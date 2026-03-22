@@ -72,6 +72,7 @@ namespace TravelManager.Infrastructure.Data
             modelBuilder.Entity<TripDocument>().HasOne(d => d.Accommodation).WithMany().HasForeignKey(d => d.AccommodationId).OnDelete(DeleteBehavior.ClientSetNull);
             modelBuilder.Entity<TripDocument>().HasOne(d => d.TripActivity).WithMany().HasForeignKey(d => d.TripActivityId).OnDelete(DeleteBehavior.ClientSetNull);
 
+            modelBuilder.Seed();
         }
     }
 }
