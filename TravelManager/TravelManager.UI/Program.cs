@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TravelManager.Infrastructure.Data; 
+using TravelManager.Infrastructure.Data;
+using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,8 @@ builder.Services.AddControllersWithViews();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
 
