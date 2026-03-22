@@ -17,7 +17,7 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var tripsFromDb = _unitOfWork.Trip.GetAll();
+            var tripsFromDb = _unitOfWork.Trip.GetAll(includeProperties: "Status");
 
             var tripViewModels = tripsFromDb.Select(t => new TripListViewModel
             {
@@ -26,7 +26,7 @@ namespace TravelManager.UI.Controllers
                 DepartureLocation = t.DepartureLocation,
                 StartDate = t.StartDate,
                 EndDate = t.EndDate,
-                StatusName = "Заплановано"
+                StatusName = t.Status?.Name ?? "Planned"
             }).ToList();
 
             return View(tripViewModels);
@@ -62,6 +62,74 @@ namespace TravelManager.UI.Controllers
             };
 
             _unitOfWork.Trip.Add(newTrip);
+            await _unitOfWork.SaveAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+            if (trip == null)
+            {
+                return NotFound();
+            }
+
+            var model = new CreateTripViewModel
+            {
+                Title = trip.Title,
+                Description = trip.Description,
+                DepartureLocation = trip.DepartureLocation,
+                ReturnLocation = trip.ReturnLocation,
+                StartDate = trip.StartDate,
+                EndDate = trip.EndDate,
+                BaseCurrency = trip.BaseCurrency
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, CreateTripViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var tripFromDb = _unitOfWork.Trip.Get(u => u.Id == id);
+            if (tripFromDb == null)
+            {
+                return NotFound();
+            }
+
+            tripFromDb.Title = model.Title;
+            tripFromDb.Description = model.Description;
+            tripFromDb.DepartureLocation = model.DepartureLocation;
+            tripFromDb.ReturnLocation = model.ReturnLocation;
+            tripFromDb.StartDate = model.StartDate;
+            tripFromDb.EndDate = model.EndDate;
+            tripFromDb.BaseCurrency = model.BaseCurrency;
+
+            _unitOfWork.Trip.Update(tripFromDb);
+            await _unitOfWork.SaveAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+            if (trip == null)
+            {
+                return NotFound();
+            }
+
+            _unitOfWork.Trip.Remove(trip);
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
