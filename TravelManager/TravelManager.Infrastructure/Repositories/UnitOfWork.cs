@@ -16,6 +16,15 @@ namespace TravelManager.Infrastructure.Repositories
         public ITripRepository Trip { get; }
         public IExpenseRepository Expense { get; }
         public IAccommodationRepository Accommodation { get; }
+        public IExpenseSplitRepository ExpenseSplit { get; }
+        public ITransitRepository Transit { get; }
+        public ITripActivityRepository TripActivity { get; }
+
+
+        public IRepository<TripStatus> TripStatus { get; private set; }
+        public IRepository<BookingStatus> BookingStatus { get; private set; }
+        public IRepository<TransitType> TransitType { get; private set; }
+        public IRepository<ExpenseCategory> ExpenseCategory { get; private set; }
 
         public UnitOfWork(ApplicationDbContext ctx)
         {
@@ -23,6 +32,13 @@ namespace TravelManager.Infrastructure.Repositories
             Trip = new TripRepository(_ctx);
             Expense = new ExpenseRepository(_ctx);
             Accommodation = new AccommodationRepository(_ctx);
+            ExpenseSplit = new Expe
+
+
+            TripStatus = new Repository<TripStatus>(_ctx);
+            BookingStatus = new Repository<BookingStatus>(_ctx);
+            TransitType = new Repository<TransitType>(_ctx);
+            ExpenseCategory = new Repository<ExpenseCategory>(_ctx);
         }
 
         public void Save()
