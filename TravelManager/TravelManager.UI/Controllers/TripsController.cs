@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
@@ -8,10 +10,12 @@ namespace TravelManager.UI.Controllers
     public class TripsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<User> _userManager;
 
-        public TripsController(IUnitOfWork unitOfWork)
+        public TripsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -35,7 +39,11 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            return View(new CreateTripViewModel());
+            var model = new CreateTripViewModel
+            {
+                UserList = GetUserList()
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -44,6 +52,7 @@ namespace TravelManager.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
+                model.UserList = GetUserList();
                 return View(model);
             }
 
@@ -58,7 +67,7 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = model.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
-                CreatorId = "temporary-user-id"
+                CreatorId = model.CreatorId
             };
 
             _unitOfWork.Trip.Add(newTrip);
@@ -84,7 +93,9 @@ namespace TravelManager.UI.Controllers
                 ReturnLocation = trip.ReturnLocation,
                 StartDate = trip.StartDate,
                 EndDate = trip.EndDate,
-                BaseCurrency = trip.BaseCurrency
+                BaseCurrency = trip.BaseCurrency,
+                CreatorId = trip.CreatorId,
+                UserList = GetUserList()
             };
 
             return View(model);
@@ -96,6 +107,7 @@ namespace TravelManager.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
+                model.UserList = GetUserList();
                 return View(model);
             }
 
@@ -112,6 +124,7 @@ namespace TravelManager.UI.Controllers
             tripFromDb.StartDate = model.StartDate;
             tripFromDb.EndDate = model.EndDate;
             tripFromDb.BaseCurrency = model.BaseCurrency;
+            tripFromDb.CreatorId = model.CreatorId;
 
             _unitOfWork.Trip.Update(tripFromDb);
             await _unitOfWork.SaveAsync();
@@ -134,5 +147,14 @@ namespace TravelManager.UI.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        private IEnumerable<SelectListItem> GetUserList()
+        {
+            return _userManager.Users.ToList().Select(u => new SelectListItem
+            {
+                Text = u.UserName,
+                Value = u.Id
+            });
+        }
     }
-}  
+}

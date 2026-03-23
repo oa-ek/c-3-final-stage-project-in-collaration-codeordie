@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TravelManager.UI.Models.ViewModels
 {
@@ -33,5 +35,11 @@ namespace TravelManager.UI.Models.ViewModels
         [Required(ErrorMessage = "Оберіть базову валюту (напр. USD, UAH)")]
         [Display(Name = "Базова валюта")]
         public string BaseCurrency { get; set; } = "UAH";
+
+        [Required(ErrorMessage = "Оберіть організатора поїздки")]
+        [Display(Name = "Організатор поїздки")]
+        public string CreatorId { get; set; } = string.Empty;
+
+        public IEnumerable<SelectListItem>? UserList { get; set; }
     }
 }
