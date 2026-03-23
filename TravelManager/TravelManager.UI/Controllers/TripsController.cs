@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TravelManager.UI.Controllers
 {
@@ -37,24 +39,34 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
+        public IActionResult Details(int id)
+        {
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id, includeProperties: "Status");
+            if (trip == null) return NotFound();
+
+            var model = new TripDetailsViewModel
+            {
+                Trip = trip,
+                Destinations = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).OrderBy(d => d.ArrivalDate).ToList(),
+                Accommodations = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList(),
+                Transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList(),
+                Checklists = _unitOfWork.Checklist.GetAll(c => c.TripId == id, includeProperties: "Items").ToList()
+            };
+
+            return View(model);
+        }
+
+        [HttpGet]
         public IActionResult Create()
         {
-            var model = new CreateTripViewModel
-            {
-                UserList = GetUserList()
-            };
-            return View(model);
+            return View(new CreateTripViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTripViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                model.UserList = GetUserList();
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var newTrip = new Trip
             {
@@ -67,35 +79,31 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = model.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
-                CreatorId = model.CreatorId
+                CreatorId = "temporary-user-id"
             };
 
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = newTrip.Id });
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var trip = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (trip == null)
-            {
-                return NotFound();
-            }
+            if (trip == null) return NotFound();
 
             var model = new CreateTripViewModel
             {
+                Id = trip.Id,
                 Title = trip.Title,
                 Description = trip.Description,
                 DepartureLocation = trip.DepartureLocation,
                 ReturnLocation = trip.ReturnLocation,
                 StartDate = trip.StartDate,
                 EndDate = trip.EndDate,
-                BaseCurrency = trip.BaseCurrency,
-                CreatorId = trip.CreatorId,
-                UserList = GetUserList()
+                BaseCurrency = trip.BaseCurrency
             };
 
             return View(model);
@@ -105,17 +113,10 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, CreateTripViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                model.UserList = GetUserList();
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var tripFromDb = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (tripFromDb == null)
-            {
-                return NotFound();
-            }
+            if (tripFromDb == null) return NotFound();
 
             tripFromDb.Title = model.Title;
             tripFromDb.Description = model.Description;
@@ -124,12 +125,11 @@ namespace TravelManager.UI.Controllers
             tripFromDb.StartDate = model.StartDate;
             tripFromDb.EndDate = model.EndDate;
             tripFromDb.BaseCurrency = model.BaseCurrency;
-            tripFromDb.CreatorId = model.CreatorId;
 
             _unitOfWork.Trip.Update(tripFromDb);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = tripFromDb.Id });
         }
 
         [HttpPost]
@@ -137,24 +137,12 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var trip = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (trip == null)
-            {
-                return NotFound();
-            }
+            if (trip == null) return NotFound();
 
             _unitOfWork.Trip.Remove(trip);
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private IEnumerable<SelectListItem> GetUserList()
-        {
-            return _userManager.Users.ToList().Select(u => new SelectListItem
-            {
-                Text = u.UserName,
-                Value = u.Id
-            });
         }
     }
 }

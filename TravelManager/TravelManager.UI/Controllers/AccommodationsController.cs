@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TravelManager.UI.Controllers
 {
@@ -19,7 +22,6 @@ namespace TravelManager.UI.Controllers
         public IActionResult Index()
         {
             var accommodations = _unitOfWork.Accommodation.GetAll(includeProperties: "Trip");
-
             var viewModels = accommodations.Select(a => new AccommodationListViewModel
             {
                 Id = a.Id,
@@ -28,24 +30,17 @@ namespace TravelManager.UI.Controllers
                 CheckInTime = a.CheckInTime,
                 CheckOutTime = a.CheckOutTime
             }).ToList();
-
             return View(viewModels);
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create(int? tripId)
         {
-            var trips = _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
-
             var model = new AccommodationFormViewModel
             {
-                TripList = trips
+                TripId = tripId ?? 0,
+                TripList = GetTripList()
             };
-
             return View(model);
         }
 
@@ -55,11 +50,7 @@ namespace TravelManager.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                model.TripList = _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-                {
-                    Text = t.Title,
-                    Value = t.Id.ToString()
-                });
+                model.TripList = GetTripList();
                 return View(model);
             }
 
@@ -77,23 +68,14 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Accommodation.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
-
-            var trips = _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
+            if (entity == null) return NotFound();
 
             var model = new AccommodationFormViewModel
             {
@@ -104,9 +86,8 @@ namespace TravelManager.UI.Controllers
                 CheckOutTime = entity.CheckOutTime,
                 BookingReference = entity.BookingReference,
                 TripId = entity.TripId,
-                TripList = trips
+                TripList = GetTripList()
             };
-
             return View(model);
         }
 
@@ -116,19 +97,12 @@ namespace TravelManager.UI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                model.TripList = _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-                {
-                    Text = t.Title,
-                    Value = t.Id.ToString()
-                });
+                model.TripList = GetTripList();
                 return View(model);
             }
 
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             entity.Name = model.Name;
             entity.Address = model.Address;
@@ -140,7 +114,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Accommodation.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -148,15 +122,22 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
+            int tripId = entity.TripId;
             _unitOfWork.Accommodation.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
+        }
+
+        private IEnumerable<SelectListItem> GetTripList()
+        {
+            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
+            {
+                Text = t.Title,
+                Value = t.Id.ToString()
+            });
         }
     }
 }

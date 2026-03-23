@@ -1,0 +1,163 @@
+﻿@model TravelManager.UI.Models.ViewModels.TripDetailsViewModel
+
+@{
+    ViewData["Title"] = "Планування: " + Model.Trip.Title;
+}
+
+<div class="container py-4">
+    <div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden">
+        <div class="card-body p-4 position-relative">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold mb-1">@Model.Trip.Title</h1>
+                    <p class="lead opacity-75 mb-3">@Model.Trip.Description</p>
+                    <div class="d-flex flex-wrap gap-3 small">
+                        <span class="badge bg-white text-primary px-3 py-2">Статус: @Model.Trip.Status?.Name</span>
+                        <span>📅 @Model.Trip.StartDate.ToShortDateString() — @Model.Trip.EndDate.ToShortDateString()</span>
+                        <span>📍 @Model.Trip.DepartureLocation → @Model.Trip.ReturnLocation</span>
+                        <span>💰 Валюта: @Model.Trip.BaseCurrency</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="btn-group">
+                        <a asp-action="Edit" asp-route-id="@Model.Trip.Id" class="btn btn-light shadow-sm">Редагувати</a>
+                        <a asp-action="Index" class="btn btn-outline-light">Усі поїздки</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary">📍 Маршрут</h5>
+                    <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-primary">+ Додати точку</a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Destinations.Any())
+                    {
+                        <div class="text-center py-3 text-muted">Маршрут ще порожній.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Місто</th>
+                                        <th>Прибуття</th>
+                                        <th>Відбуття</th>
+                                        <th class="text-end">Дії</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var d in Model.Destinations)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@d.CityName (@d.Country)</td>
+                                            <td>@d.ArrivalDate.ToShortDateString()</td>
+                                            <td>@d.DepartureDate.ToShortDateString()</td>
+                                            <td class="text-end">
+                                                <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" class="btn btn-sm btn-link text-warning">⚙️</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-success">🏠 Житло</h5>
+                    <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-success">+ Забронювати</a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Accommodations.Any())
+                    {
+                        <div class="text-center py-3 text-muted">Житло ще не додано.</div>
+                    }
+                    else
+                    {
+                        <div class="row row-cols-1 row-cols-md-2 g-3">
+                            @foreach (var a in Model.Accommodations)
+                            {
+                                <div class="col">
+                                    <div class="p-3 border rounded bg-light position-relative">
+                                        <h6 class="fw-bold mb-1">@a.Name</h6>
+                                        <p class="small text-muted mb-2">@a.Address</p>
+                                        <div class="d-flex justify-content-between align-items-center small">
+                                            <span>📅 @a.CheckInTime.ToShortDateString()</span>
+                                            <a asp-controller="Accommodations" asp-action="Edit" asp-route-id="@a.Id" class="text-decoration-none">Редагувати</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-info">✈️ Транспорт</h5>
+                    <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-info">+ Квиток</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.Transits.Any())
+                    {
+                        <p class="text-muted small p-3 mb-0">Квитки відсутні.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var t in Model.Transits)
+                            {
+                                <li class="list-group-item py-3">
+                                    <div class="d-flex justify-content-between fw-bold small">
+                                        <span>@t.DepartureLocation → @t.ArrivalLocation</span>
+                                        <span class="badge bg-light text-dark border">@t.TransitType?.Name</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        @t.DepartureTime.ToShortDateString() | 🎫 @t.BookingReference
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">📝 Списки речей</h5>
+                    <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-light">+ Новий</a>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Checklists.Any())
+                    {
+                        <p class="text-muted small mb-0">Списків ще немає.</p>
+                    }
+                    else
+                    {
+                        @foreach (var c in Model.Checklists)
+                        {
+                            <a asp-controller="Checklists" asp-action="Details" asp-route-id="@c.Id" class="btn btn-white w-100 text-start border shadow-sm mb-2 p-2 d-flex justify-content-between">
+                                <span>@c.Title</span>
+                                <span class="text-muted">➔</span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

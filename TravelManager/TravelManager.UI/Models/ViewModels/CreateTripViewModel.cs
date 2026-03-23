@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TravelManager.UI.Models.ViewModels
 {
     public class CreateTripViewModel
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Введіть назву поїздки")]
-        [MaxLength(200, ErrorMessage = "Назва занадто довга")]
         [Display(Name = "Назва поїздки")]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [Display(Name = "Опис")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Вкажіть місце відправлення")]
         [Display(Name = "Місце відправлення")]
-        public string DepartureLocation { get; set; }
+        public string? DepartureLocation { get; set; }
 
         [Display(Name = "Місце повернення")]
         public string? ReturnLocation { get; set; }
@@ -32,14 +30,7 @@ namespace TravelManager.UI.Models.ViewModels
         [DataType(DataType.Date)]
         public DateTime EndDate { get; set; } = DateTime.Today.AddDays(7);
 
-        [Required(ErrorMessage = "Оберіть базову валюту (напр. USD, UAH)")]
         [Display(Name = "Базова валюта")]
-        public string BaseCurrency { get; set; } = "UAH";
-
-        [Required(ErrorMessage = "Оберіть організатора поїздки")]
-        [Display(Name = "Організатор поїздки")]
-        public string CreatorId { get; set; } = string.Empty;
-
-        public IEnumerable<SelectListItem>? UserList { get; set; }
+        public string? BaseCurrency { get; set; } = "UAH";
     }
 }

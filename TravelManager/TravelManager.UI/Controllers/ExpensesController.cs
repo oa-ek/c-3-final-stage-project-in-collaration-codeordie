@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TravelManager.UI.Controllers
 {
@@ -19,7 +23,6 @@ namespace TravelManager.UI.Controllers
         public IActionResult Index()
         {
             var expenses = _unitOfWork.Expense.GetAll(includeProperties: "Trip,Category");
-
             var viewModels = expenses.Select(e => new ExpenseListViewModel
             {
                 Id = e.Id,
@@ -30,20 +33,20 @@ namespace TravelManager.UI.Controllers
                 CategoryName = e.Category?.Name ?? "Невідомо",
                 TripTitle = e.Trip?.Title ?? "Невідомо"
             }).ToList();
-
             return View(viewModels);
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create(int? tripId)
         {
             var model = new ExpenseFormViewModel
             {
+                TripId = tripId ?? 0,
+                Date = DateTime.Now,
                 TripList = GetTripList(),
                 CategoryList = GetCategoryList(),
                 CurrencyList = GetCurrencyList()
             };
-
             return View(model);
         }
 
@@ -73,17 +76,14 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Expense.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             var model = new ExpenseFormViewModel
             {
@@ -98,7 +98,6 @@ namespace TravelManager.UI.Controllers
                 CategoryList = GetCategoryList(),
                 CurrencyList = GetCurrencyList()
             };
-
             return View(model);
         }
 
@@ -115,10 +114,7 @@ namespace TravelManager.UI.Controllers
             }
 
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             entity.TripId = model.TripId;
             entity.CategoryId = model.CategoryId;
@@ -130,7 +126,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Expense.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -138,24 +134,18 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
+            int tripId = entity.TripId;
             _unitOfWork.Expense.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private IEnumerable<SelectListItem> GetTripList()
         {
-            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
+            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem { Text = t.Title, Value = t.Id.ToString() });
         }
 
         private IEnumerable<SelectListItem> GetCategoryList()
@@ -177,9 +167,7 @@ namespace TravelManager.UI.Controllers
             {
                 new SelectListItem { Text = "UAH (Гривня)", Value = "UAH" },
                 new SelectListItem { Text = "USD (Долар США)", Value = "USD" },
-                new SelectListItem { Text = "EUR (Євро)", Value = "EUR" },
-                new SelectListItem { Text = "PLN (Злотий)", Value = "PLN" },
-                new SelectListItem { Text = "GBP (Фунт)", Value = "GBP" }
+                new SelectListItem { Text = "EUR (Євро)", Value = "EUR" }
             };
         }
     }
