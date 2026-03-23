@@ -27,10 +27,11 @@
                         <td>@item.Title</td>
                         <td class="text-end pe-4">
                             <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info text-dark">Деталі</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark ms-1">Редагувати</a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline ms-1" onsubmit="return confirm('Ви впевнені?')">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
                                 </form>
                             </div>
                         </td>

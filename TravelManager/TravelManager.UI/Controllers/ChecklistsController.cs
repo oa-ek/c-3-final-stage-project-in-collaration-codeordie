@@ -31,6 +31,36 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
+        public IActionResult Details(int id)
+        {
+            // Витягуємо список разом із поїздкою та всіма речами
+            var checklist = _unitOfWork.Checklist.Get(c => c.Id == id, includeProperties: "Trip,Items");
+
+            if (checklist == null)
+            {
+                return NotFound();
+            }
+
+            var model = new ChecklistDetailsViewModel
+            {
+                Id = checklist.Id,
+                Title = checklist.Title,
+                TripName = checklist.Trip?.Title ?? "Невідомо",
+
+               
+                Items = checklist.Items.Select(i => new ChecklistItemListViewModel
+                {
+                    Id = i.Id,
+                    ChecklistName = checklist.Title,
+                    Content = i.Content,
+                    IsChecked = i.IsChecked
+                }).OrderBy(i => i.IsChecked).ThenBy(i => i.Content).ToList()
+            };
+
+            return View(model);
+        }
+
+        [HttpGet]
         public IActionResult Create()
         {
             var model = new ChecklistFormViewModel

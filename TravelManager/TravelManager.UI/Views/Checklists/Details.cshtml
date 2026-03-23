@@ -1,0 +1,56 @@
+﻿@model TravelManager.UI.Models.ViewModels.ChecklistDetailsViewModel
+
+@{
+    ViewData["Title"] = "Деталі списку";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">@Model.Title</h2>
+            <span class="text-muted fs-5">Поїздка: <strong>@Model.TripName</strong></span>
+        </div>
+        <div>
+            <a asp-controller="ChecklistItems" asp-action="Create" class="btn btn-success shadow-sm">
+                + Додати річ
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Назад до списків</a>
+        </div>
+    </div>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold">
+                    Вміст списку
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (!Model.Items.Any())
+                    {
+                        <li class="list-group-item text-muted fst-italic py-4 text-center">
+                            У цьому списку поки немає жодної речі.
+                        </li>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" disabled @(item.IsChecked ? "checked" : "")>
+                                    <label class="form-check-label @(item.IsChecked ? "text-decoration-line-through text-muted" : "fw-bold")">
+                                        @item.Content
+                                    </label>
+                                </div>
+                                <div class="btn-group">
+                                    <a asp-controller="ChecklistItems" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Редагувати</a>
+                                </div>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

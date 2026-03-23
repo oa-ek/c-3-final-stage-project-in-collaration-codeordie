@@ -1,0 +1,53 @@
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.ChecklistItemListViewModel>
+
+@{
+    ViewData["Title"] = "Речі у списках";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="display-6">Вміст списків</h2>
+    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати річ</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-4">Статус</th>
+                    <th>Назва списку</th>
+                    <th>Річ / Завдання</th>
+                    <th class="text-end pe-4">Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="ps-4">
+                            @if (item.IsChecked)
+                            {
+                                <span class="badge bg-success">Зібрано</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Треба взяти</span>
+                            }
+                        </td>
+                        <td class="fw-bold">@item.ChecklistName</td>
+                        <td class="@(item.IsChecked ? "text-decoration-line-through text-muted" : "")">@item.Content</td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Видалити цю річ?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
