@@ -1,0 +1,77 @@
+﻿@model TravelManager.UI.Models.ViewModels.TripDestinationFormViewModel
+
+@{
+    ViewData["Title"] = "Редагувати місто";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">Редагувати місто у маршруті</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="TripId" class="form-label fw-bold"></label>
+                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select"></select>
+                            <span asp-validation-for="TripId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="CityName" class="form-label fw-bold"></label>
+                                <input asp-for="CityName" class="form-control" />
+                                <span asp-validation-for="CityName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="Country" class="form-label fw-bold"></label>
+                                <input asp-for="Country" class="form-control" />
+                                <span asp-validation-for="Country" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="ArrivalDate" class="form-label fw-bold"></label>
+                                <input asp-for="ArrivalDate" class="form-control" />
+                                <span asp-validation-for="ArrivalDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="DepartureDate" class="form-label fw-bold"></label>
+                                <input asp-for="DepartureDate" class="form-control" />
+                                <span asp-validation-for="DepartureDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="Latitude" class="form-label fw-bold"></label>
+                                <input asp-for="Latitude" class="form-control" type="number" step="0.000001" />
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="Longitude" class="form-label fw-bold"></label>
+                                <input asp-for="Longitude" class="form-control" type="number" step="0.000001" />
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary px-5 shadow-sm">Оновити</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

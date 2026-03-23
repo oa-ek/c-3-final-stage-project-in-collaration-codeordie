@@ -8,13 +8,14 @@ using TravelManager.Domain.Entities;
 namespace TravelManager.Infrastructure.Interfaces
 {
     public interface IUnitOfWork : IDisposable
-    { 
+    {
         ITripRepository Trip { get; }
         IExpenseRepository Expense { get; }
         IAccommodationRepository Accommodation { get; }
         IExpenseSplitRepository ExpenseSplit { get; }
         ITransitRepository Transit { get; }
         ITripActivityRepository TripActivity { get; }
+        ITripDestinationRepository TripDestination { get; }
 
         IRepository<TripStatus> TripStatus { get; }
         IRepository<BookingStatus> BookingStatus { get; }
