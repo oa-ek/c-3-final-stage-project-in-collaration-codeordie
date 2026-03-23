@@ -17,6 +17,8 @@ namespace TravelManager.Infrastructure.Interfaces
         ITripActivityRepository TripActivity { get; }
         ITripDestinationRepository TripDestination { get; }
 
+        IChecklistRepository Checklist { get; }
+
         IRepository<TripStatus> TripStatus { get; }
         IRepository<BookingStatus> BookingStatus { get; }
         IRepository<TransitType> TransitType { get; }
