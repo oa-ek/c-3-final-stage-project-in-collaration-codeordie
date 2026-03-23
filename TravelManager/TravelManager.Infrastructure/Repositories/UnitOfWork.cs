@@ -32,7 +32,9 @@ namespace TravelManager.Infrastructure.Repositories
             Trip = new TripRepository(_ctx);
             Expense = new ExpenseRepository(_ctx);
             Accommodation = new AccommodationRepository(_ctx);
-            ExpenseSplit = new Expe
+            ExpenseSplit = new ExpenseSplitRepository(_ctx);
+            Transit = new TransitRepository(_ctx);
+            TripActivity = new TripActivityRepository(_ctx);
 
 
             TripStatus = new Repository<TripStatus>(_ctx);
