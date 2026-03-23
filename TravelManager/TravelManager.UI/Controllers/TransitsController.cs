@@ -18,18 +18,18 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var transits = new List<Transit>();
+            var transits = _unitOfWork.Transit.GetAll(includeProperties: "Trip,TransitType,BookingStatus");
 
             var viewModels = transits.Select(t => new TransitListViewModel
             {
                 Id = t.Id,
-                TripTitle = t.Trip?.Title ?? "Невідомо",
-                TransitTypeName = t.TransitType?.Name ?? GetTransitTypeName(t.TransitTypeId),
+                TripTitle = t.Trip?.Title ?? string.Empty,
+                TransitTypeName = t.TransitType?.Name ?? string.Empty,
                 DepartureLocation = t.DepartureLocation,
                 ArrivalLocation = t.ArrivalLocation,
                 DepartureTime = t.DepartureTime,
                 ArrivalTime = t.ArrivalTime,
-                BookingStatusName = t.BookingStatus?.Name ?? GetBookingStatusName(t.BookingStatusId)
+                BookingStatusName = t.BookingStatus?.Name ?? string.Empty
             }).ToList();
 
             return View(viewModels);
@@ -40,7 +40,6 @@ namespace TravelManager.UI.Controllers
         {
             var model = new TransitFormViewModel
             {
-        
                 TripList = GetTripList(),
                 TransitTypeList = GetTransitTypeList(),
                 BookingStatusList = GetBookingStatusList()
@@ -61,8 +60,6 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
-
-            /*
             var entity = new Transit
             {
                 TripId = model.TripId,
@@ -78,7 +75,6 @@ namespace TravelManager.UI.Controllers
 
             _unitOfWork.Transit.Add(entity);
             await _unitOfWork.SaveAsync();
-            */
 
             return RedirectToAction(nameof(Index));
         }
@@ -86,15 +82,63 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-      
-            return Content("Редагування тимчасово недоступне. Чекаємо оновлення бази від Дарини.");
+            var entity = _unitOfWork.Transit.Get(u => u.Id == id);
+            if (entity == null)
+            {
+                return NotFound();
+            }
+
+            var model = new TransitFormViewModel
+            {
+                Id = entity.Id,
+                TripId = entity.TripId,
+                TransitTypeId = entity.TransitTypeId,
+                BookingStatusId = entity.BookingStatusId,
+                DepartureLocation = entity.DepartureLocation,
+                ArrivalLocation = entity.ArrivalLocation,
+                DepartureTime = entity.DepartureTime,
+                ArrivalTime = entity.ArrivalTime,
+                CarrierInfo = entity.CarrierInfo,
+                BookingReference = entity.BookingReference,
+                TripList = GetTripList(),
+                TransitTypeList = GetTransitTypeList(),
+                BookingStatusList = GetBookingStatusList()
+            };
+
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TransitFormViewModel model)
         {
-      
+            if (!ModelState.IsValid)
+            {
+                model.TripList = GetTripList();
+                model.TransitTypeList = GetTransitTypeList();
+                model.BookingStatusList = GetBookingStatusList();
+                return View(model);
+            }
+
+            var entity = _unitOfWork.Transit.Get(u => u.Id == id);
+            if (entity == null)
+            {
+                return NotFound();
+            }
+
+            entity.TripId = model.TripId;
+            entity.TransitTypeId = model.TransitTypeId;
+            entity.BookingStatusId = model.BookingStatusId;
+            entity.DepartureLocation = model.DepartureLocation;
+            entity.ArrivalLocation = model.ArrivalLocation;
+            entity.DepartureTime = model.DepartureTime;
+            entity.ArrivalTime = model.ArrivalTime;
+            entity.CarrierInfo = model.CarrierInfo;
+            entity.BookingReference = model.BookingReference;
+
+            _unitOfWork.Transit.Update(entity);
+            await _unitOfWork.SaveAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -102,7 +146,15 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-       
+            var entity = _unitOfWork.Transit.Get(u => u.Id == id);
+            if (entity == null)
+            {
+                return NotFound();
+            }
+
+            _unitOfWork.Transit.Remove(entity);
+            await _unitOfWork.SaveAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -117,44 +169,20 @@ namespace TravelManager.UI.Controllers
 
         private IEnumerable<SelectListItem> GetTransitTypeList()
         {
-            return new List<SelectListItem>
+            return _unitOfWork.TransitType.GetAll().Select(t => new SelectListItem
             {
-                new SelectListItem { Text = "Літак (Flight)", Value = "1" },
-                new SelectListItem { Text = "Поїзд (Train)", Value = "2" },
-                new SelectListItem { Text = "Автобус (Bus)", Value = "3" },
-                new SelectListItem { Text = "Оренда авто (Car Rental)", Value = "4" },
-                new SelectListItem { Text = "Таксі/Трансфер (Taxi)", Value = "5" }
-            };
+                Text = t.Name,
+                Value = t.Id.ToString()
+            });
         }
 
         private IEnumerable<SelectListItem> GetBookingStatusList()
         {
-            return new List<SelectListItem>
+            return _unitOfWork.BookingStatus.GetAll().Select(b => new SelectListItem
             {
-                new SelectListItem { Text = "Не заброньовано (Not Booked)", Value = "1" },
-                new SelectListItem { Text = "Очікує підтвердження (Pending)", Value = "2" },
-                new SelectListItem { Text = "Підтверджено (Confirmed)", Value = "3" },
-                new SelectListItem { Text = "Скасовано (Cancelled)", Value = "4" }
-            };
+                Text = b.Name,
+                Value = b.Id.ToString()
+            });
         }
-
-        private string GetTransitTypeName(int id) => id switch
-        {
-            1 => "Літак",
-            2 => "Поїзд",
-            3 => "Автобус",
-            4 => "Оренда авто",
-            5 => "Таксі/Трансфер",
-            _ => "Інше"
-        };
-
-        private string GetBookingStatusName(int id) => id switch
-        {
-            1 => "Не заброньовано",
-            2 => "Очікує",
-            3 => "Підтверджено",
-            4 => "Скасовано",
-            _ => "Невідомо"
-        };
     }
 }
