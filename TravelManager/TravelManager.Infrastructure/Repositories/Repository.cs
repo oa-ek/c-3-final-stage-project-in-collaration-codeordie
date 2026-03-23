@@ -79,5 +79,10 @@ namespace TravelManager.Infrastructure.Repositories
         {
             DbSet.RemoveRange(entities);
         }
+
+        public void Update(T entity)
+        {
+            DbSet.Update(entity);
+        }
     }
 }
