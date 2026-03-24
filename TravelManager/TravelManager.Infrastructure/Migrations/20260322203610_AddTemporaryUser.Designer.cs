@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TravelManager.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using TravelManager.Infrastructure.Data;
 namespace TravelManager.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322203610_AddTemporaryUser")]
+    partial class AddTemporaryUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -896,7 +899,7 @@ namespace TravelManager.Infrastructure.Migrations
                         {
                             Id = "temporary-user-id",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "static-concurrency-stamp",
+                            ConcurrencyStamp = "0426ed37-d3ba-40d3-8d3d-c0e303f3fa93",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "test@travel.com",
                             EmailConfirmed = true,
@@ -904,7 +907,7 @@ namespace TravelManager.Infrastructure.Migrations
                             NormalizedEmail = "TEST@TRAVEL.COM",
                             NormalizedUserName = "TEST@TRAVEL.COM",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "static-security-stamp",
+                            SecurityStamp = "50efc77a-6672-4c15-80d2-c26aaf26ab02",
                             TwoFactorEnabled = false,
                             UserName = "test@travel.com"
                         });

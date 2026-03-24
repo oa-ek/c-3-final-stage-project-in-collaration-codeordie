@@ -1,0 +1,91 @@
+﻿@model TravelManager.UI.Models.ViewModels.TransitFormViewModel
+
+@{
+    ViewData["Title"] = "Редагувати транспорт";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">Редагувати транспорт</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="TripId" class="form-label fw-bold">Поїздка</label>
+                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
+                                <option disabled selected>-- Оберіть поїздку --</option>
+                            </select>
+                            <span asp-validation-for="TripId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="TransitTypeId" class="form-label fw-bold">Тип транспорту</label>
+                                <select asp-for="TransitTypeId" asp-items="Model.TransitTypeList" class="form-select"></select>
+                                <span asp-validation-for="TransitTypeId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="BookingStatusId" class="form-label fw-bold">Статус бронювання</label>
+                                <select asp-for="BookingStatusId" asp-items="Model.BookingStatusList" class="form-select"></select>
+                                <span asp-validation-for="BookingStatusId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DepartureLocation" class="form-label fw-bold">Звідки (Місто/Аеропорт)</label>
+                                <input asp-for="DepartureLocation" class="form-control" />
+                                <span asp-validation-for="DepartureLocation" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="ArrivalLocation" class="form-label fw-bold">Куди (Місто/Аеропорт)</label>
+                                <input asp-for="ArrivalLocation" class="form-control" />
+                                <span asp-validation-for="ArrivalLocation" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DepartureTime" class="form-label fw-bold">Час відправлення</label>
+                                <input asp-for="DepartureTime" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="DepartureTime" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="ArrivalTime" class="form-label fw-bold">Час прибуття</label>
+                                <input asp-for="ArrivalTime" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="ArrivalTime" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="CarrierInfo" class="form-label fw-bold">Перевізник (Авіакомпанія/Автобус)</label>
+                            <input asp-for="CarrierInfo" class="form-control" placeholder="Напр. Ryanair, FlixBus" />
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="BookingReference" class="form-label fw-bold">Номер квитка / PNR</label>
+                            <input asp-for="BookingReference" class="form-control" />
+                        </div>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary px-5 shadow-sm">Оновити</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

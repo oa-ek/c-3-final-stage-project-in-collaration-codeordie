@@ -1,0 +1,46 @@
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.AccommodationListViewModel>
+
+@{
+    ViewData["Title"] = "Житло";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="display-6">Житло</h2>
+    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати житло</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-4">Назва</th>
+                    <th>Адреса</th>
+                    <th>Заїзд</th>
+                    <th>Виїзд</th>
+                    <th class="text-end pe-4">Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold">@item.Name</td>
+                        <td>@item.Address</td>
+                        <td>@item.CheckInTime.ToString("g")</td>
+                        <td>@item.CheckOutTime.ToString("g")</td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

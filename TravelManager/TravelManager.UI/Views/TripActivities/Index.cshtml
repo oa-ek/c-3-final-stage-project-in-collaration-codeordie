@@ -1,0 +1,52 @@
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripActivityListViewModel>
+
+@{
+    ViewData["Title"] = "Активності";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="display-6">Екскурсії та Активності</h2>
+    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати активність</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-4">Поїздка</th>
+                    <th>Назва</th>
+                    <th>Локація</th>
+                    <th>Час початку</th>
+                    <th>Статус</th>
+                    <th class="text-end pe-4">Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="ps-4 fw-bold">@item.TripTitle</td>
+                        <td>@item.Title</td>
+                        <td>@(string.IsNullOrEmpty(item.Address) ? "—" : item.Address)</td>
+                        <td>@item.StartTime.ToString("g")</td>
+                        <td>
+                            <span class="badge @(item.BookingStatusName == "Підтверджено" ? "bg-success" : "bg-secondary")">
+                                @item.BookingStatusName
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

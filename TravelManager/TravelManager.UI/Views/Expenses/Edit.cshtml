@@ -1,0 +1,75 @@
+﻿@model TravelManager.UI.Models.ViewModels.ExpenseFormViewModel
+
+@{
+    ViewData["Title"] = "Редагувати витрату";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">Редагувати витрату</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="form-group mb-3">
+                            <label asp-for="TripId" class="form-label fw-bold">Поїздка</label>
+                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
+                                <option disabled selected>-- Оберіть поїздку --</option>
+                            </select>
+                            <span asp-validation-for="TripId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="CategoryId" class="form-label fw-bold">Категорія</label>
+                            <select asp-for="CategoryId" asp-items="Model.CategoryList" class="form-select">
+                                <option disabled selected>-- Оберіть категорію --</option>
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Опис (на що витратили)</label>
+                            <input asp-for="Description" class="form-control" />
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Amount" class="form-label fw-bold">Сума</label>
+                                <input asp-for="Amount" class="form-control" type="number" step="0.01" />
+                                <span asp-validation-for="Amount" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="Currency" class="form-label fw-bold">Валюта</label>
+                                <select asp-for="Currency" asp-items="Model.CurrencyList" class="form-select"></select>
+                                <span asp-validation-for="Currency" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="Date" class="form-label fw-bold">Дата</label>
+                            <input asp-for="Date" class="form-control" />
+                            <span asp-validation-for="Date" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary px-5 shadow-sm">Оновити</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

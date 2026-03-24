@@ -1,0 +1,78 @@
+﻿@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
+
+@{
+    ViewData["Title"] = "Редагувати поїздку";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">Редагувати поїздку</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Title" class="form-label fw-bold"></label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Description" class="form-label fw-bold"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DepartureLocation" class="form-label fw-bold"></label>
+                                <input asp-for="DepartureLocation" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="ReturnLocation" class="form-label fw-bold"></label>
+                                <input asp-for="ReturnLocation" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="StartDate" class="form-label fw-bold"></label>
+                                <input asp-for="StartDate" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="EndDate" class="form-label fw-bold"></label>
+                                <input asp-for="EndDate" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="BaseCurrency" class="form-label fw-bold"></label>
+                                <input asp-for="BaseCurrency" class="form-control" />
+                            </div>
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="CreatorId" class="form-label fw-bold"></label>
+                                <select asp-for="CreatorId" asp-items="Model.UserList" class="form-select"></select>
+                                <span asp-validation-for="CreatorId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary px-5 shadow-sm">Оновити</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}=

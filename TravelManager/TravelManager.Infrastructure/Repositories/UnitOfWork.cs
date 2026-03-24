@@ -19,7 +19,9 @@ namespace TravelManager.Infrastructure.Repositories
         public IExpenseSplitRepository ExpenseSplit { get; }
         public ITransitRepository Transit { get; }
         public ITripActivityRepository TripActivity { get; }
-
+        public ITripDestinationRepository TripDestination { get; }
+        public IChecklistRepository Checklist { get; private set; }
+        public IChecklistItemRepository ChecklistItem { get; private set; }
 
         public IRepository<TripStatus> TripStatus { get; private set; }
         public IRepository<BookingStatus> BookingStatus { get; private set; }
@@ -35,7 +37,9 @@ namespace TravelManager.Infrastructure.Repositories
             ExpenseSplit = new ExpenseSplitRepository(_ctx);
             Transit = new TransitRepository(_ctx);
             TripActivity = new TripActivityRepository(_ctx);
-
+            TripDestination = new TripDestinationRepository(_ctx);
+            Checklist = new ChecklistRepository(_ctx);
+            ChecklistItem = new ChecklistItemRepository(_ctx);
 
             TripStatus = new Repository<TripStatus>(_ctx);
             BookingStatus = new Repository<BookingStatus>(_ctx);
@@ -59,4 +63,3 @@ namespace TravelManager.Infrastructure.Repositories
         }
     }
 }
-

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TravelManager.Domain.Entities;
+using System;
 
 namespace TravelManager.Infrastructure.Data
 {
@@ -7,6 +8,19 @@ namespace TravelManager.Infrastructure.Data
     {
         public static void Seed(this ModelBuilder builder)
         {
+            builder.Entity<User>().HasData(new User
+            {
+                Id = "temporary-user-id",
+                UserName = "test@travel.com",
+                NormalizedUserName = "TEST@TRAVEL.COM",
+                Email = "test@travel.com",
+                NormalizedEmail = "TEST@TRAVEL.COM",
+                EmailConfirmed = true,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                ConcurrencyStamp = "static-concurrency-stamp",
+                SecurityStamp = "static-security-stamp"
+            });
+
             builder.Entity<TripStatus>().HasData(
                 new TripStatus { Id = 1, Name = "Planned" },
                 new TripStatus { Id = 2, Name = "In Progress" },
