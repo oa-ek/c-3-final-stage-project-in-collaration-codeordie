@@ -2,7 +2,7 @@
 **Виконавці:** Мартинюк Дарина (КН-213), Мініч Андрій (КН-212)
 
 ---
-**Посилання на звіт у docx:** https://docs.google.com/document/d/1L_u6K9jE4JxkDHW5DgliTMMsnVhYCtXlJ8NYhprXu6g/edit?usp=sharing 
+**Посилання на звіт у docs:** https://docs.google.com/document/d/1L_u6K9jE4JxkDHW5DgliTMMsnVhYCtXlJ8NYhprXu6g/edit?usp=sharing 
 ---
 
 ## Технічне завдання
