@@ -117,6 +117,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Update(entity);
             await _unitOfWork.SaveAsync();
 
+            
             return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
@@ -131,6 +132,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Remove(entity);
             await _unitOfWork.SaveAsync();
 
+            
             return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 

@@ -50,7 +50,8 @@ namespace TravelManager.UI.Controllers
                 Destinations = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).OrderBy(d => d.ArrivalDate).ToList(),
                 Accommodations = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList(),
                 Transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList(),
-                Checklists = _unitOfWork.Checklist.GetAll(c => c.TripId == id, includeProperties: "Items").ToList()
+                Checklists = _unitOfWork.Checklist.GetAll(c => c.TripId == id, includeProperties: "Items").ToList(),
+                Expenses = _unitOfWork.Expense.GetAll(e => e.TripId == id).ToList()
             };
 
             return View(model);

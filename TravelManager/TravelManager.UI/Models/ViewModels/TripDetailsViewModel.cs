@@ -10,5 +10,6 @@ namespace TravelManager.UI.Models.ViewModels
         public IEnumerable<Accommodation> Accommodations { get; set; } = new List<Accommodation>();
         public IEnumerable<Transit> Transits { get; set; } = new List<Transit>();
         public IEnumerable<Checklist> Checklists { get; set; } = new List<Checklist>();
+        public IEnumerable<Expense> Expenses { get; set; } = new List<Expense>();
     }
 }
