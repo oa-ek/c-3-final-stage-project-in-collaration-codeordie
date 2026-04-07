@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using TravelManager.Domain.Entities
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        var currentUser = await UserManager.GetUserAsync(User);
+        var displayName = currentUser?.FirstName ?? User.Identity?.Name;
+
+        <li class="nav-item">
+            <a class="nav-link text-dark fw-bold" href="#">
+                <i class="fa-regular fa-circle-user me-1"></i> Привіт, @displayName!
+            </a>
+        </li>
+
+        // Показуємо кнопку Адмін Панелі, тільки якщо юзер - Адмін
+        @if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-danger fw-bold" href="#">👑 Адмінка</a>
+            </li>
+        }
+
+        <li class="nav-item">
+            <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="nav-link btn btn-link text-dark">Вийти</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Реєстрація</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link btn btn-outline-primary ms-2" asp-controller="Account" asp-action="Login">Увійти</a>
+        </li>
+    }
+</ul>

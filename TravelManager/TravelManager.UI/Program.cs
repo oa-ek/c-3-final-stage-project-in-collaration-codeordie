@@ -1,6 +1,10 @@
+using FluentValidation;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TravelManager.Domain.Entities;
+using TravelManager.Infrastructure;
 using TravelManager.Infrastructure.Data;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Repositories;
@@ -8,17 +12,26 @@ using TravelManager.Infrastructure.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddIdentity<User, IdentityRole>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
+builder.Services.AddIdentity<User, IdentityRole>(options => {
+    options.Password.RequireDigit = false; // ваші налаштування
 })
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+.AddEntityFrameworkStores<ApplicationDbContext>() // назва вашого контексту
+.AddDefaultTokenProviders()
+.AddErrorDescriber<UkrainianIdentityErrorDescriber>(); 
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -42,5 +55,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+using (var scope = app.Services.CreateScope())
+{
+    await DbInitializer.SeedAdminAsync(scope.ServiceProvider);
+}
 
 app.Run();

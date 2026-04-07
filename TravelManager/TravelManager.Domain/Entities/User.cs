@@ -9,6 +9,8 @@ namespace TravelManager.Domain.Entities
 {
     public class User : IdentityUser
     {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public virtual ICollection<TripParticipant> Participations { get; set; } = new List<TripParticipant>();
         public virtual ICollection<Expense> PaidExpenses { get; set; } = new List<Expense>();

@@ -24,16 +24,21 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Головна</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
+                        }
                     </ul>
+                    <partial name="_LoginPartial" />
                 </div>
             </div>
+            
         </nav>
     </header>
 
