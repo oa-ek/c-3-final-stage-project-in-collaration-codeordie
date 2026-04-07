@@ -8,6 +8,7 @@ using TravelManager.Infrastructure;
 using TravelManager.Infrastructure.Data;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Repositories;
+using TravelManager.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,11 +21,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddIdentity<User, IdentityRole>(options => {
-    options.Password.RequireDigit = false; // ваші налаштування
+    options.Password.RequireDigit = false; 
 })
-.AddEntityFrameworkStores<ApplicationDbContext>() // назва вашого контексту
+.AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders()
-.AddErrorDescriber<UkrainianIdentityErrorDescriber>(); 
+.AddErrorDescriber<UkrainianIdentityErrorDescriber>();
+
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
 using TravelManager.UI.Models.ViewModels.Account;
+using TravelManager.Infrastructure.Interfaces; 
 
 namespace TravelManager.UI.Controllers
 {
@@ -10,18 +11,17 @@ namespace TravelManager.UI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly IEmailService _emailService; 
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailService = emailService;
         }
 
         [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        public IActionResult Register() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -29,31 +29,17 @@ namespace TravelManager.UI.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new User
-                {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName
-                };
-
+                var user = new User { UserName = model.Email, Email = model.Email, FirstName = model.FirstName, LastName = model.LastName };
                 var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, "User");
-
                     await _signInManager.SignInAsync(user, isPersistent: false);
-
                     return RedirectToAction("Index", "Home");
                 }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+                foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
             }
-
             return View(model);
         }
 
@@ -69,27 +55,16 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
-
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(
-                    model.Email,
-                    model.Password,
-                    model.RememberMe,
-                    lockoutOnFailure: false);
-
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                    {
-                        return Redirect(returnUrl);
-                    }
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
                     return RedirectToAction("Index", "Home");
                 }
-
                 ModelState.AddModelError(string.Empty, "Невірна спроба входу. Перевірте email та пароль.");
             }
-
             return View(model);
         }
 
@@ -103,9 +78,76 @@ namespace TravelManager.UI.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult AccessDenied()
+        public IActionResult AccessDenied() => View();
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPassword() => View();
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            return View();
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user != null)
+                {
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    var callbackUrl = Url.Action("ResetPassword", "Account",
+                        new { token, email = user.Email }, protocol: HttpContext.Request.Scheme);
+
+                    string mailMessage = $@"
+                        <div style='font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; border-radius: 10px;'>
+                            <h2 style='color: #0369a1;'>Відновлення доступу до TravelManager</h2>
+                            <p>Привіт!</p>
+                            <p>Ми отримали запит на скидання пароля для вашого акаунту.</p>
+                            <p>Щоб створити новий пароль, натисніть на кнопку нижче:</p>
+                            <br>
+                            <a href='{callbackUrl}' style='display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;'>Створити новий пароль</a>
+                        </div>";
+
+                    await _emailService.SendEmailAsync(model.Email, "Скидання пароля - TravelManager", mailMessage);
+                }
+
+                return RedirectToAction("ForgotPasswordConfirmation");
+            }
+            return View(model);
         }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPasswordConfirmation() => View();
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string token, string email)
+        {
+            if (token == null || email == null) return RedirectToAction("Index", "Home");
+            var model = new ResetPasswordViewModel { Token = token, Email = email };
+            return View(model);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null) return RedirectToAction("ResetPasswordConfirmation");
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+            if (result.Succeeded) return RedirectToAction("ResetPasswordConfirmation");
+
+            foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPasswordConfirmation() => View();
     }
 }
