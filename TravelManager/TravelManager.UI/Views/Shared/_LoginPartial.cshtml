@@ -10,7 +10,7 @@
         var displayName = currentUser?.FirstName ?? User.Identity?.Name;
 
         <li class="nav-item">
-            <a class="nav-link text-dark fw-bold" href="#">
+            <a class="nav-link text-dark fw-bold" asp-controller="Account" asp-action="Profile">
                 <i class="fa-regular fa-circle-user me-1"></i> Привіт, @displayName!
             </a>
         </li>
@@ -19,7 +19,7 @@
         @if (User.IsInRole("Admin"))
         {
             <li class="nav-item">
-                <a class="nav-link text-danger fw-bold" href="#">👑 Адмінка</a>
+                <a class="nav-link text-danger fw-bold" asp-controller="Admin" asp-action="AdminDashboard">👑 Адмінка</a>
             </li>
         }
 

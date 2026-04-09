@@ -1,0 +1,54 @@
+﻿@model TravelManager.UI.Models.ViewModels.Admin.DashboardViewModel
+@{
+    ViewData["Title"] = "Адмін Панель";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Панель Адміністратора</h2>
+
+    <div class="row">
+        <!-- Картка: Всі користувачі -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-primary shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Користувачів</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="display-4 fw-bold m-0">@Model.TotalUsers</h1>
+                        <i class="bi bi-people" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a asp-action="UserList" class="text-white text-decoration-none">
+                        Переглянути всіх <i class="bi bi-arrow-right-circle ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Картка: Адміністратори -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-danger shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Адміністраторів</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="display-4 fw-bold m-0">@Model.TotalAdmins</h1>
+                        <i class="bi bi-shield-lock" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Картка: Всі поїздки -->
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Всього поїздок</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="display-4 fw-bold m-0">@Model.TotalTrips</h1>
+                        <i class="bi bi-airplane" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
