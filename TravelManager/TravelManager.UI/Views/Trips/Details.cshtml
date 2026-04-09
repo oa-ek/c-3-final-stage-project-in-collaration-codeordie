@@ -1,0 +1,140 @@
+﻿@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>@Model.Title</h2>
+        <div>
+            <!-- Кнопка створення витрати передає tripId -->
+            <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Id" class="btn btn-success me-2">
+                <i class="bi bi-cash"></i> Додати витрату
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Редагувати</a>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- ІНФОРМАЦІЯ ПРО ПОЇЗДКУ -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <p><strong>Опис:</strong> @Model.Description</p>
+                    <p><strong>Дати:</strong> @Model.StartDate.ToShortDateString() - @Model.EndDate.ToShortDateString()</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ УЧАСНИКІВ -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Учасники</h5>
+                    <span class="badge bg-light text-dark">@Model.Participants.Count()</span>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.Participants)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center w-100">
+                                <i class="bi bi-person-circle fs-4 me-2 text-muted"></i>
+                                <div class="w-100">
+                                    <span class="d-block fw-bold">@p.UserName</span>
+
+                                    @if (p.Role != "Owner" && (ViewBag.CurrentUserRole == "Owner" || ViewBag.CurrentUserRole == "Editor"))
+                                    {
+                                        <!-- ФОРМА ЗМІНИ РОЛІ ІСНУЮЧОГО УЧАСНИКА -->
+                                        <form asp-action="UpdateParticipantRole" method="post" class="mt-1 d-flex">
+                                            <input type="hidden" name="tripId" value="@Model.Id" />
+                                            <input type="hidden" name="userId" value="@p.UserId" />
+                                            <!-- onchange="this.form.submit()" відправляє форму одразу при виборі нового пункту -->
+                                            <select name="roleId" class="form-select form-select-sm" style="max-width: 150px;" onchange="this.form.submit()">
+                                                @foreach (var role in ViewBag.AvailableRoles)
+                                                {
+                                                    if (role.Text == p.Role)
+                                                    {
+                                                        <option value="@role.Value" selected="selected">@role.Text</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@role.Value">@role.Text</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <!-- ПРОСТИЙ ТЕКСТ ДЛЯ ЗВИЧАЙНИХ УЧАСНИКІВ АБО ВЛАСНИКА -->
+                                        <small class="text-muted">@p.Role</small>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Кнопка видалення (якщо це не Owner і є права) -->
+                            @if (p.Role != "Owner" && (ViewBag.CurrentUserRole == "Owner" || ViewBag.CurrentUserRole == "Editor"))
+                            {
+                                <form asp-action="RemoveParticipant" method="post" class="ms-2" onsubmit="return confirm('Видалити цього учасника?');">
+                                    <input type="hidden" name="tripId" value="@Model.Id" />
+                                    <input type="hidden" name="userId" value="@p.UserId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+
+                <!-- ФОРМА ЗАПРОШЕННЯ (Видна тільки для Owner/Editor) -->
+                @if (ViewBag.CurrentUserRole == "Organizer" || ViewBag.CurrentUserRole == "Editor")
+                {
+                    <div class="card-body bg-light border-top">
+                        <h6 class="mb-2">Додати учасника</h6>
+                        <form asp-action="InviteParticipant" method="post">
+                            <input type="hidden" name="tripId" value="@Model.Id" />
+
+                            <div class="mb-2">
+                                <input type="email" name="email" class="form-control form-control-sm" placeholder="Email користувача" required>
+                            </div>
+
+                            <div class="input-group">
+                                <!-- ВИПАДАЮЧИЙ СПИСОК РОЛЕЙ ПРИ ЗАПРОШЕННІ -->
+                                <select name="roleId" class="form-select form-select-sm">
+                                    @foreach (var role in ViewBag.AvailableRoles)
+                                    {
+                                        <option value="@role.Value">@role.Text</option>
+                                    }
+                                </select>
+                                <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-person-plus"></i> Додати</button>
+                            </div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+        </div>
+
+            </div>
+        </div>
+    </div>
+</div>

@@ -7,6 +7,7 @@ namespace TravelManager.UI.Models.ViewModels
 {
     public class CreateTripViewModel
     {
+        public int Id { get; set; }
         [Required(ErrorMessage = "Введіть назву поїздки")]
         [MaxLength(200, ErrorMessage = "Назва занадто довга")]
         [Display(Name = "Назва поїздки")]
@@ -39,7 +40,7 @@ namespace TravelManager.UI.Models.ViewModels
         [Required(ErrorMessage = "Оберіть організатора поїздки")]
         [Display(Name = "Організатор поїздки")]
         public string CreatorId { get; set; } = string.Empty;
-
         public IEnumerable<SelectListItem>? UserList { get; set; }
+        public List<TripParticipantViewModel> Participants { get; set; } = new();
     }
 }

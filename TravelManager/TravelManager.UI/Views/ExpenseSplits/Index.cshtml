@@ -1,50 +1,91 @@
 ﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.ExpenseSplitListViewModel>
 
 @{
-    ViewData["Title"] = "Розподіл витрат";
+    ViewData["Title"] = "Розподіл витрат (Борги)";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Розподіл витрат</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати борг</a>
-</div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Розподіл витрат</h2>
+        <a asp-controller="Trips" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад до поїздок
+        </a>
+    </div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Витрата</th>
-                    <th>Боржник</th>
-                    <th>Сума боргу</th>
-                    <th>Статус</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.ExpenseName</td>
-                        <td>@item.DebtorName</td>
-                        <td class="fw-bold text-danger">@item.OwedAmount.ToString("C")</td>
-                        <td>
-                            <span class="badge @(item.IsSettled ? "bg-success" : "bg-warning text-dark")">
-                                @(item.IsSettled ? "Оплачено" : "Висить борг")
-                            </span>
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Назва витрати</th>
+                            <th>Боржник</th>
+                            <th>Сума боргу</th>
+                            <th>Статус</th>
+                            <th class="text-end">Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="bi bi-emoji-smile fs-3 d-block mb-2"></i>
+                                    Поки що немає жодних боргів.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="align-middle fw-bold">@item.ExpenseName</td>
+                                    <td class="align-middle">
+                                        <i class="bi bi-person-circle text-muted me-1"></i> @item.DebtorName
+                                    </td>
+                                    <td class="align-middle fw-bold text-danger">
+                                        @item.OwedAmount.ToString("C")
+                                    </td>
+                                    <td class="align-middle">
+                                        @if (item.IsSettled)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check2-all"></i> Погашено</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Очікує оплати</span>
+                                        }
+                                    </td>
+                                    <td class="text-end align-middle">
+                                        @if (!item.IsSettled)
+                                        {
+                                            <form asp-controller="ExpenseSplits" asp-action="Settle" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви підтверджуєте, що цей борг повернено?');">
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-cash-stack"></i> Погасити
+                                                </button>
+                                            </form>
+                                        }
+                                        <form asp-controller="ExpenseSplits" asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Дійсно видалити цей запис?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>

@@ -23,6 +23,8 @@ namespace TravelManager.Infrastructure.Interfaces
         IRepository<BookingStatus> BookingStatus { get; }
         IRepository<TransitType> TransitType { get; }
         IRepository<ExpenseCategory> ExpenseCategory { get; }
+        IRepository<TripParticipant> TripParticipant { get; }
+        IRepository<TripRole> TripRole { get; }
 
         void Save();
         Task SaveAsync();
