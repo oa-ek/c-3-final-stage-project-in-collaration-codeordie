@@ -226,7 +226,6 @@ namespace TravelManager.UI.Controllers
 
             if (changePasswordResult.Succeeded)
             {
-                // Оновлюємо куки, щоб користувача не "викинуло" з системи після зміни пароля
                 await _signInManager.RefreshSignInAsync(user);
 
                 TempData["StatusMessage"] = "Ваш пароль успішно змінено!";
@@ -275,18 +274,17 @@ namespace TravelManager.UI.Controllers
 
                 if (user == null)
                 {
-                    // ВИПРАВЛЕНО: Створюємо екземпляр вашого класу User
                     user = new User
                     {
                         UserName = email,
                         Email = email,
-                        CreatedAt = DateTime.Now // додайте поля, які є у вашому класі
+                        CreatedAt = DateTime.Now 
                     };
 
                     var createResult = await _userManager.CreateAsync(user);
                     if (!createResult.Succeeded) return View(nameof(Login));
 
-                    await _userManager.AddToRoleAsync(user, "User"); // Роль за замовчуванням
+                    await _userManager.AddToRoleAsync(user, "User"); 
                 }
 
                 var addLoginResult = await _userManager.AddLoginAsync(user, info);

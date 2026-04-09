@@ -3,9 +3,16 @@
     ViewData["Title"] = "Мій профіль";
 }
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+<style>
+    #imageToCrop {
+        display: block;
+        max-width: 100%;
+    }
+</style>
+
 <div class="container mt-4">
     <div class="row">
-        <!-- Бокове меню -->
         <div class="col-md-3 mb-4">
             <div class="list-group shadow-sm">
                 <a asp-controller="Account" asp-action="Profile" class="list-group-item list-group-item-action active" aria-current="true">
@@ -17,7 +24,6 @@
             </div>
         </div>
 
-        <!-- Основний контент -->
         <div class="col-md-9">
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
@@ -31,28 +37,22 @@
                         </div>
                     }
 
-                    <!-- ДОДАНО: enctype="multipart/form-data" ОБОВ'ЯЗКОВО ДЛЯ ФАЙЛІВ -->
-                    <form asp-action="Profile" method="post" enctype="multipart/form-data">
+                    <form asp-action="Profile" method="post" enctype="multipart/form-data" id="profileForm">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <!-- БЛОК ФОТО ПРОФІЛЮ -->
                         <div class="row mb-4 align-items-center">
-                            <div class="col-auto">
-                                @if (Model.CurrentProfilePicture != null)
-                                {
-                                    var base64 = Convert.ToBase64String(Model.CurrentProfilePicture);
-                                    var imgSrc = String.Format("data:image/jpeg;base64,{0}", base64);
-                                    <img src="@imgSrc" alt="Profile" class="rounded-circle shadow-sm" style="width:100px; height:100px; object-fit:cover;" />
+                            <div class="col-auto" id="previewContainer">
+                                @{
+                                    var hasPicture = Model.CurrentProfilePicture != null;
+                                    var imgSrc = hasPicture ? String.Format("data:image/jpeg;base64,{0}", Convert.ToBase64String(Model.CurrentProfilePicture)) : "";
                                 }
-                                else
-                                {
-                                    <i class="bi bi-person-circle text-muted" style="font-size: 100px; line-height: 1;"></i>
-                                }
+                                <img id="profilePreview" src="@imgSrc" class="rounded-circle shadow-sm" style="width:100px; height:100px; object-fit:cover; display: @(hasPicture ? "block" : "none");" />
+                                <i id="profilePlaceholder" class="bi bi-person-circle text-muted" style="font-size: 100px; line-height: 1; display: @(hasPicture ? "none" : "block");"></i>
                             </div>
                             <div class="col">
                                 <label asp-for="ProfileImage" class="form-label text-muted">Оновити фото профілю</label>
-                                <input asp-for="ProfileImage" type="file" class="form-control" accept="image/*" />
-                                <small class="text-muted">Рекомендований розмір: 200x200 px. Формати: JPG, PNG.</small>
+                                <input asp-for="ProfileImage" id="ProfileImageInput" type="file" class="form-control" accept="image/png, image/jpeg, image/jpg" />
+                                <small class="text-muted">Оберіть фото. Ви зможете обрізати його перед збереженням.</small>
                             </div>
                         </div>
 
@@ -90,6 +90,90 @@
     </div>
 </div>
 
+<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cropModalLabel">Обрізати фото</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div style="max-height: 500px; overflow: hidden;">
+                    <img id="imageToCrop" src="" alt="Picture">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                <button type="button" class="btn btn-primary" id="btnCropAndSave">Підтвердити обрізання</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let cropper;
+            const imageInput = document.getElementById('ProfileImageInput');
+            const imageToCrop = document.getElementById('imageToCrop');
+            const previewImage = document.getElementById('profilePreview');
+            const placeholderIcon = document.getElementById('profilePlaceholder');
+            const cropModalElement = document.getElementById('cropModal');
+            const cropModal = new bootstrap.Modal(cropModalElement);
+
+            imageInput.addEventListener('change', function (e) {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        
+                        imageToCrop.src = event.target.result;
+                        cropModal.show();
+                    };
+                    reader.readAsDataURL(files[0]);
+                }
+            });
+
+            cropModalElement.addEventListener('shown.bs.modal', function () {
+                cropper = new Cropper(imageToCrop, {
+                    aspectRatio: 1, 
+                    viewMode: 2,    
+                    autoCropArea: 1,
+                });
+            });
+
+            cropModalElement.addEventListener('hidden.bs.modal', function () {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+            });
+
+            document.getElementById('btnCropAndSave').addEventListener('click', function () {
+                if (!cropper) return;
+
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300,  
+                    height: 300
+                });
+
+                canvas.toBlob(function (blob) {
+                    const url = URL.createObjectURL(blob);
+                    previewImage.src = url;
+                    previewImage.style.display = 'block';
+                    placeholderIcon.style.display = 'none';
+
+                    const file = new File([blob], 'cropped_avatar.jpg', { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    imageInput.files = dataTransfer.files;
+
+                    cropModal.hide();
+                }, 'image/jpeg');
+            });
+        });
+    </script>
 }

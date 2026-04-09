@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Data;
 using TravelManager.UI.Models.ViewModels.Admin;
-using TravelManager.Infrastructure.Interfaces; // Додано для IEmailService
+using TravelManager.Infrastructure.Interfaces; 
 
 namespace TravelManager.UI.Controllers
 {
@@ -14,7 +14,7 @@ namespace TravelManager.UI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly ApplicationDbContext _context;
-        private readonly IEmailService _emailService; // Додано сервіс розсилки
+        private readonly IEmailService _emailService; 
 
         public AdminController(UserManager<User> userManager, ApplicationDbContext context, IEmailService emailService)
         {
@@ -54,7 +54,6 @@ namespace TravelManager.UI.Controllers
             return View(model);
         }
 
-        // ================= НОВА ФУНКЦІЯ: МАСОВА РОЗСИЛКА =================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BroadcastEmail(string subject, string message, string targetGroup)
@@ -69,7 +68,6 @@ namespace TravelManager.UI.Controllers
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
             var adminIds = admins.Select(a => a.Id).ToList();
 
-            // Фільтруємо користувачів залежно від вибору адміна
             var targetUsers = new List<User>();
             if (targetGroup == "Admins")
             {
@@ -79,12 +77,11 @@ namespace TravelManager.UI.Controllers
             {
                 targetUsers = allUsers.Where(u => !adminIds.Contains(u.Id)).ToList();
             }
-            else // "All"
+            else
             {
                 targetUsers = allUsers;
             }
 
-            // Форматуємо текст листа, щоб він виглядав гарно, а переноси рядків (\n) ставали <br>
             string formattedMessage = message.Replace("\n", "<br>");
             string mailBody = $@"
                 <div style='font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; border-radius: 10px;'>
@@ -96,7 +93,6 @@ namespace TravelManager.UI.Controllers
 
             int successCount = 0;
 
-            // Відправляємо листи циклом
             foreach (var user in targetUsers)
             {
                 if (!string.IsNullOrEmpty(user.Email))
@@ -108,8 +104,6 @@ namespace TravelManager.UI.Controllers
                     }
                     catch
                     {
-                        // Якщо відправка одному юзеру впала (наприклад, неіснуючий email), 
-                        // ми просто йдемо далі, щоб не зупиняти розсилку іншим
                     }
                 }
             }
@@ -118,7 +112,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(AdminDashboard));
         }
 
-        // ================= CRUD КОРИСТУВАЧІВ (без змін) =================
         [HttpGet]
         public async Task<IActionResult> UserList()
         {
