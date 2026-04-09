@@ -4,72 +4,188 @@
     ViewData["Title"] = "Створити поїздку";
 }
 
-<h2>Створити поїздку</h2>
-<hr />
+<style>
+    @@keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
 
-<div class="row">
-    <div class="col-md-8 col-lg-6">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        50% {
+            transform: translateY(-12px);
+        }
+    }
 
-            <div class="form-group mb-3">
-                <label asp-for="Title" class="form-label fw-bold"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger small"></span>
+    @@keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @@keyframes shimmer {
+        0% {
+            transform: translateX(-150%) skewX(-15deg);
+        }
+
+        100% {
+            transform: translateX(150%) skewX(-15deg);
+        }
+    }
+
+    .animate-float {
+        animation: float 8s ease-in-out infinite;
+    }
+
+    .stagger-1 {
+        animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.1s;
+        opacity: 0;
+    }
+
+    .stagger-2 {
+        animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.2s;
+        opacity: 0;
+    }
+
+    .stagger-3 {
+        animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.3s;
+        opacity: 0;
+    }
+
+    .stagger-4 {
+        animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation-delay: 0.4s;
+        opacity: 0;
+    }
+</style>
+
+<div class="max-w-4xl mx-auto px-4 relative z-10 py-10">
+
+    <div class="relative rounded-[3.5rem] p-1">
+
+        <div class="absolute -top-20 -left-20 w-[35rem] h-[35rem] bg-blue-400/20 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-[35rem] h-[35rem] bg-emerald-400/20 rounded-full blur-[100px] animate-pulse pointer-events-none" style="animation-delay: 2.5s;"></div>
+
+        <div class="animate-float relative bg-white/40 backdrop-blur-3xl border border-white/80 rounded-[3rem] p-8 md:p-14 z-10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.08)] hover:shadow-[0_40px_90px_-20px_rgba(0,0,0,0.12)] transition-shadow duration-700">
+
+            <div class="mb-14 stagger-1">
+                <p class="text-blue-500 font-black uppercase tracking-[0.2em] text-xs mb-4 flex items-center gap-2">
+                    <span class="relative flex h-2 w-2 mr-1">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    Створення маршруту
+                </p>
+                <h1 class="text-6xl font-black text-slate-800 tracking-tighter drop-shadow-sm leading-none">
+                    Нова пригода
+                </h1>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Description" class="form-label fw-bold"></label>
-                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="Description" class="text-danger small"></span>
-            </div>
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-red-500 mb-8 font-bold bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-red-100 shadow-sm stagger-1"></div>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label asp-for="DepartureLocation" class="form-label fw-bold"></label>
-                    <input asp-for="DepartureLocation" class="form-control" />
-                    <span asp-validation-for="DepartureLocation" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mt-3 mt-md-0">
-                    <label asp-for="ReturnLocation" class="form-label fw-bold"></label>
-                    <input asp-for="ReturnLocation" class="form-control" />
-                    <span asp-validation-for="ReturnLocation" class="text-danger small"></span>
-                </div>
-            </div>
+                <div class="space-y-10">
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label asp-for="StartDate" class="form-label fw-bold"></label>
-                    <input asp-for="StartDate" class="form-control" />
-                    <span asp-validation-for="StartDate" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mt-3 mt-md-0">
-                    <label asp-for="EndDate" class="form-label fw-bold"></label>
-                    <input asp-for="EndDate" class="form-control" />
-                    <span asp-validation-for="EndDate" class="text-danger small"></span>
-                </div>
-            </div>
+                    <div class="relative group stagger-2">
+                        <input asp-for="Title" class="w-full bg-transparent border-0 border-b-[3px] border-slate-300/50 text-slate-800 text-4xl md:text-5xl font-black py-4 px-0 focus:ring-0 focus:border-blue-500 transition-all duration-500 placeholder-slate-300 group-hover:border-blue-300" placeholder="Дай назву цій історії..." />
+                        <span asp-validation-for="Title" class="text-red-500 text-xs font-bold mt-2 block absolute"></span>
+                    </div>
 
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <label asp-for="BaseCurrency" class="form-label fw-bold"></label>
-                    <input asp-for="BaseCurrency" class="form-control" />
-                    <span asp-validation-for="BaseCurrency" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6 mt-3 mt-md-0">
-                    <label asp-for="CreatorId" class="form-label fw-bold"></label>
-                    <select asp-for="CreatorId" asp-items="Model.UserList" class="form-select">
-                        <option disabled selected>-- Оберіть організатора --</option>
-                    </select>
-                    <span asp-validation-for="CreatorId" class="text-danger small"></span>
-                </div>
-            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 stagger-3">
 
-            <div class="form-group">
-                <button type="submit" class="btn btn-success px-4">Зберегти</button>
-                <a asp-action="Index" class="btn btn-outline-secondary ms-2">Скасувати</a>
-            </div>
-        </form>
+                        <div class="relative group">
+                            <label asp-for="DepartureLocation" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-blue-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-blue-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-geo-alt-fill absolute left-6 top-1/2 -translate-y-1/2 text-blue-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <input asp-for="DepartureLocation" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400" placeholder="Місто відправлення" />
+                            </div>
+                            <span asp-validation-for="DepartureLocation" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
+                        </div>
+
+                        <div class="relative group">
+                            <label asp-for="ReturnLocation" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-emerald-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-emerald-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-geo-fill absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <input asp-for="ReturnLocation" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400" placeholder="Місто повернення" />
+                            </div>
+                            <span asp-validation-for="ReturnLocation" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
+                        </div>
+
+                        <div class="relative group">
+                            <label asp-for="StartDate" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-amber-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-amber-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-calendar-event absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <input asp-for="StartDate" type="date" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold cursor-pointer" />
+                            </div>
+                            <span asp-validation-for="StartDate" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
+                        </div>
+
+                        <div class="relative group">
+                            <label asp-for="EndDate" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-amber-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-amber-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-calendar-check absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <input asp-for="EndDate" type="date" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold cursor-pointer" />
+                            </div>
+                            <span asp-validation-for="EndDate" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
+                        </div>
+
+                        <div class="relative group">
+                            <label asp-for="BaseCurrency" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-violet-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-violet-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-cash-coin absolute left-6 top-1/2 -translate-y-1/2 text-violet-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <input asp-for="BaseCurrency" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400" placeholder="USD, EUR, UAH..." />
+                            </div>
+                        </div>
+
+                        <div class="relative group">
+                            <label asp-for="CreatorId" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-rose-600"></label>
+                            <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-rose-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                                <i class="bi bi-person-badge absolute left-6 top-1/2 -translate-y-1/2 text-rose-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <select asp-for="CreatorId" asp-items="Model.UserList" class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-10 py-5 focus:outline-none font-bold appearance-none cursor-pointer">
+                                    <option disabled selected class="text-slate-400">Оберіть організатора</option>
+                                </select>
+                                <i class="bi bi-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-rose-500 transition-colors duration-300"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative group pt-4 stagger-4">
+                        <label asp-for="Description" class="absolute top-1 left-8 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-transform duration-300 group-focus-within:-translate-y-1 group-focus-within:text-indigo-600"></label>
+                        <div class="relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2.5rem] shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 group-focus-within:shadow-lg group-focus-within:border-indigo-300 group-focus-within:-translate-y-1 group-focus-within:bg-white/90">
+                            <textarea asp-for="Description" class="w-full bg-transparent text-slate-800 rounded-[2.5rem] pl-8 pr-8 pt-10 pb-6 focus:outline-none font-medium placeholder-slate-400 resize-none" rows="3" placeholder="Додай опис або нотатки до поїздки..."></textarea>
+                        </div>
+                        <span asp-validation-for="Description" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
+                    </div>
+
+                </div>
+
+                <div class="mt-14 flex flex-col sm:flex-row items-center justify-between gap-6 stagger-4">
+
+                    <a asp-action="Index" class="group flex items-center gap-3 text-slate-500 hover:text-slate-800 transition-all duration-300 font-black tracking-widest uppercase text-xs bg-white/40 backdrop-blur-md border border-white/60 px-8 py-4 rounded-full hover:shadow-lg hover:-translate-y-1">
+                        <i class="bi bi-arrow-left transition-transform duration-300 group-hover:-translate-x-2"></i> Повернутися
+                    </a>
+
+                    <button type="submit" class="w-full sm:w-auto relative group overflow-hidden rounded-full shadow-[0_10px_30px_rgba(59,130,246,0.4)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.6)] transition-all duration-500 hover:-translate-y-2">
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600"></div>
+
+                        <div class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></div>
+
+                        <div class="relative px-12 py-5 flex items-center justify-center gap-3">
+                            <span class="text-white font-black uppercase tracking-widest text-sm drop-shadow-md">Створити</span>
+                            <i class="bi bi-rocket-takeoff-fill text-white text-xl transition-transform duration-500 group-hover:scale-125 group-hover:-translate-y-1 drop-shadow-md"></i>
+                        </div>
+                    </button>
+
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

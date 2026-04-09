@@ -4,47 +4,110 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - TravelManager</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/TravelManager.UI.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-</head>
-<body class="d-flex flex-column min-vh-100 bg-light">
 
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-4">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-airplane-engines-fill"></i> TravelManager
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Головна</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
-                    </ul>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        
+        @@keyframes lightFlow {
+            0%
+
+        {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+
+        }
+
+       
+        @@keyframes compassSpin {
+            from
+
+        {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        .perfect-light-bg {
+            background: linear-gradient(-45deg, #f8fafc, #e0f2fe, #ecfdf5, #f3e8ff);
+            background-size: 300% 300%;
+            animation: lightFlow 15s ease infinite;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .animate-compass {
+            animation: compassSpin 20s linear infinite;
+        }
+    </style>
+</head>
+
+<body class="perfect-light-bg flex flex-col min-h-screen font-sans text-slate-800 antialiased selection:bg-blue-200">
+
+    <header class="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <nav class="pointer-events-auto bg-white/40 backdrop-blur-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-6 py-3 flex items-center justify-between gap-6 transition-all hover:bg-white/60 hover:shadow-lg w-full max-w-5xl">
+
+            <a class="text-xl md:text-2xl font-black flex items-center gap-3 hover:opacity-80 transition-opacity duration-300 flex-shrink-0" asp-area="" asp-controller="Home" asp-action="Index">
+                <div class="relative w-10 h-10 group overflow-hidden rounded-full border border-blue-100 shadow-inner flex items-center justify-center">
+                    <span class="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-emerald-100/50 opacity-50"></span>
+                    <i class="bi bi-compass text-2xl text-blue-600 drop-shadow-md animate-compass transition-transform duration-500 group-hover:scale-110"></i>
+                    <div class="absolute -inset-1 bg-gradient-to-b from-white/30 via-transparent to-black/10 rounded-full blur-sm"></div>
                 </div>
+
+                <span class="relative group">
+                    <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 bg-clip-text text-transparent tracking-tighter drop-shadow-sm pb-1">
+                        TravelManager
+                    </span>
+                    <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-600/30 to-emerald-500/30 blur-sm rounded-full transition-transform duration-500 scale-x-75 group-hover:scale-x-100"></div>
+                </span>
+            </a>
+
+            <div class="overflow-x-auto scrollbar-hide">
+                <ul class="flex space-x-1 text-sm font-bold text-slate-600 items-center whitespace-nowrap">
+                    <li><a class="px-5 py-2 rounded-full hover:bg-white/60 hover:shadow-md transition-all block" asp-area="" asp-controller="Home" asp-action="Index">Головна</a></li>
+                    <li><a class="px-5 py-2 rounded-full bg-blue-600/10 text-blue-800 shadow-inner border border-blue-200/50 block" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
+                    <li><a class="px-5 py-2 rounded-full hover:bg-white/60 hover:shadow-md transition-all block" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
+                    <li><a class="px-5 py-2 rounded-full hover:bg-white/60 hover:shadow-md transition-all block" asp-area="" asp-controller="Checklists" asp-action="Index">Речі</a></li>
+                </ul>
             </div>
         </nav>
     </header>
 
-    <div class="container flex-grow-1 bg-white p-4 rounded shadow-sm mb-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <main role="main" class="flex-grow container mx-auto px-4 pt-36 pb-16 max-w-7xl relative z-0">
+        @RenderBody()
+    </main>
+
+    <footer class="mt-auto border-t border-slate-200/50 bg-white/20 backdrop-blur-lg py-8">
+        <div class="container mx-auto px-4 text-center flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm font-semibold">
+            <div>&copy; @DateTime.Now.Year - TravelManager</div>
+            <div class="flex items-center gap-2">
+                Створено з <i class="bi bi-heart-fill text-rose-500 animate-pulse text-lg"></i> до подорожей
+            </div>
+        </div>
+    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
