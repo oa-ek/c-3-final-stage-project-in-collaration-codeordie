@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
-using TravelManager.UI.Models.ViewModels.Account;
 using TravelManager.Infrastructure.Interfaces; 
+using TravelManager.UI.Models.ViewModels.Account;
+using System.Security.Claims;
 
 namespace TravelManager.UI.Controllers
 {
@@ -11,7 +12,7 @@ namespace TravelManager.UI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
-        private readonly IEmailService _emailService; 
+        private readonly IEmailService _emailService;
 
         public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IEmailService emailService)
         {
@@ -150,21 +151,20 @@ namespace TravelManager.UI.Controllers
         [AllowAnonymous]
         public IActionResult ResetPasswordConfirmation() => View();
 
-        // ================= НОВИЙ КОД: ПРОФІЛЬ ТА ПАРОЛЬ =================
-
         [HttpGet]
-        [Authorize] // Тільки для авторизованих
-        public async Task<IActionResult> Profile()
+        [Authorize]
+        public async Task<IActionResult> Profile() 
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return NotFound("Користувача не знайдено.");
+            if (user == null) return NotFound();
 
             var model = new ProfileViewModel
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                PhoneNumber = user.PhoneNumber
+                PhoneNumber = user.PhoneNumber,
+                CurrentProfilePicture = user.ProfilePicture 
             };
 
             return View(model);
@@ -184,19 +184,24 @@ namespace TravelManager.UI.Controllers
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
 
+            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await model.ProfileImage.CopyToAsync(memoryStream);
+                    user.ProfilePicture = memoryStream.ToArray(); 
+                }
+            }
+
             var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Ваш профіль успішно оновлено!";
-                return RedirectToAction(nameof(Profile)); // Перезавантажуємо сторінку
+                TempData["SuccessMessage"] = "Профіль успішно оновлено!";
+                return RedirectToAction("Index", "Home");
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
+            foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
             return View(model);
         }
 
@@ -234,6 +239,66 @@ namespace TravelManager.UI.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ExternalLogin(string provider, string returnUrl = null)
+        {
+            var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { returnUrl });
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return Challenge(properties, provider);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
+        {
+            returnUrl = returnUrl ?? Url.Content("~/");
+
+            if (remoteError != null)
+            {
+                ModelState.AddModelError(string.Empty, $"Помилка: {remoteError}");
+                return View(nameof(Login));
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null) return RedirectToAction(nameof(Login));
+
+            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+
+            if (result.Succeeded) return LocalRedirect(returnUrl);
+
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (email != null)
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+
+                if (user == null)
+                {
+                    // ВИПРАВЛЕНО: Створюємо екземпляр вашого класу User
+                    user = new User
+                    {
+                        UserName = email,
+                        Email = email,
+                        CreatedAt = DateTime.Now // додайте поля, які є у вашому класі
+                    };
+
+                    var createResult = await _userManager.CreateAsync(user);
+                    if (!createResult.Succeeded) return View(nameof(Login));
+
+                    await _userManager.AddToRoleAsync(user, "User"); // Роль за замовчуванням
+                }
+
+                var addLoginResult = await _userManager.AddLoginAsync(user, info);
+                if (addLoginResult.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return LocalRedirect(returnUrl);
+                }
+            }
+
+            return RedirectToAction(nameof(Login));
+
         }
     }
 }

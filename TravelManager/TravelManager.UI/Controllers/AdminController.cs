@@ -3,40 +3,122 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TravelManager.Domain.Entities;
-using TravelManager.Infrastructure.Data; 
+using TravelManager.Infrastructure.Data;
 using TravelManager.UI.Models.ViewModels.Admin;
+using TravelManager.Infrastructure.Interfaces; // Додано для IEmailService
 
 namespace TravelManager.UI.Controllers
 {
-    [Authorize(Roles = "Admin")] 
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly UserManager<User> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService; // Додано сервіс розсилки
 
-        public AdminController(UserManager<User> userManager, ApplicationDbContext context)
+        public AdminController(UserManager<User> userManager, ApplicationDbContext context, IEmailService emailService)
         {
             _userManager = userManager;
             _context = context;
+            _emailService = emailService;
         }
 
         [HttpGet]
         public async Task<IActionResult> AdminDashboard()
         {
+            var users = await _userManager.Users.ToListAsync();
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
-            var totalUsers = await _userManager.Users.CountAsync();
-            var totalTrips = await _context.Trips.CountAsync(); 
+            var totalTrips = await _context.Trips.CountAsync();
+
+            var registrationsPerMonth = users
+                .GroupBy(u => new { u.CreatedAt.Year, u.CreatedAt.Month })
+                .OrderBy(g => g.Key.Year)
+                .ThenBy(g => g.Key.Month)
+                .Select(g => new
+                {
+                    Month = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy", new System.Globalization.CultureInfo("uk-UA")),
+                    Count = g.Count()
+                })
+                .TakeLast(6)
+                .ToList();
 
             var model = new DashboardViewModel
             {
-                TotalUsers = totalUsers,
+                TotalUsers = users.Count,
                 TotalAdmins = admins.Count,
-                TotalTrips = totalTrips
+                TotalTrips = totalTrips,
+                RegistrationMonths = registrationsPerMonth.Select(r => r.Month).ToList(),
+                RegistrationsCount = registrationsPerMonth.Select(r => r.Count).ToList()
             };
 
             return View(model);
         }
 
+        // ================= НОВА ФУНКЦІЯ: МАСОВА РОЗСИЛКА =================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BroadcastEmail(string subject, string message, string targetGroup)
+        {
+            if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(message))
+            {
+                TempData["ErrorMessage"] = "Тема та текст листа не можуть бути порожніми!";
+                return RedirectToAction(nameof(AdminDashboard));
+            }
+
+            var allUsers = await _userManager.Users.ToListAsync();
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            var adminIds = admins.Select(a => a.Id).ToList();
+
+            // Фільтруємо користувачів залежно від вибору адміна
+            var targetUsers = new List<User>();
+            if (targetGroup == "Admins")
+            {
+                targetUsers = admins.ToList();
+            }
+            else if (targetGroup == "Users")
+            {
+                targetUsers = allUsers.Where(u => !adminIds.Contains(u.Id)).ToList();
+            }
+            else // "All"
+            {
+                targetUsers = allUsers;
+            }
+
+            // Форматуємо текст листа, щоб він виглядав гарно, а переноси рядків (\n) ставали <br>
+            string formattedMessage = message.Replace("\n", "<br>");
+            string mailBody = $@"
+                <div style='font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; border-radius: 10px;'>
+                    <h2 style='color: #0369a1;'>Повідомлення від адміністрації TravelManager</h2>
+                    <div style='font-size: 16px; color: #334155; line-height: 1.6;'>
+                        {formattedMessage}
+                    </div>
+                </div>";
+
+            int successCount = 0;
+
+            // Відправляємо листи циклом
+            foreach (var user in targetUsers)
+            {
+                if (!string.IsNullOrEmpty(user.Email))
+                {
+                    try
+                    {
+                        await _emailService.SendEmailAsync(user.Email, subject, mailBody);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        // Якщо відправка одному юзеру впала (наприклад, неіснуючий email), 
+                        // ми просто йдемо далі, щоб не зупиняти розсилку іншим
+                    }
+                }
+            }
+
+            TempData["SuccessMessage"] = $"Розсилку успішно відправлено {successCount} користувачам (Група: {targetGroup})!";
+            return RedirectToAction(nameof(AdminDashboard));
+        }
+
+        // ================= CRUD КОРИСТУВАЧІВ (без змін) =================
         [HttpGet]
         public async Task<IActionResult> UserList()
         {
@@ -114,5 +196,6 @@ namespace TravelManager.UI.Controllers
 
             return RedirectToAction(nameof(UserList));
         }
+
     }
 }

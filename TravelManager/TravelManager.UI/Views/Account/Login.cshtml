@@ -42,6 +42,14 @@
                         <button type="submit" class="btn btn-primary btn-lg">Увійти</button>
                     </div>
                 </form>
+                <form asp-controller="Account" asp-action="ExternalLogin" method="post" class="form-horizontal">
+                    <div class="d-grid gap-2">
+                        <!-- Кнопка використовує name="provider" value="Google" -->
+                        <button type="submit" class="btn btn-outline-danger" name="provider" value="Google">
+                            <i class="fab fa-google me-2"></i> Увійти через Google
+                        </button>
+                    </div>
+                </form>
                 <div class="text-center mt-4">
                     <a asp-action="ForgotPassword" class="text-decoration-none">Забули пароль?</a>
                     <hr class="w-50 mx-auto opacity-25">

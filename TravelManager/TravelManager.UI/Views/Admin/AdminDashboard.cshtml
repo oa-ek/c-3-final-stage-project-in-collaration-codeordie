@@ -3,13 +3,16 @@
     ViewData["Title"] = "Адмін Панель";
 }
 
+<!-- Підключаємо Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="container mt-4">
     <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Панель Адміністратора</h2>
 
-    <div class="row">
-        <!-- Картка: Всі користувачі -->
-        <div class="col-md-4 mb-4">
-            <div class="card text-white bg-primary shadow">
+    <!-- Верхній ряд: Картки статистики (без змін) -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-white bg-primary shadow h-100">
                 <div class="card-body">
                     <h5 class="card-title">Користувачів</h5>
                     <div class="d-flex justify-content-between align-items-center">
@@ -18,16 +21,15 @@
                     </div>
                 </div>
                 <div class="card-footer bg-transparent border-0">
-                    <a asp-action="UserList" class="text-white text-decoration-none">
-                        Переглянути всіх <i class="bi bi-arrow-right-circle ms-1"></i>
+                    <a asp-action="UserList" class="text-white text-decoration-none fw-bold">
+                        Керувати користувачами <i class="bi bi-arrow-right-circle ms-1"></i>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Картка: Адміністратори -->
-        <div class="col-md-4 mb-4">
-            <div class="card text-white bg-danger shadow">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card text-white bg-danger shadow h-100">
                 <div class="card-body">
                     <h5 class="card-title">Адміністраторів</h5>
                     <div class="d-flex justify-content-between align-items-center">
@@ -38,9 +40,8 @@
             </div>
         </div>
 
-        <!-- Картка: Всі поїздки -->
-        <div class="col-md-4 mb-4">
-            <div class="card text-white bg-success shadow">
+        <div class="col-md-4">
+            <div class="card text-white bg-success shadow h-100">
                 <div class="card-body">
                     <h5 class="card-title">Всього поїздок</h5>
                     <div class="d-flex justify-content-between align-items-center">
@@ -51,4 +52,109 @@
             </div>
         </div>
     </div>
+
+    <!-- Нижній ряд: Графіки -->
+    <div class="row">
+        <!-- Лінійний графік (Динаміка реєстрацій) -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h5 class="card-title mb-0"><i class="bi bi-graph-up text-primary me-2"></i> Динаміка реєстрацій</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="registrationsChart" style="min-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель масової розсилки -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h5 class="card-title mb-0"><i class="bi bi-envelope-paper text-warning me-2"></i> Масова розсилка</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="BroadcastEmail" method="post">
+
+                        <!-- Сповіщення (Успіх/Помилка) -->
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success py-2 px-3 small">@TempData["SuccessMessage"]</div>
+                        }
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger py-2 px-3 small">@TempData["ErrorMessage"]</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Кому відправити:</label>
+                            <select name="targetGroup" class="form-select form-select-sm">
+                                <option value="All">Всім користувачам (@Model.TotalUsers)</option>
+                                <option value="Users">Тільки звичайним користувачам (@Model.NormalUsersCount)</option>
+                                <option value="Admins">Тільки адміністраторам (@Model.TotalAdmins)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Тема листа:</label>
+                            <input type="text" name="subject" class="form-control form-control-sm" placeholder="Наприклад: Оновлення сайту" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Текст повідомлення:</label>
+                            <textarea name="message" class="form-control form-control-sm" rows="4" placeholder="Напишіть ваше повідомлення тут..." required></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-warning btn-sm fw-bold text-dark" onclick="return confirm('Ви впевнені, що хочете розпочати масову розсилку?');">
+                                <i class="bi bi-send-fill me-1"></i> Відправити листи
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // === 1. Графік: Динаміка реєстрацій (Лінійний) ===
+        // Конвертуємо C# масиви в JavaScript масиви за допомогою JSON.Serialize
+        const monthsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationMonths));
+        const countsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationsCount));
+
+        const ctxLine = document.getElementById('registrationsChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: monthsData,
+                datasets: [{
+                    label: 'Нових користувачів',
+                    data: countsData,
+                    borderColor: '#0d6efd', // Колір Primary (синій)
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4, // Робить лінію плавною (згладженою)
+                    fill: true,
+                    pointBackgroundColor: '#0d6efd',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false } // Ховаємо легенду зверху
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 } // Щоб не показувало "1.5 юзера"
+                    }
+                }
+            }
+        });
+
+    </script>
+}

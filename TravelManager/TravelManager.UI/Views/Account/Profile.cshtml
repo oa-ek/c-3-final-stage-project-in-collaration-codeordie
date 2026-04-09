@@ -8,7 +8,6 @@
         <!-- Бокове меню -->
         <div class="col-md-3 mb-4">
             <div class="list-group shadow-sm">
-                <!-- ВАЖЛИВО: Вказуємо asp-controller="Account" -->
                 <a asp-controller="Account" asp-action="Profile" class="list-group-item list-group-item-action active" aria-current="true">
                     <i class="bi bi-person-circle me-2"></i> Особисті дані
                 </a>
@@ -32,8 +31,30 @@
                         </div>
                     }
 
-                    <form asp-action="Profile" method="post">
+                    <!-- ДОДАНО: enctype="multipart/form-data" ОБОВ'ЯЗКОВО ДЛЯ ФАЙЛІВ -->
+                    <form asp-action="Profile" method="post" enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- БЛОК ФОТО ПРОФІЛЮ -->
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-auto">
+                                @if (Model.CurrentProfilePicture != null)
+                                {
+                                    var base64 = Convert.ToBase64String(Model.CurrentProfilePicture);
+                                    var imgSrc = String.Format("data:image/jpeg;base64,{0}", base64);
+                                    <img src="@imgSrc" alt="Profile" class="rounded-circle shadow-sm" style="width:100px; height:100px; object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-person-circle text-muted" style="font-size: 100px; line-height: 1;"></i>
+                                }
+                            </div>
+                            <div class="col">
+                                <label asp-for="ProfileImage" class="form-label text-muted">Оновити фото профілю</label>
+                                <input asp-for="ProfileImage" type="file" class="form-control" accept="image/*" />
+                                <small class="text-muted">Рекомендований розмір: 200x200 px. Формати: JPG, PNG.</small>
+                            </div>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label text-muted">Email (Логін)</label>
