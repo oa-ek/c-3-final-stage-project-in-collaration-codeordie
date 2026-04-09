@@ -4,53 +4,105 @@
     ViewData["Title"] = "Деталі списку";
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="display-6 mb-0">@Model.Title</h2>
-            <span class="text-muted fs-5">Поїздка: <strong>@Model.TripName</strong></span>
-        </div>
-        <div>
-            <a asp-controller="ChecklistItems" asp-action="Create" class="btn btn-success shadow-sm">
-                + Додати річ
-            </a>
-            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Назад до списків</a>
-        </div>
-    </div>
-    <hr />
+<style>
+    @@keyframes fadeSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white fw-bold">
-                    Вміст списку
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stagger-item {
+        animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+
+    /* Красивий кастомний чекбокс (візуально) */
+    .packed-item {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .unpacked-item {
+        background: rgba(255, 255, 255, 0.6);
+        border-color: rgba(255, 255, 255, 0.9);
+    }
+</style>
+
+<div class="relative w-full max-w-5xl mx-auto min-h-[85vh] py-10 z-10 px-4">
+
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <div class="absolute top-0 right-20 w-[30rem] h-[30rem] bg-cyan-300/20 rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-0 left-10 w-[20rem] h-[20rem] bg-indigo-300/20 rounded-full blur-[100px]"></div>
+    </div>
+
+    <div class="relative z-20 bg-white/40 backdrop-blur-3xl border border-white/80 rounded-[3rem] p-10 md:p-12 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] mb-10 stagger-item" style="animation-delay: 0.1s;">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 shadow-inner mb-4">
+                    <i class="bi bi-airplane-engines text-blue-500"></i>
+                    <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Поїздка: @Model.TripName</span>
                 </div>
-                <ul class="list-group list-group-flush">
-                    @if (!Model.Items.Any())
-                    {
-                        <li class="list-group-item text-muted fst-italic py-4 text-center">
-                            У цьому списку поки немає жодної речі.
-                        </li>
-                    }
-                    else
-                    {
-                        @foreach (var item in Model.Items)
-                        {
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" disabled @(item.IsChecked ? "checked" : "")>
-                                    <label class="form-check-label @(item.IsChecked ? "text-decoration-line-through text-muted" : "fw-bold")">
-                                        @item.Content
-                                    </label>
-                                </div>
-                                <div class="btn-group">
-                                    <a asp-controller="ChecklistItems" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Редагувати</a>
-                                </div>
-                            </li>
-                        }
-                    }
-                </ul>
+                <h1 class="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter drop-shadow-sm">@Model.Title</h1>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <a asp-action="Index" class="px-6 py-4 rounded-full font-black text-slate-500 bg-white hover:bg-slate-50 border border-white shadow-sm transition-all text-xs uppercase tracking-widest text-center">
+                    <i class="bi bi-arrow-left mr-1"></i> Назад
+                </a>
+                <a asp-controller="ChecklistItems" asp-action="Create" asp-route-checklistId="@Model.Id" class="px-8 py-4 rounded-full font-black text-white bg-slate-900 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-xs uppercase tracking-widest text-center flex items-center justify-center gap-2">
+                    Додати річ <i class="bi bi-plus-circle-fill"></i>
+                </a>
             </div>
         </div>
+    </div>
+
+    <div class="relative z-20">
+        @if (!Model.Items.Any())
+        {
+            <div class="bg-white/30 backdrop-blur-xl border border-white/50 rounded-[2rem] p-12 text-center shadow-sm stagger-item" style="animation-delay: 0.2s;">
+                <i class="bi bi-box-seam text-6xl text-slate-300 mb-4 inline-block"></i>
+                <h3 class="text-2xl font-black text-slate-600 tracking-tight">Тут поки порожньо</h3>
+                <p class="text-slate-500 font-medium mt-2">Час додавати речі до валізи!</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @{
+                    var delay = 0.2m;
+                }
+                @foreach (var item in Model.Items)
+                {
+                    <div class="group backdrop-blur-md border-2 rounded-3xl p-5 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg stagger-item @(item.IsChecked ? "packed-item" : "unpacked-item")" style="animation-delay: @(delay.ToString(System.Globalization.CultureInfo.InvariantCulture))s;">
+
+                        <div class="flex items-center gap-4">
+                            @if (item.IsChecked)
+                            {
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-inner shrink-0">
+                                    <i class="bi bi-check-lg text-emerald-500 text-xl font-black"></i>
+                                </div>
+                                <span class="text-lg font-black text-slate-400 line-through decoration-emerald-500/50 decoration-2">@item.Content</span>
+                            }
+                            else
+                            {
+                                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-slate-200 shadow-inner shrink-0 group-hover:border-cyan-400 transition-colors"></div>
+                                <span class="text-lg font-black text-slate-700">@item.Content</span>
+                            }
+                        </div>
+
+                        <a asp-controller="ChecklistItems" asp-action="Edit" asp-route-id="@item.Id" class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 hover:text-cyan-600 hover:border-cyan-200 transition-all shadow-sm opacity-0 group-hover:opacity-100">
+                            <i class="bi bi-pencil-fill text-sm"></i>
+                        </a>
+                    </div>
+                    delay += 0.05m;
+                }
+            </div>
+        }
     </div>
 </div>
