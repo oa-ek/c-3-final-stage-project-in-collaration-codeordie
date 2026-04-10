@@ -21,7 +21,20 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var checklists = _unitOfWork.Checklist.GetAll(includeProperties: "Trip");
+
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var checklists = _unitOfWork.Checklist.
+                GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip");
 
             var viewModels = checklists.Select(c => new ChecklistListViewModel
             {
@@ -36,7 +49,6 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Details(int id)
         {
-            // Витягуємо список разом із поїздкою та всіма речами
             var checklist = _unitOfWork.Checklist.Get(c => c.Id == id, includeProperties: "Trip,Items");
 
             if (checklist == null)

@@ -23,7 +23,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var expenses = _unitOfWork.Expense.GetAll(includeProperties: "Trip,Category");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+                
+
+            var expenses = _unitOfWork.Expense.GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip, Category");
 
             var viewModels = expenses.Select(e => new ExpenseListViewModel
             {

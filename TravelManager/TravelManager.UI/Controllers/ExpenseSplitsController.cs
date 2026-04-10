@@ -22,7 +22,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var splits = _unitOfWork.ExpenseSplit.GetAll(includeProperties: "Expense,Debtor");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var splits = _unitOfWork.ExpenseSplit
+                .GetAll(s => myTripIds.Contains(s.Expense.TripId), includeProperties: "Expense,Debtor");
 
             var viewModels = splits.Select(s => new ExpenseSplitListViewModel
             {
