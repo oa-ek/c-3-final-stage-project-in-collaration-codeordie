@@ -21,7 +21,6 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            // 1. Отримуємо ID поточного авторизованого користувача
             var currentUserId = _userManager.GetUserId(User);
 
             if (currentUserId == null)
@@ -29,22 +28,19 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // 2. Шукаємо в таблиці TripParticipant всі записи, де UserId співпадає з поточним
             var userTrips = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip")
-                .Select(tp => tp.Trip) // Витягуємо самі об'єкти Trip
-                .Distinct() // Прибираємо дублікати
+                .Select(tp => tp.Trip)
+                .Distinct() 
                 .Select(t => new TravelManager.UI.Models.ViewModels.TripListViewModel
                 {
                     Id = t.Id,
                     Title = t.Title,
-                    // Description = t.Description, <-- Рядок видалено, щоб уникнути помилки!
                     StartDate = t.StartDate,
                     EndDate = t.EndDate
                 })
                 .ToList();
 
-            // 3. Передаємо у View ТІЛЬКИ поїздки цього користувача
             return View(userTrips);
         }
 
@@ -142,6 +138,9 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, CreateTripViewModel model)
         {
+            ModelState.Remove("CreatorId");
+            ModelState.Remove("Participants");
+            ModelState.Remove("UserList");
             if (!ModelState.IsValid)
             {
                 model.UserList = GetUserList();
