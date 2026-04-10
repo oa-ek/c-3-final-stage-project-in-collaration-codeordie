@@ -4,69 +4,98 @@
     ViewData["Title"] = "Реєстрація";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm mt-5">
-            <div class="card-body p-5">
-                <h2 class="text-center mb-4">Створити акаунт</h2>
+<style>
+    @@keyframes slideUpFade {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+        }
 
-                <form asp-action="Register" method="post">
-                    <!-- Загальні помилки форми (наприклад, якщо такий email вже є) -->
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FirstName" class="form-label">Ім'я</label>
-                            <input asp-for="FirstName" class="form-control" placeholder="Іван" />
-                            <span asp-validation-for="FirstName" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="LastName" class="form-label">Прізвище</label>
-                            <input asp-for="LastName" class="form-control" placeholder="Франко" />
-                            <span asp-validation-for="LastName" class="text-danger"></span>
-                        </div>
-                    </div>
+    .animate-slide-up {
+        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" placeholder="example@mail.com" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
+<div class="relative w-full flex flex-col items-center justify-center min-h-[80vh] py-10 z-10 overflow-hidden">
+    <div class="absolute top-10 right-1/4 w-[30rem] h-[30rem] bg-emerald-400/10 rounded-full blur-[100px] animate-pulse pointer-events-none translate-x-1/2"></div>
+    <div class="absolute bottom-10 left-1/4 w-[35rem] h-[35rem] bg-blue-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none -translate-x-1/4" style="animation-delay: 2s;"></div>
 
-                    <!-- Пароль з Оком -->
-                    <div class="form-group mb-3">
-                        <label asp-for="Password" class="form-label"></label>
-                        <div class="input-group">
-                            <input asp-for="Password" type="password" id="passInput" class="form-control" />
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePass('passInput', 'passIcon')">
-                                <i class="bi bi-eye-slash" id="passIcon"></i>
-                            </button>
-                        </div>
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
+    <div class="w-full max-w-lg animate-slide-up z-20 px-4">
+        <div class="bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] p-8 md:p-10 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.1)]">
 
-                    <div class="form-group mb-3">
-                        <label asp-for="ConfirmPassword" class="form-label"></label>
-                        <div class="input-group">
-                            <input asp-for="ConfirmPassword" type="password" id="confirmInput" class="form-control" />
-                            <button class="btn btn-outline-secondary" type="button" onclick="togglePass('confirmInput', 'confirmIcon')">
-                                <i class="bi bi-eye-slash" id="confirmIcon"></i>
-                            </button>
-                        </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                    </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">Створити акаунт</button>
-                    </div>
-                </form>
-                <div class="text-center mt-4">
-                    <p class="text-muted">Вже маєте акаунт? <a asp-action="Login" class="text-decoration-none fw-bold">Увійти</a></p>
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-100 to-white rounded-2xl border border-emerald-100 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                    <i class="bi bi-person-plus-fill text-3xl text-emerald-500 drop-shadow-sm"></i>
                 </div>
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight">Створити акаунт</h2>
+                <p class="text-slate-500 font-medium mt-2 text-sm">Приєднуйся та плануй подорожі ідеально</p>
+            </div>
+
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-rose-500 mb-5 p-4 bg-rose-50/80 backdrop-blur-sm rounded-2xl text-sm font-medium border border-rose-100"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label asp-for="FirstName" class="block text-sm font-bold text-slate-700 mb-2 pl-1">Ім'я</label>
+                        <input asp-for="FirstName" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3.5 transition-all outline-none shadow-sm placeholder:text-slate-400" placeholder="Іван" />
+                        <span asp-validation-for="FirstName" class="text-rose-500 text-xs font-medium mt-1.5 pl-1 block"></span>
+                    </div>
+                    <div>
+                        <label asp-for="LastName" class="block text-sm font-bold text-slate-700 mb-2 pl-1">Прізвище</label>
+                        <input asp-for="LastName" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3.5 transition-all outline-none shadow-sm placeholder:text-slate-400" placeholder="Франко" />
+                        <span asp-validation-for="LastName" class="text-rose-500 text-xs font-medium mt-1.5 pl-1 block"></span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Email" class="block text-sm font-bold text-slate-700 mb-2 pl-1"></label>
+                    <input asp-for="Email" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3.5 transition-all outline-none shadow-sm placeholder:text-slate-400" placeholder="example@mail.com" />
+                    <span asp-validation-for="Email" class="text-rose-500 text-xs font-medium mt-1.5 pl-1 block"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Password" class="block text-sm font-bold text-slate-700 mb-2 pl-1"></label>
+                    <div class="relative">
+                        <input asp-for="Password" type="password" id="passInput" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3.5 transition-all outline-none shadow-sm placeholder:text-slate-400" />
+                        <button class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-emerald-600 transition-colors" type="button" onclick="togglePass('passInput', 'passIcon')">
+                            <i class="bi bi-eye-slash text-lg" id="passIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-rose-500 text-xs font-medium mt-1.5 pl-1 block"></span>
+                </div>
+
+                <div class="mb-8">
+                    <label asp-for="ConfirmPassword" class="block text-sm font-bold text-slate-700 mb-2 pl-1"></label>
+                    <div class="relative">
+                        <input asp-for="ConfirmPassword" type="password" id="confirmInput" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3.5 transition-all outline-none shadow-sm placeholder:text-slate-400" />
+                        <button class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-emerald-600 transition-colors" type="button" onclick="togglePass('confirmInput', 'confirmIcon')">
+                            <i class="bi bi-eye-slash text-lg" id="confirmIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-rose-500 text-xs font-medium mt-1.5 pl-1 block"></span>
+                </div>
+
+                <div class="mb-4">
+                    <button type="submit" class="w-full group relative inline-flex items-center justify-center px-8 py-4 font-black text-white transition-all duration-500 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_15px_25px_-10px_rgba(16,185,129,0.6)] hover:-translate-y-0.5 uppercase tracking-widest text-xs overflow-hidden">
+                        <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                        <span class="relative">Зареєструватися</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center mt-8">
+                <p class="text-sm font-medium text-slate-500">
+                    Вже маєте акаунт? <a asp-action="Login" class="text-emerald-600 hover:text-blue-600 font-black tracking-wide transition-colors decoration-2 hover:underline underline-offset-4">Увійти</a>
+                </p>
             </div>
         </div>
     </div>
-</div>
 </div>
 
 @section Scripts {

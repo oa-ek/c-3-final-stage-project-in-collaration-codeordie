@@ -3,79 +3,142 @@
     ViewData["Title"] = "Керування користувачами";
 }
 
-<div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="bi bi-people"></i> Керування користувачами</h2>
-            <a asp-action="AdminDashboard" class="btn btn-outline-secondary">Назад до Дашборду</a>
-        </div>
+<style>
+    @@keyframes slideUpFade {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+        }
 
-    <!-- Сповіщення (Успіх/Помилка) -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Ім'я</th>
-                        <th>Email</th>
-                        <th>Дата реєстрації</th>
-                        <th>Роль</th>
-                        <th class="text-end">Дії</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Model)
-                    {
-                        var isAdmin = user.Roles.Contains("Admin");
-                        <tr>
-                            <td class="align-middle">@user.FullName</td>
-                            <td class="align-middle">@user.Email</td>
-                            <td class="align-middle">@user.CreatedAt.ToString("dd.MM.yyyy")</td>
-                            <td class="align-middle">
-                                @if (isAdmin)
-                                {
-                                    <span class="badge bg-danger">Admin</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-primary">User</span>
-                                }
-                            </td>
-                            <td class="text-end align-middle">
-                                <!-- Форма зміни ролі -->
-                                <form asp-action="ToggleAdminRole" method="post" class="d-inline">
-                                    <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-sm @(isAdmin ? "btn-outline-secondary" : "btn-outline-success") me-1" title="@(isAdmin ? "Забрати права Адміна" : "Зробити Адміном")">
-                                        <i class="bi @(isAdmin ? "bi-arrow-down-circle" : "bi-arrow-up-circle")"></i>
-                                    </button>
-                                </form>
+    .animate-slide-up {
+        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
 
-                                <!-- Форма видалення -->
-                                <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені, що хочете видалити цього користувача? Це незворотно!');">
-                                    <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Видалити користувача">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
+<div class="relative w-full min-h-[80vh] py-10 z-10 overflow-hidden">
+    <div class="absolute top-10 right-1/4 w-[30rem] h-[30rem] bg-emerald-400/10 rounded-full blur-[100px] animate-pulse pointer-events-none translate-x-1/2"></div>
+    <div class="absolute bottom-10 left-1/4 w-[35rem] h-[35rem] bg-blue-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none -translate-x-1/4" style="animation-delay: 2s;"></div>
+
+    <div class="max-w-7xl mx-auto px-4 z-20 relative animate-slide-up">
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-white rounded-2xl border border-blue-100 flex items-center justify-center shadow-sm">
+                    <i class="bi bi-people-fill text-3xl text-blue-600 drop-shadow-sm"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight m-0">Користувачі</h2>
+                    <p class="text-slate-500 font-medium m-0 mt-1">Керування акаунтами та ролями</p>
+                </div>
+            </div>
+            <a asp-action="AdminDashboard" class="inline-flex items-center justify-center px-6 py-3 bg-white/80 hover:bg-white text-slate-700 font-bold rounded-full shadow-sm hover:shadow transition-all text-sm border border-slate-200 backdrop-blur-md">
+                <i class="bi bi-arrow-left me-2"></i> Назад до Дашборду
+            </a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="text-emerald-600 mb-6 p-4 bg-emerald-50/80 backdrop-blur-sm rounded-2xl text-sm font-medium border border-emerald-100 shadow-sm flex items-center">
+                <i class="bi bi-check-circle-fill text-lg me-3"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="text-rose-500 mb-6 p-4 bg-rose-50/80 backdrop-blur-sm rounded-2xl text-sm font-medium border border-rose-100 shadow-sm flex items-center">
+                <i class="bi bi-exclamation-triangle-fill text-lg me-3"></i> @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800/5 border-b border-slate-200/60">
+                            <th class="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest">Ім'я</th>
+                            <th class="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest">Email</th>
+                            <th class="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest">Дата реєстрації</th>
+                            <th class="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest">Роль</th>
+                            <th class="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Дії</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200/60">
+                        @foreach (var user in Model)
+                        {
+                            var isAdmin = user.Roles.Contains("Admin");
+                            <tr class="hover:bg-white/40 transition-colors duration-200 group">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                                            <i class="bi bi-person-fill text-xl"></i>
+                                        </div>
+                                        <span class="font-bold text-slate-800">@user.FullName</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-600">@user.Email</td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-500">@user.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td class="px-6 py-4">
+                                    @if (isAdmin)
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-100 text-rose-700 border border-rose-200/50">
+                                            <i class="bi bi-shield-fill-check"></i> Admin
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 border border-emerald-200/50">
+                                            <i class="bi bi-person-check-fill"></i> User
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+
+                                    <!-- Форма зміни ролі -->
+                                    <form asp-action="ToggleAdminRole" method="post" class="inline-block">
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        @if (isAdmin)
+                                        {
+                                            <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 shadow-sm transition-all" title="Забрати права Адміна">
+                                                <i class="bi bi-arrow-down-circle text-lg"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 text-emerald-500 hover:text-white hover:bg-emerald-500 hover:border-emerald-500 shadow-sm transition-all" title="Зробити Адміном">
+                                                <i class="bi bi-arrow-up-circle text-lg"></i>
+                                            </button>
+                                        }
+                                    </form>
+
+                                    <!-- Форма видалення -->
+                                    <form asp-action="DeleteUser" method="post" class="inline-block ml-1" onsubmit="return confirm('Ви впевнені, що хочете видалити цього користувача? Це незворотно!');">
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 text-rose-400 hover:text-white hover:bg-rose-500 hover:border-rose-500 shadow-sm transition-all" title="Видалити користувача">
+                                            <i class="bi bi-trash3 text-lg"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <i class="bi bi-inbox-fill text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-700">Користувачів не знайдено</h4>
+                        <p class="text-sm text-slate-500">База даних поки що порожня.</p>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
