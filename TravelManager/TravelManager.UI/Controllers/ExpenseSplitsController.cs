@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
@@ -52,11 +53,13 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Settle(int id)
         {
-            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id);
+            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
+            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense", tracked: true);
             if (entity == null)
             {
                 return NotFound();
             }
+
             var role = GetUserRoleInTrip(entity.Expense.TripId);
             if (role == "Viewer" || role == "None")
             {
@@ -77,11 +80,13 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id);
+            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
+            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense");
             if (entity == null)
             {
                 return NotFound();
             }
+
             var role = GetUserRoleInTrip(entity.Expense.TripId);
             if (role == "Viewer" || role == "None")
             {

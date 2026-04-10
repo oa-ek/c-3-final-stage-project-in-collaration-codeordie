@@ -33,7 +33,7 @@ namespace TravelManager.UI.Controllers
                     Title = tp.Trip.Title,
                     StartDate = tp.Trip.StartDate,
                     EndDate = tp.Trip.EndDate,
-                    CurrentUserRole = tp.Role?.Name ?? "Member"
+                    CurrentUserRole = tp.Role?.Name ?? "Participant"
                 })
                 .ToList();
 
@@ -83,16 +83,16 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
 
-            var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer")
-                            ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
+            // ВИПРАВЛЕНО: шукаємо "Organizer" (як у DatabaseSeeder), а не довільну першу роль
+            var organizerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer");
 
-            if (currentUserId != null && ownerRole != null)
+            if (currentUserId != null && organizerRole != null)
             {
                 var creatorParticipant = new TripParticipant
                 {
                     TripId = newTrip.Id,
                     UserId = currentUserId,
-                    RoleId = ownerRole.Id
+                    RoleId = organizerRole.Id
                 };
                 _unitOfWork.TripParticipant.Add(creatorParticipant);
                 await _unitOfWork.SaveAsync();
@@ -108,7 +108,8 @@ namespace TravelManager.UI.Controllers
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (participant?.Role?.Name != "Organizer" && participant?.Role?.Name != "Editor")
+            // ВИПРАВЛЕНО: "Organizer" замість "Owner", "Participant" не може редагувати
+            if (participant?.Role?.Name != "Organizer")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
                 return RedirectToAction("Details", new { id });
@@ -145,7 +146,8 @@ namespace TravelManager.UI.Controllers
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (participant?.Role?.Name != "Organizer" && participant?.Role?.Name != "Editor")
+            // ВИПРАВЛЕНО: "Organizer" замість "Owner" / "Editor"
+            if (participant?.Role?.Name != "Organizer")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
                 return RedirectToAction("Details", new { id });
@@ -187,9 +189,10 @@ namespace TravelManager.UI.Controllers
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (participant?.Role?.Name != "Owner")
+            // ВИПРАВЛЕНО: "Organizer" замість неіснуючої ролі "Owner"
+            if (participant?.Role?.Name != "Organizer")
             {
-                TempData["ErrorMessage"] = "Тільки власник може видалити поїздку.";
+                TempData["ErrorMessage"] = "Тільки організатор може видалити поїздку.";
                 return RedirectToAction("Details", new { id });
             }
 
@@ -235,7 +238,7 @@ namespace TravelManager.UI.Controllers
                 {
                     UserId = p.UserId,
                     UserName = p.User.UserName,
-                    Role = p.Role?.Name ?? "Member"
+                    Role = p.Role?.Name ?? "Participant"
                 }).ToList()
             };
 
@@ -250,7 +253,8 @@ namespace TravelManager.UI.Controllers
             var currentParticipant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (currentParticipant?.Role?.Name != "Owner" && currentParticipant?.Role?.Name != "Editor")
+            // ВИПРАВЛЕНО: "Organizer" замість неіснуючих "Owner" / "Editor"
+            if (currentParticipant?.Role?.Name != "Organizer")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для запрошення учасників.";
                 return RedirectToAction("Details", new { id = tripId });
@@ -278,6 +282,14 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
+            // Запобігаємо призначенню ролі Organizer через запрошення
+            var organizerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer");
+            if (organizerRole != null && roleId == organizerRole.Id)
+            {
+                TempData["ErrorMessage"] = "Неможливо запросити користувача одразу як Організатора.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
             var newParticipant = new TripParticipant
             {
                 TripId = tripId,
@@ -300,7 +312,8 @@ namespace TravelManager.UI.Controllers
             var currentParticipant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (currentParticipant?.Role?.Name != "Owner" && currentParticipant?.Role?.Name != "Editor")
+            // ВИПРАВЛЕНО: "Organizer" замість "Owner" / "Editor"
+            if (currentParticipant?.Role?.Name != "Organizer")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для видалення учасників.";
                 return RedirectToAction("Details", new { id = tripId });
@@ -311,9 +324,17 @@ namespace TravelManager.UI.Controllers
 
             if (participant == null) return NotFound();
 
-            if (participant.Role?.Name == "Owner")
+            // ВИПРАВЛЕНО: захист організатора, а не "Owner"
+            if (participant.Role?.Name == "Organizer")
             {
-                TempData["ErrorMessage"] = "Неможливо видалити власника поїздки.";
+                TempData["ErrorMessage"] = "Неможливо видалити організатора поїздки.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            // Захист від самовидалення
+            if (participant.UserId == currentUserId)
+            {
+                TempData["ErrorMessage"] = "Ви не можете видалити самого себе з поїздки.";
                 return RedirectToAction("Details", new { id = tripId });
             }
 
@@ -332,7 +353,8 @@ namespace TravelManager.UI.Controllers
             var currentUserParticipant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (currentUserParticipant?.Role?.Name != "Owner" && currentUserParticipant?.Role?.Name != "Editor")
+            // ВИПРАВЛЕНО: "Organizer" замість "Owner" / "Editor"
+            if (currentUserParticipant?.Role?.Name != "Organizer")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для зміни ролей.";
                 return RedirectToAction("Details", new { id = tripId });
@@ -343,9 +365,10 @@ namespace TravelManager.UI.Controllers
 
             if (participantToUpdate == null) return NotFound();
 
-            if (participantToUpdate.Role?.Name == "Owner" && roleId != participantToUpdate.RoleId)
+            
+            if (participantToUpdate.Role?.Name == "Organizer" && roleId != participantToUpdate.RoleId)
             {
-                TempData["ErrorMessage"] = "Неможливо змінити роль Власника напряму.";
+                TempData["ErrorMessage"] = "Неможливо змінити роль Організатора напряму.";
                 return RedirectToAction("Details", new { id = tripId });
             }
 
@@ -364,6 +387,7 @@ namespace TravelManager.UI.Controllers
                 Value = u.Id
             });
         }
+
         private string GetUserRoleInTrip(int tripId)
         {
             var currentUserId = _userManager.GetUserId(User);
