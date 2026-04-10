@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
@@ -9,10 +10,12 @@ namespace TravelManager.UI.Controllers
     public class TripDestinationsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<User> _userManager;
 
-        public TripDestinationsController(IUnitOfWork unitOfWork)
+        public TripDestinationsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -43,10 +46,30 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Create(int? tripId)
         {
+            var allowedTrips = GetAllowedTripsForUser(); 
+
+            if (!allowedTrips.Any())
+            {
+                TempData["ErrorMessage"] = "У вас немає поїздок, де ви можете додавати записи.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            if (tripId.HasValue)
+            {
+                var role = GetUserRoleInTrip(tripId.Value);
+                if (role == "Viewer" || role == "None")
+                {
+                    TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
+                    return RedirectToAction("Index", "Trips"); 
+                }
+
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
+            }
             var model = new TripDestinationFormViewModel
             {
                 TripId = tripId ?? 0,
-                TripList = GetTripList(),
+                TripList = GetAllowedTripsForUser(),
                 ArrivalDate = DateTime.Now,
                 DepartureDate = DateTime.Now.AddDays(1)
             };
@@ -57,9 +80,15 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TripDestinationFormViewModel model)
         {
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
+                return RedirectToAction("Index", "Trips");
+            }
             if (!ModelState.IsValid)
             {
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
             }
 
@@ -88,6 +117,12 @@ namespace TravelManager.UI.Controllers
             {
                 return NotFound();
             }
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                return RedirectToAction("Index", "Trips"); 
+            }
 
             var model = new TripDestinationFormViewModel
             {
@@ -99,7 +134,7 @@ namespace TravelManager.UI.Controllers
                 Longitude = entity.Longitude,
                 ArrivalDate = entity.ArrivalDate,
                 DepartureDate = entity.DepartureDate,
-                TripList = GetTripList()
+                TripList = GetAllowedTripsForUser()
             };
 
             return View(model);
@@ -109,9 +144,16 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TripDestinationFormViewModel model)
         {
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                return RedirectToAction("Index", "Trips");
+            }
+
             if (!ModelState.IsValid)
             {
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
             }
 
@@ -139,12 +181,18 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+
             var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
             if (entity == null)
             {
                 return NotFound();
             }
-
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                return RedirectToAction("Index", "Trips");
+            }
             int? tripId = entity.TripId;
             _unitOfWork.TripDestination.Remove(entity);
             await _unitOfWork.SaveAsync();
@@ -160,5 +208,28 @@ namespace TravelManager.UI.Controllers
                 Value = t.Id.ToString()
             });
         }
+
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
+        }
+
+        private IEnumerable<SelectListItem> GetAllowedTripsForUser()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            return _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip,Role")
+                .Select(tp => new SelectListItem
+                {
+                    Text = tp.Trip.Title,
+                    Value = tp.TripId.ToString()
+                }).ToList();
+        }
+
     }
 }

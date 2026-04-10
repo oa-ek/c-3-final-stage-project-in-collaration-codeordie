@@ -45,6 +45,12 @@ namespace TravelManager.UI.Controllers
             {
                 return NotFound();
             }
+            var role = GetUserRoleInTrip(entity.Expense.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть погашати борги.";
+                return RedirectToAction(nameof(Index));
+            }
 
             entity.IsSettled = true;
 
@@ -64,11 +70,26 @@ namespace TravelManager.UI.Controllers
             {
                 return NotFound();
             }
+            var role = GetUserRoleInTrip(entity.Expense.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                return RedirectToAction(nameof(Index));
+            }
 
             _unitOfWork.ExpenseSplit.Remove(entity);
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
         }
     }
 }
