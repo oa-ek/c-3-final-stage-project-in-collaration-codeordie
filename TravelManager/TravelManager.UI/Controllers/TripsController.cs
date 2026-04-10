@@ -83,7 +83,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
 
-            var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Owner")
+            var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer")
                             ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
 
             if (currentUserId != null && ownerRole != null)
@@ -108,7 +108,7 @@ namespace TravelManager.UI.Controllers
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (participant?.Role?.Name != "Owner" && participant?.Role?.Name != "Editor")
+            if (participant?.Role?.Name != "Organizer" && participant?.Role?.Name != "Editor")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
                 return RedirectToAction("Details", new { id });
@@ -145,7 +145,7 @@ namespace TravelManager.UI.Controllers
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
 
-            if (participant?.Role?.Name != "Owner" && participant?.Role?.Name != "Editor")
+            if (participant?.Role?.Name != "Organizer" && participant?.Role?.Name != "Editor")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
                 return RedirectToAction("Details", new { id });
@@ -363,6 +363,14 @@ namespace TravelManager.UI.Controllers
                 Text = u.UserName,
                 Value = u.Id
             });
+        }
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
         }
     }
 }
