@@ -90,11 +90,11 @@
     <header class="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
         <nav class="pointer-events-auto bg-white/60 backdrop-blur-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full px-5 py-2.5 flex items-center justify-between gap-4 transition-all hover:bg-white/70 hover:shadow-lg w-full max-w-6xl">
 
-            @* Логотип *@
-            <a class="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
-               asp-area="" asp-controller="Home" asp-action="Index">
-                <div class="relative w-9 h-9 overflow-hidden rounded-full border border-blue-100 shadow-inner flex items-center justify-center bg-gradient-to-br from-blue-50 to-emerald-50">
-                    <i class="bi bi-compass text-xl text-blue-600 drop-shadow-md animate-compass"></i>
+            <a class="text-xl md:text-2xl font-black flex items-center gap-3 hover:opacity-80 transition-opacity duration-300 flex-shrink-0" asp-area="" asp-controller="Home" asp-action="Index">
+                <div class="relative w-10 h-10 group overflow-hidden rounded-full border border-blue-100 shadow-inner flex items-center justify-center">
+                    <span class="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-emerald-100/50 opacity-50"></span>
+                    <i class="bi bi-compass text-2xl text-blue-600 drop-shadow-md animate-compass transition-transform duration-500 group-hover:scale-110"></i>
+                    <div class="absolute -inset-1 bg-gradient-to-b from-white/30 via-transparent to-black/10 rounded-full blur-sm"></div>
                 </div>
                 <span class="font-black text-slate-800 text-base hidden md:block tracking-tight">TravelManager</span>
             </a>
