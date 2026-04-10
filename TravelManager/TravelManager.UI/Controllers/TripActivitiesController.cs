@@ -21,7 +21,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var activities = _unitOfWork.TripActivity.GetAll(includeProperties: "Trip,BookingStatus");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var activities = _unitOfWork.TripActivity.
+                GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip,BookingStatus");
 
             var viewModels = activities.Select(a => new TripActivityListViewModel
             {

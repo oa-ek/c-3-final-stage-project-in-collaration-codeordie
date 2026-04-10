@@ -21,7 +21,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var items = _unitOfWork.ChecklistItem.GetAll(includeProperties: "Checklist");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var items = _unitOfWork.ChecklistItem
+    .GetAll(i => myTripIds.Contains(i.Checklist.TripId), includeProperties: "Checklist");
 
             var viewModels = items.Select(i => new ChecklistItemListViewModel
             {

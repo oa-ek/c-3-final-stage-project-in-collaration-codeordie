@@ -20,7 +20,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var transits = _unitOfWork.Transit.GetAll(includeProperties: "Trip,TransitType,BookingStatus");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var transits = _unitOfWork.Transit.
+                GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip,TransitType,BookingStatus");
 
             var viewModels = transits.Select(t => new TransitListViewModel
             {
