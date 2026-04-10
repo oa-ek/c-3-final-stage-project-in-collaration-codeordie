@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using TravelManager.Domain.Entities
+@inject UserManager<User> UserManager
+
+<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="utf-8" />
@@ -24,14 +28,36 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Головна</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Accommodations" asp-action="Index">Проживання</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
+                        }
                     </ul>
+                    
+                    <div class="d-flex align-items-center">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            if (currentUser?.ProfilePicture != null)
+                            {
+                                var base64 = Convert.ToBase64String(currentUser.ProfilePicture);
+                                var imgSrc = String.Format("data:image/jpeg;base64,{0}", base64);
+                                <img src="@imgSrc" alt="Avatar" class="rounded-circle border me-2" style="width: 35px; height: 35px; object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-person-circle text-muted fs-4 me-2"></i>
+                            }
+                        }
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>

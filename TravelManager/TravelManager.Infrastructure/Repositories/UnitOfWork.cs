@@ -27,6 +27,8 @@ namespace TravelManager.Infrastructure.Repositories
         public IRepository<BookingStatus> BookingStatus { get; private set; }
         public IRepository<TransitType> TransitType { get; private set; }
         public IRepository<ExpenseCategory> ExpenseCategory { get; private set; }
+        public IRepository<TripParticipant> TripParticipant { get; private set; }
+        public IRepository<TripRole> TripRole { get; private set; }
 
         public UnitOfWork(ApplicationDbContext ctx)
         {
@@ -45,6 +47,8 @@ namespace TravelManager.Infrastructure.Repositories
             BookingStatus = new Repository<BookingStatus>(_ctx);
             TransitType = new Repository<TransitType>(_ctx);
             ExpenseCategory = new Repository<ExpenseCategory>(_ctx);
+            TripParticipant = new Repository<TripParticipant>(_ctx);
+            TripRole = new Repository<TripRole>(_ctx);
         }
 
         public void Save()

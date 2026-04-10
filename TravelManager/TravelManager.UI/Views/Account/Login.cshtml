@@ -1,0 +1,78 @@
+﻿@model TravelManager.UI.Models.ViewModels.Account.LoginViewModel
+
+@{
+    ViewData["Title"] = "Вхід";
+    // Зберігаємо посилання, куди юзер хотів зайти до того, як його перекинуло на логін
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body p-5">
+                <h2 class="text-center mb-4">Вхід у систему</h2>
+
+                <form asp-action="Login" asp-route-returnUrl="@returnUrl" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 alert alert-danger" role="alert" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email адреса</label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Пароль</label>
+                        <div class="input-group">
+                            @* Додано id="passInput", щоб JS міг його знайти *@
+                            <input asp-for="Password" id="passInput" class="form-control" type="password" />
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePass('passInput', 'passIcon')">
+                                <i class="bi bi-eye-slash" id="passIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label">Запам'ятати мене</label>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Увійти</button>
+                    </div>
+                </form>
+                <form asp-controller="Account" asp-action="ExternalLogin" method="post" class="form-horizontal">
+                    <div class="d-grid gap-2">
+                        <!-- Кнопка використовує name="provider" value="Google" -->
+                        <button type="submit" class="btn btn-outline-danger" name="provider" value="Google">
+                            <i class="fab fa-google me-2"></i> Увійти через Google
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-4">
+                    <a asp-action="ForgotPassword" class="text-decoration-none">Забули пароль?</a>
+                    <hr class="w-50 mx-auto opacity-25">
+                    <p class="text-muted">Ще не зареєстровані? <a asp-action="Register" class="text-decoration-none fw-bold">Створити акаунт</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePass(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("bi-eye-slash", "bi-eye");
+            } else {
+                input.type = "password";
+                icon.classList.replace("bi-eye", "bi-eye-slash");
+            }
+        }
+    </script>
+}

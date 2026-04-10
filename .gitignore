@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+/TravelManager/TravelManager.UI/appsettings.json
+/TravelManager/TravelManager.UI/appsettings.Development.json

@@ -4,72 +4,90 @@
     ViewData["Title"] = "Редагувати витрату";
 }
 
-<div class="container py-4">
-    <h2 class="mb-4">Редагувати витрату</h2>
-    <hr />
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">Редагувати витрату</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="TripId" />
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Edit">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        <input type="hidden" asp-for="Id" />
-
-                        <div class="form-group mb-3">
-                            <label asp-for="TripId" class="form-label fw-bold">Поїздка</label>
-                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
-                                <option disabled selected>-- Оберіть поїздку --</option>
-                            </select>
-                            <span asp-validation-for="TripId" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label asp-for="CategoryId" class="form-label fw-bold">Категорія</label>
-                            <select asp-for="CategoryId" asp-items="Model.CategoryList" class="form-select">
-                                <option disabled selected>-- Оберіть категорію --</option>
-                            </select>
-                            <span asp-validation-for="CategoryId" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label asp-for="Description" class="form-label fw-bold">Опис (на що витратили)</label>
-                            <input asp-for="Description" class="form-control" />
-                            <span asp-validation-for="Description" class="text-danger small"></span>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="Amount" class="form-label fw-bold">Сума</label>
-                                <input asp-for="Amount" class="form-control" type="number" step="0.01" />
-                                <span asp-validation-for="Amount" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="Currency" class="form-label fw-bold">Валюта</label>
-                                <select asp-for="Currency" asp-items="Model.CurrencyList" class="form-select"></select>
-                                <span asp-validation-for="Currency" class="text-danger small"></span>
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label asp-for="Date" class="form-label fw-bold">Дата</label>
-                            <input asp-for="Date" class="form-control" />
-                            <span asp-validation-for="Date" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-group d-flex justify-content-between">
-                            <button type="submit" class="btn btn-primary px-5 shadow-sm">Оновити</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
-                        </div>
-                    </form>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Description" class="form-label">Опис (Назва)</label>
+                        <input asp-for="Description" class="form-control" />
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CategoryId" class="form-label">Категорія</label>
+                        <select asp-for="CategoryId" asp-items="Model.CategoryList" class="form-select"></select>
+                    </div>
                 </div>
-            </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="TotalAmount" class="form-label">Загальна сума</label>
+                        <input asp-for="TotalAmount" class="form-control" type="number" step="0.01" />
+                        <span asp-validation-for="TotalAmount" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Currency" class="form-label">Валюта</label>
+                        <select asp-for="Currency" asp-items="Model.CurrencyList" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Date" class="form-label">Дата</label>
+                        <input asp-for="Date" class="form-control" type="date" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PayerId" class="form-label">Хто заплатив?</label>
+                        <select asp-for="PayerId" asp-items="Model.PayerList" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ReceiptImageUrl" class="form-label">Посилання на чек (URL)</label>
+                        <input asp-for="ReceiptImageUrl" class="form-control" />
+                        <span asp-validation-for="ReceiptImageUrl" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- БЛОК: ПРИВ'ЯЗКА ДЛЯ РЕДАГУВАННЯ -->
+                <div class="card bg-light border-0 mb-4 p-3 rounded">
+                    <h6 class="text-muted mb-3"><i class="bi bi-link-45deg"></i> Прив'язати витрату (необов'язково)</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="TransitId" class="form-label small">Транспорт</label>
+                            <select asp-for="TransitId" asp-items="Model.TransitList" class="form-select form-select-sm">
+                                <option value="">-- Немає --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="AccommodationId" class="form-label small">Житло</label>
+                            <select asp-for="AccommodationId" asp-items="Model.AccommodationList" class="form-select form-select-sm">
+                                <option value="">-- Немає --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="TripActivityId" class="form-label small">Активність</label>
+                            <select asp-for="TripActivityId" asp-items="Model.ActivityList" class="form-select form-select-sm">
+                                <option value="">-- Немає --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Зберегти зміни</button>
+                    <a asp-controller="Trips" asp-action="Details" asp-route-id="@Model.TripId" class="btn btn-secondary">Скасувати</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }
