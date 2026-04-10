@@ -1,52 +1,618 @@
-﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripActivityListViewModel>
+﻿@* 📄 TravelManager/TravelManager.UI/Views/TripActivities/Index.cshtml *@
+
+@model IEnumerable<TravelManager.UI.Models.ViewModels.TripActivityListViewModel>
 
 @{
     ViewData["Title"] = "Активності";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Екскурсії та Активності</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати активність</a>
-</div>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Поїздка</th>
-                    <th>Назва</th>
-                    <th>Локація</th>
-                    <th>Час початку</th>
-                    <th>Статус</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
+<style>
+    .act-root {
+        font-family: 'DM Sans', sans-serif;
+        padding: 2rem 0 4rem;
+    }
+
+        /* Живий фон */
+        .act-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 5% 10%, rgba(16,185,129,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 70% at 95% 90%, rgba(245,158,11,0.09) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 14s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg);
+        }
+
+        100% {
+            filter: hue-rotate(20deg);
+        }
+    }
+
+    /* Blob-и */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.15;
+        z-index: -1;
+        pointer-events: none;
+        animation: blobFloat linear infinite;
+    }
+
+    .blob-a {
+        width: 450px;
+        height: 450px;
+        background: #10b981;
+        top: -80px;
+        right: -80px;
+        animation-duration: 22s;
+    }
+
+    .blob-b {
+        width: 380px;
+        height: 380px;
+        background: #f59e0b;
+        bottom: -60px;
+        left: -60px;
+        animation-duration: 28s;
+        animation-direction: reverse;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(-30px,40px) scale(1.04);
+        }
+
+        66% {
+            transform: translate(40px,-20px) scale(0.96);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    /* Stagger-появи */
+    .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: revealUp 0.6s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .d1 {
+        animation-delay: 0.05s;
+    }
+
+    .d2 {
+        animation-delay: 0.12s;
+    }
+
+    .d3 {
+        animation-delay: 0.19s;
+    }
+
+    .d4 {
+        animation-delay: 0.26s;
+    }
+
+    .d5 {
+        animation-delay: 0.33s;
+    }
+
+    .d6 {
+        animation-delay: 0.40s;
+    }
+
+    /* Заголовок */
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem,5vw,3.2rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #10b981, #f59e0b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradShift 5s ease infinite;
+        }
+
+    @@keyframes gradShift {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    /* Кнопка додати */
+    .add-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        background-size: 200% 200%;
+        animation: gradShift 4s ease infinite;
+        color: white;
+        border: none;
+        border-radius: 1.1rem;
+        padding: 0.8rem 1.8rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .add-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+    @@keyframes shimmer {
+        0% {
+            left: -100%;
+        }
+
+        50% {
+            left: 150%;
+        }
+
+        100% {
+            left: 150%;
+        }
+    }
+
+    .add-btn:hover {
+        transform: translateY(-3px) scale(1.04);
+        box-shadow: 0 8px 30px rgba(16,185,129,0.55);
+        color: white;
+    }
+
+    .add-btn:active {
+        transform: scale(0.97);
+    }
+
+    /* Статистика */
+    .stat-card {
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.85);
+        border-radius: 1.5rem;
+        padding: 1.2rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.09);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--c1), var(--c2));
+            opacity: 0.06;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover::before {
+            opacity: 0.10;
+        }
+
+    .stat-num {
+        font-family: 'Syne', sans-serif;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .stat-lbl {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-top: 0.2rem;
+    }
+
+    /* Картка активності */
+    .act-card {
+        background: rgba(255,255,255,0.58);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.88);
+        border-radius: 1.8rem;
+        padding: 1.4rem 1.6rem;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .act-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #10b981, #f59e0b);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .act-card:hover {
+            transform: translateY(-4px) translateX(4px);
+            box-shadow: 0 12px 40px rgba(16,185,129,0.12);
+            border-color: rgba(16,185,129,0.25);
+        }
+
+            .act-card:hover::before {
+                opacity: 1;
+            }
+
+    /* Іконка активності */
+    .act-icon {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 1.1rem;
+        background: linear-gradient(135deg, #10b981, #059669);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(16,185,129,0.35);
+        transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .act-card:hover .act-icon {
+        transform: rotate(-8deg) scale(1.1);
+    }
+
+    .act-title {
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .act-trip {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #94a3b8;
+        margin-top: 0.15rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .act-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+        .meta-item i {
+            color: #10b981;
+            font-size: 0.85rem;
+        }
+
+    /* Бейдж статусу */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        transition: transform 0.2s ease;
+    }
+
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+
+    .badge-confirmed {
+        background: rgba(16,185,129,0.12);
+        color: #065f46;
+        border: 1px solid rgba(16,185,129,0.25);
+    }
+
+    .badge-pending {
+        background: rgba(245,158,11,0.12);
+        color: #92400e;
+        border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    .badge-other {
+        background: rgba(148,163,184,0.15);
+        color: #475569;
+        border: 1px solid rgba(148,163,184,0.25);
+    }
+
+    .badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s ease infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.4;
+        }
+    }
+
+    /* Кнопки дій */
+    .act-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1.5px solid transparent;
+        transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .btn-edit {
+        background: rgba(99,102,241,0.08);
+        color: #6366f1;
+        border-color: rgba(99,102,241,0.2);
+    }
+
+        .btn-edit:hover {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.15) rotate(-5deg);
+            box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+        }
+
+    .btn-del {
+        background: rgba(239,68,68,0.08);
+        color: #ef4444;
+        border-color: rgba(239,68,68,0.2);
+    }
+
+        .btn-del:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 4px 15px rgba(239,68,68,0.4);
+        }
+
+    /* Порожній стан */
+    .empty-state {
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(20px);
+        border: 2px dashed rgba(16,185,129,0.25);
+        border-radius: 2rem;
+        padding: 5rem 2rem;
+        text-align: center;
+        animation: revealUp 0.7s cubic-bezier(.16,1,.3,1) 0.2s both;
+    }
+
+    .empty-icon {
+        width: 90px;
+        height: 90px;
+        background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(245,158,11,0.08));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1.5rem;
+        animation: emptyFloat 4s ease-in-out infinite;
+    }
+
+    @@keyframes emptyFloat {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg);
+        }
+
+        50% {
+            transform: translateY(-10px) rotate(5deg);
+        }
+    }
+</style>
+
+<div class="blob blob-a"></div>
+<div class="blob blob-b"></div>
+
+<div class="act-root">
+    <div style="max-width:1100px; margin:0 auto; padding:0 1rem;">
+
+        @* Заголовок + кнопка *@
+        <div class="reveal d1" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+            <div>
+                <h1 class="page-title">Екскурсії та <span>Активності</span></h1>
+                <p style="color:#64748b; font-weight:500; margin-top:0.4rem;">Всі заплановані розваги та пригоди твоїх поїздок</p>
+            </div>
+            <a asp-action="Create" class="add-btn">
+                <i class="bi bi-plus-lg"></i> Додати активність
+            </a>
+        </div>
+
+        @* Статистика *@
+        @{
+            var total = Model.Count();
+            var confirmed = Model.Count(a => a.BookingStatusName == "Підтверджено");
+            var pending = total - confirmed;
+        }
+        <div class="reveal d2" style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem;">
+            <div class="stat-card" style="--c1:#10b981; --c2:#059669;">
+                <div class="stat-num" style="color:#10b981;">@total</div>
+                <div class="stat-lbl">Всього активностей</div>
+            </div>
+            <div class="stat-card" style="--c1:#10b981; --c2:#34d399;">
+                <div class="stat-num" style="color:#059669;">@confirmed</div>
+                <div class="stat-lbl">Підтверджено</div>
+            </div>
+            <div class="stat-card" style="--c1:#f59e0b; --c2:#d97706;">
+                <div class="stat-num" style="color:#d97706;">@pending</div>
+                <div class="stat-lbl">Очікують</div>
+            </div>
+        </div>
+
+        @* Список активностей *@
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">🎭</div>
+                <h3 style="font-family:'Syne',sans-serif; font-weight:900; color:#0f172a; font-size:1.4rem; margin-bottom:0.5rem;">
+                    Поки що порожньо
+                </h3>
+                <p style="color:#94a3b8; font-weight:500; margin-bottom:1.5rem;">
+                    Додай першу активність — екскурсію, атракцію або пригоду!
+                </p>
+                <a asp-action="Create" class="add-btn" style="margin:0 auto;">
+                    <i class="bi bi-plus-lg"></i> Додати активність
+                </a>
+            </div>
+        }
+        else
+        {
+            <div style="display:flex; flex-direction:column; gap:0.85rem;">
+                @{
+                    int idx = 0;
+                }
                 @foreach (var item in Model)
                 {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.TripTitle</td>
-                        <td>@item.Title</td>
-                        <td>@(string.IsNullOrEmpty(item.Address) ? "—" : item.Address)</td>
-                        <td>@item.StartTime.ToString("g")</td>
-                        <td>
-                            <span class="badge @(item.BookingStatusName == "Підтверджено" ? "bg-success" : "bg-secondary")">
-                                @item.BookingStatusName
-                            </span>
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
+                    var delay = $"animation-delay:{0.05 + idx * 0.07}s";
+                    var isConfirmed = item.BookingStatusName == "Підтверджено";
+                    var badgeClass = isConfirmed ? "badge-confirmed" : item.BookingStatusName == "Очікується" ? "badge-pending" : "badge-other";
+                    idx++;
+
+                    <div class="act-card reveal" style="@delay">
+
+                        @* Іконка *@
+                        <div class="act-icon">
+                            <i class="bi bi-bicycle"></i>
+                        </div>
+
+                        @* Інфо *@
+                        <div style="flex:1; min-width:0;">
+                            <div class="act-title">@item.Title</div>
+                            <div class="act-trip">
+                                <i class="bi bi-airplane-fill" style="color:#10b981;"></i>
+                                @item.TripTitle
                             </div>
-                        </td>
-                    </tr>
+                            <div class="act-meta" style="margin-top:0.6rem;">
+                                @if (!string.IsNullOrEmpty(item.Address))
+                                {
+                                    <div class="meta-item">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                        <span>@item.Address</span>
+                                    </div>
+                                }
+                                <div class="meta-item">
+                                    <i class="bi bi-clock-fill"></i>
+                                    <span>@item.StartTime.ToString("dd.MM.yyyy HH:mm")</span>
+                                </div>
+                                @if (item.EndTime.HasValue)
+                                {
+                                    <div class="meta-item">
+                                        <i class="bi bi-clock-history"></i>
+                                        <span>до @item.EndTime.Value.ToString("HH:mm")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @* Статус *@
+                        <div class="status-badge @badgeClass">
+                            <span class="badge-dot"></span>
+                            @item.BookingStatusName
+                        </div>
+
+                        @* Дії *@
+                        <div class="act-actions">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Редагувати">
+                                <i class="bi bi-pencil-fill"></i>
+                            </a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Видалити активність «@item.Title»?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="action-btn btn-del" title="Видалити">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            </div>
+        }
     </div>
 </div>
