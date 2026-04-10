@@ -1,48 +1,345 @@
 ﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripDestinationListViewModel>
 
 @{
-    ViewData["Title"] = "Маршрути";
+	ViewData["Title"] = "Маршрут";
+	var totalCities = Model.Count();
+	var totalDays = Model.Any() ? Model.Sum(x => (x.DepartureDate - x.ArrivalDate).Days == 0 ? 1 : (x.DepartureDate - x.ArrivalDate).Days) : 0;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Маршрути (Міста)</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати місто</a>
-</div>
+<style>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Поїздка</th>
-                    <th>Місто</th>
-                    <th>Країна</th>
-                    <th>Прибуття</th>
-                    <th>Відбуття</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.TripName</td>
-                        <td class="fw-bold text-primary">@item.CityName</td>
-                        <td>@item.Country</td>
-                        <td>@item.ArrivalDate.ToShortDateString()</td>
-                        <td>@item.DepartureDate.ToShortDateString()</td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+	@@keyframes fadeSlideUp {
+		from {
+			opacity: 0;
+			transform: translateY(30px)
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0)
+		}
+	}
+
+	@@keyframes shimmer {
+		0% {
+			transform: translateX(-150%)
+		}
+
+		100% {
+			transform: translateX(150%)
+		}
+	}
+
+	@@keyframes routeMove {
+		0% {
+			background-position: 0% 0
+		}
+
+		100% {
+			background-position: 200% 0
+		}
+	}
+
+	@@keyframes planeFly {
+		0% {
+			transform: translateX(-6px)
+		}
+
+		50% {
+			transform: translateX(6px)
+		}
+
+		100% {
+			transform: translateX(-6px)
+		}
+	}
+
+	@@keyframes globeFloat {
+		0% {
+			transform: translateY(0)
+		}
+
+		50% {
+			transform: translateY(-3px)
+		}
+
+		100% {
+			transform: translateY(0)
+		}
+	}
+
+	.stagger-item {
+		animation: fadeSlideUp .6s ease forwards;
+		opacity: 0;
+	}
+
+	.trip-card {
+		position: relative;
+		transition: .35s;
+	}
+
+		.trip-card:hover {
+			transform: translateY(-6px);
+			box-shadow: 0 20px 40px rgba(0,0,0,.08);
+		}
+
+	.route-line {
+		height: 3px;
+		background: linear-gradient(90deg,#cbd5f5,#60a5fa,#cbd5f5);
+		background-size: 200% 100%;
+		animation: routeMove 4s linear infinite;
+		border-radius: 4px;
+	}
+
+	.plane-icon {
+		animation: planeFly 3s ease-in-out infinite;
+	}
+
+	.globe-icon {
+		display: inline-block;
+		animation: globeFloat 5s ease-in-out infinite;
+	}
+
+	.ticket-divider {
+		background-image: linear-gradient(to bottom,transparent 50%,rgba(255,255,255,0.8) 50%);
+		background-size: 100% 12px;
+	}
+
+</style>
+
+<div class="relative w-full max-w-7xl mx-auto min-h-[75vh] py-10 px-4">
+
+	<div class="relative flex flex-col md:flex-row justify-between items-start md:items-end mb-10 stagger-item">
+
+		<div>
+
+			<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 border shadow-sm mb-4">
+				<i class="bi bi-geo-alt-fill text-blue-500 text-sm"></i>
+				<span class="text-xs font-black text-slate-500 uppercase tracking-widest">Деталі подорожі</span>
+			</div>
+
+			<h1 class="text-5xl md:text-7xl font-black text-slate-800 tracking-tight">
+				Маршрут
+			</h1>
+
+		</div>
+
+		<div class="flex gap-4 mt-8 md:mt-0">
+
+			<a asp-controller="Trips" asp-action="Index"
+			   class="inline-flex items-center px-8 py-5 font-black text-slate-600 bg-white border rounded-full shadow-sm hover:shadow-md hover:-translate-y-1 uppercase tracking-widest text-xs">
+
+				<i class="bi bi-arrow-left mr-2"></i>
+				До поїздок
+			</a>
+
+			<a asp-action="Create" asp-route-tripId="@ViewBag.CurrentTripId"
+			   class="group relative inline-flex items-center px-10 py-5 font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 uppercase tracking-widest text-sm overflow-hidden">
+
+				<span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
+
+				<span class="relative flex items-center gap-3">
+					Додати місто
+					<i class="bi bi-plus-lg text-xl group-hover:rotate-90 transition"></i>
+				</span>
+
+			</a>
+
+		</div>
+
+	</div>
+
+	@if (Model.Any())
+	{
+
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 stagger-item">
+
+			<div class="bg-white border rounded-2xl p-6 flex items-center gap-4 shadow-sm">
+
+				<div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-xl">
+					<i class="bi bi-map-fill"></i>
+				</div>
+
+				<div>
+					<p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Міст</p>
+					<p class="text-3xl font-black text-slate-800">@totalCities</p>
+				</div>
+
+			</div>
+
+			<div class="bg-white border rounded-2xl p-6 flex items-center gap-4 shadow-sm">
+
+				<div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-xl">
+					<i class="bi bi-calendar-check"></i>
+				</div>
+
+				<div>
+					<p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Днів</p>
+					<p class="text-3xl font-black text-slate-800">@totalDays</p>
+				</div>
+
+			</div>
+
+		</div>
+	}
+
+	<div class="space-y-6">
+
+		@if (!Model.Any())
+		{
+
+			<div class="bg-white border rounded-3xl p-16 text-center shadow-sm">
+
+				<div class="w-24 h-24 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+					<i class="bi bi-geo-alt text-5xl text-blue-300"></i>
+				</div>
+
+				<h3 class="text-3xl font-black text-slate-700 mb-2">Міст не знайдено</h3>
+
+				<p class="text-slate-500 text-lg">
+					Натисніть "Додати місто", щоб почати подорож
+				</p>
+
+			</div>
+
+		}
+		else
+		{
+
+			var delay = 0.2m;
+
+			foreach (var item in Model)
+			{
+
+				<div class="trip-card bg-white border rounded-[2rem] shadow-md flex flex-col md:flex-row overflow-hidden stagger-item"
+					 style="animation-delay:@(delay)s">
+
+					<div class="absolute top-6 left-6 w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center font-bold text-sm shadow">
+						#@(Model.ToList().IndexOf(item) + 1)
+					</div>
+
+					<div class="flex-1 p-10">
+
+						<span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-600 mb-4">
+
+							<i class="bi bi-airplane-engines-fill text-blue-500"></i>
+							@item.TripName
+
+						</span>
+
+						<h2 class="text-5xl font-black text-slate-800">
+
+							@item.CityName
+
+						</h2>
+
+						<p class="text-slate-500 font-bold flex items-center gap-2 text-lg">
+
+							<i class="globe-icon bi bi-globe-europe-africa text-blue-400"></i>
+
+							@item.Country
+
+						</p>
+
+					</div>
+
+					<div class="hidden md:flex w-8 relative">
+
+						<div class="absolute inset-y-4 left-1/2 w-[2px] -translate-x-1/2 ticket-divider"></div>
+
+					</div>
+
+					<div class="w-full md:w-[420px] bg-slate-50 p-10 flex flex-col justify-center border-t md:border-l">
+
+						<div class="flex items-center justify-between mb-6">
+
+							<div>
+
+								<p class="text-xs font-bold uppercase tracking-widest text-slate-400">Прибуття</p>
+
+								<p class="text-2xl font-black text-slate-800">
+
+									@item.ArrivalDate.ToString("dd MMM", new System.Globalization.CultureInfo("uk-UA"))
+
+								</p>
+
+							</div>
+
+							<div class="flex-1 px-6 relative flex items-center justify-center">
+
+								<div class="route-line w-full"></div>
+
+								<div class="absolute w-10 h-10 bg-white rounded-full border flex items-center justify-center shadow text-blue-500">
+
+									<i class="plane-icon bi bi-airplane-fill"></i>
+
+								</div>
+
+							</div>
+
+							<div class="text-right">
+
+								<p class="text-xs font-bold uppercase tracking-widest text-slate-400">Відбуття</p>
+
+								<p class="text-2xl font-black text-slate-800">
+
+									@item.DepartureDate.ToString("dd MMM", new System.Globalization.CultureInfo("uk-UA"))
+
+								</p>
+
+							</div>
+
+						</div>
+
+						<div class="flex items-center justify-between pt-6 border-t">
+
+							@{
+								var itemDays = (item.DepartureDate - item.ArrivalDate).Days == 0 ? 1 : (item.DepartureDate - item.ArrivalDate).Days;
+							}
+
+							<span class="bg-white px-4 py-2 rounded-lg text-xs font-bold text-blue-600 border shadow-sm">
+
+								<i class="bi bi-clock"></i>
+								@itemDays днів
+
+							</span>
+
+							<div class="flex gap-2">
+
+								<a asp-action="Edit" asp-route-id="@item.Id"
+								   class="w-10 h-10 rounded-lg bg-white border flex items-center justify-center text-slate-400 hover:text-blue-600 shadow-sm">
+
+									<i class="bi bi-pencil-fill text-sm"></i>
+
+								</a>
+
+								<form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Видалити?')">
+
+									@Html.AntiForgeryToken()
+
+									<button type="submit"
+											class="w-10 h-10 rounded-lg bg-white border flex items-center justify-center text-slate-400 hover:text-rose-600 shadow-sm">
+
+										<i class="bi bi-trash3-fill text-sm"></i>
+
+									</button>
+
+								</form>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				delay += 0.1m;
+
+			}
+
+		}
+
+	</div>
+
 </div>

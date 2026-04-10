@@ -2,5 +2,211 @@
     ViewData["Title"] = "Головна";
 }
 
-<h2>TravelManager</h2>
-<p>Це простий та зручний інструмент для організації ваших подорожей. Програма допомагає планувати маршрути на карті, вести облік витрат, складати списки речей у дорогу та зберігати всі деталі про транспорт і житло в одному місці.</p>
+<style>
+    @@keyframes float-slow {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-12px);
+        }
+    }
+
+    @@keyframes float-fast {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+
+    .animate-float-slow {
+        animation: float-slow 7s ease-in-out infinite;
+    }
+
+    .animate-float-fast {
+        animation: float-fast 5s ease-in-out infinite;
+    }
+
+    @@keyframes slideUpFade {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .stagger-1 {
+        animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        animation-delay: 0.1s;
+    }
+
+    .stagger-2 {
+        animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        animation-delay: 0.2s;
+    }
+
+    .stagger-3 {
+        animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        animation-delay: 0.3s;
+    }
+
+    .stagger-4 {
+        animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        animation-delay: 0.5s;
+    }
+
+    @@keyframes shimmer {
+        0% {
+            transform: translateX(-150%) skewX(-15deg);
+        }
+
+        100% {
+            transform: translateX(150%) skewX(-15deg);
+        }
+    }
+
+    .word-carousel {
+        display: block;
+        position: relative;
+        height: 1.5em;
+        width: 100%;
+        margin-top: 0.2rem;
+    }
+
+        .word-carousel span {
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin: auto;
+            opacity: 0;
+            white-space: nowrap;
+            animation: textFade 9s ease-in-out infinite;
+        }
+
+            .word-carousel span:nth-child(1) {
+                animation-delay: 0s;
+            }
+
+            .word-carousel span:nth-child(2) {
+                animation-delay: 3s;
+            }
+
+            .word-carousel span:nth-child(3) {
+                animation-delay: 6s;
+            }
+
+    @@keyframes textFade {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(4px);
+        }
+
+        10%, 23% {
+            opacity: 1;
+            transform: translateY(0px);
+            filter: blur(0px);
+        }
+
+        33%, 100% {
+            opacity: 0;
+            transform: translateY(-20px);
+            filter: blur(4px);
+        }
+    }
+</style>
+
+<div class="relative w-full flex flex-col items-center justify-center min-h-[75vh] py-6 z-10">
+
+    <div class="absolute top-10 left-1/4 w-[30rem] h-[30rem] bg-blue-500/15 rounded-full blur-[100px] animate-pulse pointer-events-none -translate-x-1/2"></div>
+    <div class="absolute bottom-10 right-1/4 w-[35rem] h-[35rem] bg-emerald-400/15 rounded-full blur-[120px] animate-pulse pointer-events-none translate-x-1/4" style="animation-delay: 2s;"></div>
+
+    <div class="text-center max-w-4xl mx-auto mb-12 px-4 w-full mt-6">
+
+        <div class="stagger-1 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/60 backdrop-blur-md border border-white shadow-sm mb-6">
+            <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+            </span>
+            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Твій новий компаньйон</span>
+        </div>
+
+        <h1 class="stagger-2 text-6xl md:text-8xl font-black text-slate-800 tracking-tighter leading-[1.1] mb-6 drop-shadow-sm flex flex-col items-center">
+            <span class="mb-2">Світ чекає.</span>
+            <div class="word-carousel">
+                <span class="bg-gradient-to-r from-blue-600 via-emerald-500 to-indigo-600 bg-clip-text text-transparent pb-2">Організуй ідеально.</span>
+                <span class="bg-gradient-to-r from-emerald-500 via-indigo-500 to-blue-600 bg-clip-text text-transparent pb-2">Створи історію.</span>
+                <span class="bg-gradient-to-r from-indigo-600 via-purple-500 to-rose-500 bg-clip-text text-transparent pb-2">Заплануй пригоду.</span>
+            </div>
+        </h1>
+
+        <p class="stagger-3 text-lg md:text-xl text-slate-500 font-medium leading-relaxed max-w-2xl mx-auto mb-10 mt-4">
+            Будуй маршрути, контролюй бюджет та пакуй валізи без стресу. Все для твоєї наступної подорожі в одному стильному просторі.
+        </p>
+
+        <div class="stagger-4">
+            <a asp-controller="Trips" asp-action="Create" class="group relative inline-flex items-center justify-center px-10 py-4 font-black text-white transition-all duration-500 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-[0_12px_25px_-5px_rgba(59,130,246,0.4)] hover:shadow-[0_20px_35px_-5px_rgba(59,130,246,0.6)] hover:-translate-y-1 uppercase tracking-widest text-xs overflow-hidden">
+                <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                <span class="relative flex items-center gap-3 drop-shadow-md">
+                    Почати мандрівку
+                    <i class="bi bi-rocket-takeoff-fill text-lg group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-4 w-full relative z-20 stagger-4 pb-8">
+
+        <div class="animate-float-slow">
+            <div class="group h-full bg-white/40 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-7 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_40px_-10px_rgba(59,130,246,0.15)] hover:bg-white/60 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-24 h-24 bg-blue-400/10 rounded-full blur-xl group-hover:bg-blue-400/20 transition-colors"></div>
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-white rounded-2xl border border-blue-100 flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform duration-500 group-hover:rotate-6">
+                    <i class="bi bi-map-fill text-2xl text-blue-500 drop-shadow-sm"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight group-hover:text-blue-600 transition-colors">Точні маршрути</h3>
+                <p class="text-slate-500 font-medium text-sm leading-relaxed">
+                    Додавай локації, будуй логістику та май весь план під рукою.
+                </p>
+            </div>
+        </div>
+
+        <div class="animate-float-fast" style="animation-delay: 1s;">
+            <div class="group h-full bg-white/40 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-7 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_40px_-10px_rgba(16,185,129,0.15)] hover:bg-white/60 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-24 h-24 bg-emerald-400/10 rounded-full blur-xl group-hover:bg-emerald-400/20 transition-colors"></div>
+                <div class="w-14 h-14 bg-gradient-to-br from-emerald-100 to-white rounded-2xl border border-emerald-100 flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform duration-500 group-hover:-rotate-6">
+                    <i class="bi bi-wallet2 text-2xl text-emerald-500 drop-shadow-sm"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight group-hover:text-emerald-600 transition-colors">Облік бюджету</h3>
+                <p class="text-slate-500 font-medium text-sm leading-relaxed">
+                    Фіксуй витрати на житло та транспорт в обраній валюті.
+                </p>
+            </div>
+        </div>
+
+        <div class="animate-float-slow" style="animation-delay: 2s;">
+            <div class="group h-full bg-white/40 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-7 shadow-[0_8px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_40px_-10px_rgba(245,158,11,0.15)] hover:bg-white/60 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-24 h-24 bg-amber-400/10 rounded-full blur-xl group-hover:bg-amber-400/20 transition-colors"></div>
+                <div class="w-14 h-14 bg-gradient-to-br from-amber-100 to-white rounded-2xl border border-amber-100 flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform duration-500 group-hover:rotate-6">
+                    <i class="bi bi-luggage-fill text-2xl text-amber-500 drop-shadow-sm"></i>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tight group-hover:text-amber-600 transition-colors">Розумні чеклісти</h3>
+                <p class="text-slate-500 font-medium text-sm leading-relaxed">
+                    Складай списки речей, щоб ніколи не забути паспорт чи зарядку.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>

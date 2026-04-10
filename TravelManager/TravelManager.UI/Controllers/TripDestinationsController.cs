@@ -16,9 +16,14 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult Index(int? tripId)
         {
             var destinations = _unitOfWork.TripDestination.GetAll(includeProperties: "Trip");
+
+            if (tripId.HasValue)
+            {
+                destinations = destinations.Where(d => d.TripId == tripId.Value);
+            }
 
             var viewModels = destinations.Select(d => new TripDestinationListViewModel
             {
@@ -30,15 +35,20 @@ namespace TravelManager.UI.Controllers
                 DepartureDate = d.DepartureDate
             }).OrderBy(d => d.ArrivalDate).ToList();
 
+            ViewBag.CurrentTripId = tripId;
+
             return View(viewModels);
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create(int? tripId)
         {
             var model = new TripDestinationFormViewModel
             {
-                TripList = GetTripList()
+                TripId = tripId ?? 0,
+                TripList = GetTripList(),
+                ArrivalDate = DateTime.Now,
+                DepartureDate = DateTime.Now.AddDays(1)
             };
             return View(model);
         }
@@ -67,7 +77,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { tripId = model.TripId });
         }
 
         [HttpGet]
@@ -122,7 +132,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { tripId = entity.TripId });
         }
 
         [HttpPost]
@@ -135,10 +145,11 @@ namespace TravelManager.UI.Controllers
                 return NotFound();
             }
 
+            int? tripId = entity.TripId;
             _unitOfWork.TripDestination.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { tripId = tripId });
         }
 
         private IEnumerable<SelectListItem> GetTripList()

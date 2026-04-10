@@ -4,39 +4,126 @@
     ViewData["Title"] = "Створити список";
 }
 
-<div class="container py-4">
-    <h2 class="mb-4">Створити новий список</h2>
-    <hr />
+<style>
+    @@keyframes fadeSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+        }
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
 
-                        <div class="form-group mb-3">
-                            <label asp-for="TripId" class="form-label fw-bold"></label>
-                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
-                                <option disabled selected>-- Оберіть поїздку --</option>
-                            </select>
-                            <span asp-validation-for="TripId" class="text-danger small"></span>
+    .stagger-item {
+        animation: fadeSlideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+    }
+
+    @@keyframes blob {
+        0% {
+            transform: translate(0px, 0px) scale(1);
+        }
+
+        50% {
+            transform: translate(30px, -50px) scale(1.1);
+        }
+
+        100% {
+            transform: translate(0px, 0px) scale(1);
+        }
+    }
+
+    .animate-blob {
+        animation: blob 8s infinite alternate;
+    }
+
+    @@keyframes shimmer {
+        0% {
+            transform: translateX(-100%) skewX(-15deg);
+        }
+
+        100% {
+            transform: translateX(200%) skewX(-15deg);
+        }
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(6, 182, 212, 0.4);
+        border-radius: 10px;
+    }
+</style>
+
+<div class="relative w-full max-w-3xl mx-auto min-h-[80vh] py-12 z-10 px-4 flex flex-col justify-center overflow-hidden">
+
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply blur-[80px] animate-blob"></div>
+        <div class="absolute bottom-10 right-10 w-72 h-72 bg-blue-400/20 rounded-full mix-blend-multiply blur-[80px] animate-blob" style="animation-delay: 2s;"></div>
+    </div>
+
+    <div class="relative z-20 mb-10 text-center stagger-item" style="animation-delay: 0.1s;">
+        <h1 class="text-5xl md:text-6xl font-black text-slate-800 tracking-tighter drop-shadow-sm pb-2">
+            Новий список 🎒
+        </h1>
+    </div>
+
+    <div class="relative z-20 bg-white/50 backdrop-blur-[40px] border border-white/60 rounded-[3rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] stagger-item" style="animation-delay: 0.2s;">
+        <form asp-action="Create" method="post" id="checklistForm">
+            <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-6 text-sm font-bold text-center bg-rose-100/50 rounded-2xl py-3"></div>
+
+            <div class="space-y-8">
+                <div class="flex flex-col group relative z-50">
+                    <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-blue-500 transition-colors">
+                        <i class="bi bi-airplane-engines text-lg"></i> До якої поїздки готуємось?
+                    </label>
+                    <select asp-for="TripId" asp-items="Model.TripList" class="sr-only real-select"></select>
+
+                    <div class="relative custom-dropdown w-full">
+                        <button type="button" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-lg font-bold text-slate-700 outline-none hover:bg-white/90 transition-all shadow-inner flex justify-between items-center" onclick="toggleDropdown(this)">
+                            <span class="selected-text text-slate-400">-- Оберіть поїздку --</span>
+                            <i class="bi bi-chevron-down text-slate-400 transition-transform"></i>
+                        </button>
+                        <div class="dropdown-menu absolute left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl opacity-0 invisible translate-y-4 transition-all duration-300 overflow-hidden">
+                            <ul class="max-h-56 overflow-y-auto py-2 custom-scrollbar">
+                                <li class="px-6 py-3 text-slate-400 font-bold cursor-pointer hover:bg-slate-50" onclick="selectItem(this, '')">-- Не обрано --</li>
+                                @if (Model.TripList != null)
+                                {
+                                    foreach (var item in Model.TripList)
+                                    {
+                                        <li class="px-6 py-4 text-slate-700 font-bold cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors border-b border-slate-100 last:border-0" onclick="selectItem(this, '@item.Value')">
+                                            <i class="bi bi-compass text-blue-300 mr-2"></i> @item.Text
+                                        </li>
+                                    }
+                                }
+                            </ul>
                         </div>
+                    </div>
+                    <span asp-validation-for="TripId" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
+                </div>
 
-                        <div class="form-group mb-4">
-                            <label asp-for="Title" class="form-label fw-bold"></label>
-                            <input asp-for="Title" class="form-control" placeholder="Наприклад: Аптечка, Документи..." />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-group d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success px-5 shadow-sm">Зберегти</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
-                        </div>
-                    </form>
+                <div class="flex flex-col group relative z-40">
+                    <label asp-for="Title" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-cyan-500 transition-colors flex items-center gap-2">
+                        <i class="bi bi-tag-fill text-lg"></i> Як назвемо список?
+                    </label>
+                    <input asp-for="Title" placeholder="Наприклад: Аптечка, Одяг у гори..." class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-xl font-black text-slate-800 outline-none focus:ring-4 focus:ring-cyan-400/30 focus:border-cyan-400 focus:bg-white/90 hover:bg-white/80 transition-all shadow-inner placeholder:text-slate-300" />
+                    <span asp-validation-for="Title" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
                 </div>
             </div>
-        </div>
+
+            <div class="mt-12 flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-slate-200/50">
+                <a asp-action="Index" class="w-full sm:w-auto px-8 py-4 rounded-full font-black text-slate-400 hover:text-slate-700 hover:bg-white/50 transition-all text-sm uppercase tracking-widest text-center">Скасувати</a>
+                <button type="submit" class="w-full sm:w-auto group relative px-12 py-4 font-black text-white transition-all bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 uppercase tracking-widest text-sm overflow-hidden">
+                    <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                    <span class="relative">Зберегти список ✨</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -44,4 +131,35 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        function toggleDropdown(btn) {
+            const menu = btn.nextElementSibling;
+            const icon = btn.querySelector('.bi-chevron-down');
+            if (menu.classList.contains('opacity-0')) {
+                document.querySelectorAll('.dropdown-menu').forEach(m => { m.classList.add('opacity-0', 'invisible', 'translate-y-4'); });
+                menu.classList.remove('opacity-0', 'invisible', 'translate-y-4');
+                icon.classList.add('rotate-180');
+                btn.parentElement.classList.add('z-[60]');
+            } else {
+                menu.classList.add('opacity-0', 'invisible', 'translate-y-4');
+                icon.classList.remove('rotate-180');
+                setTimeout(() => btn.parentElement.classList.remove('z-[60]'), 300);
+            }
+        }
+        function selectItem(li, val) {
+            const container = li.closest('.custom-dropdown');
+            container.querySelector('.selected-text').innerText = li.innerText.trim();
+            container.querySelector('.selected-text').classList.replace('text-slate-400', 'text-slate-800');
+            const realSelect = container.parentElement.querySelector('.real-select');
+            realSelect.value = val;
+            if (typeof $(realSelect).valid === "function") $(realSelect).valid();
+            toggleDropdown(container.querySelector('button'));
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.custom-dropdown')) {
+                document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.add('opacity-0', 'invisible', 'translate-y-4'));
+                document.querySelectorAll('.bi-chevron-down').forEach(i => i.classList.remove('rotate-180'));
+            }
+        });
+    </script>
 }
