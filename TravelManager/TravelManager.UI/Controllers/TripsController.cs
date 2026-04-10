@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
@@ -7,6 +8,7 @@ using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
 {
+    [Authorize]
     public class TripsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -23,27 +25,20 @@ namespace TravelManager.UI.Controllers
         {
             var currentUserId = _userManager.GetUserId(User);
 
-            if (currentUserId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
             var userTrips = _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip")
-                .Select(tp => tp.Trip)
-                .Distinct() 
-                .Select(t => new TravelManager.UI.Models.ViewModels.TripListViewModel
+                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip,Role")
+                .Select(tp => new TripListViewModel
                 {
-                    Id = t.Id,
-                    Title = t.Title,
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate
+                    Id = tp.Trip.Id,
+                    Title = tp.Trip.Title,
+                    StartDate = tp.Trip.StartDate,
+                    EndDate = tp.Trip.EndDate,
+                    CurrentUserRole = tp.Role?.Name ?? "Member"
                 })
                 .ToList();
 
             return View(userTrips);
         }
-
 
         [HttpGet]
         public IActionResult Create()
@@ -69,6 +64,8 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
+            var currentUserId = _userManager.GetUserId(User);
+
             var newTrip = new Trip
             {
                 Title = model.Title,
@@ -80,13 +77,11 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = model.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
-                CreatorId = _userManager.GetUserId(User) 
+                CreatorId = currentUserId
             };
 
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
-
-            var currentUserId = _userManager.GetUserId(User);
 
             var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Owner")
                             ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
@@ -109,14 +104,22 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (participant?.Role?.Name != "Owner" && participant?.Role?.Name != "Editor")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
+                return RedirectToAction("Details", new { id });
+            }
+
             ModelState.Remove("CreatorId");
             ModelState.Remove("Participants");
             ModelState.Remove("UserList");
+
             var trip = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (trip == null)
-            {
-                return NotFound();
-            }
+            if (trip == null) return NotFound();
 
             var model = new CreateTripViewModel
             {
@@ -138,9 +141,20 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, CreateTripViewModel model)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (participant?.Role?.Name != "Owner" && participant?.Role?.Name != "Editor")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для редагування цієї поїздки.";
+                return RedirectToAction("Details", new { id });
+            }
+
             ModelState.Remove("CreatorId");
             ModelState.Remove("Participants");
             ModelState.Remove("UserList");
+
             if (!ModelState.IsValid)
             {
                 model.UserList = GetUserList();
@@ -148,10 +162,7 @@ namespace TravelManager.UI.Controllers
             }
 
             var tripFromDb = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (tripFromDb == null)
-            {
-                return NotFound();
-            }
+            if (tripFromDb == null) return NotFound();
 
             tripFromDb.Title = model.Title;
             tripFromDb.Description = model.Description;
@@ -172,11 +183,18 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (trip == null)
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (participant?.Role?.Name != "Owner")
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Тільки власник може видалити поїздку.";
+                return RedirectToAction("Details", new { id });
             }
+
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+            if (trip == null) return NotFound();
 
             _unitOfWork.Trip.Remove(trip);
             await _unitOfWork.SaveAsync();
@@ -184,23 +202,16 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private IEnumerable<SelectListItem> GetUserList()
-        {
-            return _userManager.Users.ToList().Select(u => new SelectListItem
-            {
-                Text = u.UserName,
-                Value = u.Id
-            });
-        }
         [HttpGet]
         public IActionResult Details(int id)
         {
             var trip = _unitOfWork.Trip.Get(u => u.Id == id);
             if (trip == null) return NotFound();
 
-            var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == id, includeProperties: "User,Role");
-            var currentUserId = _userManager.GetUserId(User);
+            var participants = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.TripId == id, includeProperties: "User,Role");
 
+            var currentUserId = _userManager.GetUserId(User);
             var currentUserParticipant = participants.FirstOrDefault(p => p.UserId == currentUserId);
             var currentUserRole = currentUserParticipant?.Role?.Name ?? "None";
 
@@ -230,10 +241,21 @@ namespace TravelManager.UI.Controllers
 
             return View(model);
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteParticipant(int tripId, string email, int roleId)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            var currentParticipant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (currentParticipant?.Role?.Name != "Owner" && currentParticipant?.Role?.Name != "Editor")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для запрошення учасників.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
             if (string.IsNullOrEmpty(email))
             {
                 TempData["ErrorMessage"] = "Email не може бути порожнім.";
@@ -247,7 +269,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            // Перевірка, чи він вже не в поїздці
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
 
@@ -257,15 +278,11 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            // Знаходимо роль "Member"
-            var role = _unitOfWork.TripRole.Get(r => r.Name == "Member")
-                       ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
-
             var newParticipant = new TripParticipant
             {
                 TripId = tripId,
                 UserId = userToInvite.Id,
-                RoleId = roleId 
+                RoleId = roleId
             };
 
             _unitOfWork.TripParticipant.Add(newParticipant);
@@ -279,7 +296,18 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveParticipant(int tripId, string userId)
         {
-            var participant = _unitOfWork.TripParticipant.Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
+            var currentUserId = _userManager.GetUserId(User);
+            var currentParticipant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (currentParticipant?.Role?.Name != "Owner" && currentParticipant?.Role?.Name != "Editor")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для видалення учасників.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
 
             if (participant == null) return NotFound();
 
@@ -295,24 +323,26 @@ namespace TravelManager.UI.Controllers
             TempData["SuccessMessage"] = "Учасника успішно видалено з поїздки.";
             return RedirectToAction("Details", new { id = tripId });
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateParticipantRole(int tripId, string userId, int roleId)
         {
             var currentUserId = _userManager.GetUserId(User);
-            var currentUserParticipant = _unitOfWork.TripParticipant.Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
+            var currentUserParticipant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
 
-            // Перевірка прав (тільки Owner або Editor може змінювати ролі)
             if (currentUserParticipant?.Role?.Name != "Owner" && currentUserParticipant?.Role?.Name != "Editor")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для зміни ролей.";
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            var participantToUpdate = _unitOfWork.TripParticipant.Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
+            var participantToUpdate = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
+
             if (participantToUpdate == null) return NotFound();
 
-            // Заборона змінювати роль власника (Owner), щоб випадково не залишити поїздку без керівника
             if (participantToUpdate.Role?.Name == "Owner" && roleId != participantToUpdate.RoleId)
             {
                 TempData["ErrorMessage"] = "Неможливо змінити роль Власника напряму.";
@@ -326,5 +356,13 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction("Details", new { id = tripId });
         }
 
+        private IEnumerable<SelectListItem> GetUserList()
+        {
+            return _userManager.Users.ToList().Select(u => new SelectListItem
+            {
+                Text = u.UserName,
+                Value = u.Id
+            });
+        }
     }
 }

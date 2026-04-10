@@ -1,19 +1,47 @@
-﻿@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
+﻿@* 📄 TravelManager/TravelManager.UI/Views/Trips/Details.cshtml *@
+
+@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
 
 @{
     ViewData["Title"] = Model.Title;
+    var currentUserRole = ViewBag.CurrentUserRole as string ?? "None";
+    bool canManage = currentUserRole == "Owner" || currentUserRole == "Editor";
+    bool isOwner = currentUserRole == "Owner";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>@Model.Title</h2>
-        <div>
-            <!-- Кнопка створення витрати передає tripId -->
-            <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Id" class="btn btn-success me-2">
+        <div class="d-flex gap-2">
+
+            @* Додати витрату — доступно всім учасникам *@
+            <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Id" class="btn btn-success">
                 <i class="bi bi-cash"></i> Додати витрату
             </a>
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Редагувати</a>
-            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+
+            @* Редагувати — тільки Owner або Editor *@
+            @if (canManage)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Редагувати
+                </a>
+            }
+
+            @* Видалити — тільки Owner *@
+            @if (isOwner)
+            {
+                <form asp-action="Delete" method="post" class="d-inline"
+                      onsubmit="return confirm('Ви впевнені, що хочете видалити цю поїздку?');">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Видалити
+                    </button>
+                </form>
+            }
+
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Назад
+            </a>
         </div>
     </div>
 
@@ -33,17 +61,23 @@
     }
 
     <div class="row">
-        <!-- ІНФОРМАЦІЯ ПРО ПОЇЗДКУ -->
+        @* ІНФОРМАЦІЯ ПРО ПОЇЗДКУ *@
         <div class="col-md-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <p><strong>Опис:</strong> @Model.Description</p>
-                    <p><strong>Дати:</strong> @Model.StartDate.ToShortDateString() - @Model.EndDate.ToShortDateString()</p>
+                    <p><strong>Дати:</strong> @Model.StartDate.ToShortDateString() — @Model.EndDate.ToShortDateString()</p>
                 </div>
+            </div>
+
+            @* Роль поточного юзера — підказка *@
+            <div class="alert alert-info py-2">
+                <i class="bi bi-person-badge"></i>
+                Ваша роль у цій поїздці: <strong>@currentUserRole</strong>
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ УЧАСНИКІВ -->
+        @* ПАНЕЛЬ УЧАСНИКІВ *@
         <div class="col-md-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -60,14 +94,15 @@
                                 <div class="w-100">
                                     <span class="d-block fw-bold">@p.UserName</span>
 
-                                    @if (p.Role != "Owner" && (ViewBag.CurrentUserRole == "Owner" || ViewBag.CurrentUserRole == "Editor"))
+                                    @* Зміна ролі — тільки для не-Owner учасників, якщо є права *@
+                                    @if (p.Role != "Owner" && canManage)
                                     {
-                                        <!-- ФОРМА ЗМІНИ РОЛІ ІСНУЮЧОГО УЧАСНИКА -->
                                         <form asp-action="UpdateParticipantRole" method="post" class="mt-1 d-flex">
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="tripId" value="@Model.Id" />
                                             <input type="hidden" name="userId" value="@p.UserId" />
-                                            <!-- onchange="this.form.submit()" відправляє форму одразу при виборі нового пункту -->
-                                            <select name="roleId" class="form-select form-select-sm" style="max-width: 150px;" onchange="this.form.submit()">
+                                            <select name="roleId" class="form-select form-select-sm"
+                                                    style="max-width: 150px;" onchange="this.form.submit()">
                                                 @foreach (var role in ViewBag.AvailableRoles)
                                                 {
                                                     if (role.Text == p.Role)
@@ -84,16 +119,29 @@
                                     }
                                     else
                                     {
-                                        <!-- ПРОСТИЙ ТЕКСТ ДЛЯ ЗВИЧАЙНИХ УЧАСНИКІВ АБО ВЛАСНИКА -->
-                                        <small class="text-muted">@p.Role</small>
+                                        @* Роль як текст — для Owner або якщо немає прав *@
+                                        <small class="text-muted">
+                                            @if (p.Role == "Owner")
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-star-fill"></i> @p.Role
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @p.Role
+                                            }
+                                        </small>
                                     }
                                 </div>
                             </div>
 
-                            <!-- Кнопка видалення (якщо це не Owner і є права) -->
-                            @if (p.Role != "Owner" && (ViewBag.CurrentUserRole == "Owner" || ViewBag.CurrentUserRole == "Editor"))
+                            @* Кнопка видалення — тільки не-Owner учасники, якщо є права *@
+                            @if (p.Role != "Owner" && canManage)
                             {
-                                <form asp-action="RemoveParticipant" method="post" class="ms-2" onsubmit="return confirm('Видалити цього учасника?');">
+                                <form asp-action="RemoveParticipant" method="post" class="ms-2"
+                                      onsubmit="return confirm('Видалити цього учасника?');">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="tripId" value="@Model.Id" />
                                     <input type="hidden" name="userId" value="@p.UserId" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0">
@@ -105,35 +153,38 @@
                     }
                 </ul>
 
-                <!-- ФОРМА ЗАПРОШЕННЯ (Видна тільки для Owner/Editor) -->
-                @if (ViewBag.CurrentUserRole == "Organizer" || ViewBag.CurrentUserRole == "Editor")
+                @* ФОРМА ЗАПРОШЕННЯ — виправлено: було "Organizer", тепер "Owner" *@
+                @if (canManage)
                 {
                     <div class="card-body bg-light border-top">
-                        <h6 class="mb-2">Додати учасника</h6>
+                        <h6 class="mb-2"><i class="bi bi-person-plus"></i> Додати учасника</h6>
                         <form asp-action="InviteParticipant" method="post">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="tripId" value="@Model.Id" />
 
                             <div class="mb-2">
-                                <input type="email" name="email" class="form-control form-control-sm" placeholder="Email користувача" required>
+                                <input type="email" name="email" class="form-control form-control-sm"
+                                       placeholder="Email користувача" required />
                             </div>
 
                             <div class="input-group">
-                                <!-- ВИПАДАЮЧИЙ СПИСОК РОЛЕЙ ПРИ ЗАПРОШЕННІ -->
                                 <select name="roleId" class="form-select form-select-sm">
                                     @foreach (var role in ViewBag.AvailableRoles)
                                     {
-                                        <option value="@role.Value">@role.Text</option>
+                                        @* Owner не можна призначити при запрошенні *@
+                                        if (role.Text != "Owner")
+                                        {
+                                            <option value="@role.Value">@role.Text</option>
+                                        }
                                     }
                                 </select>
-                                <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-person-plus"></i> Додати</button>
+                                <button class="btn btn-primary btn-sm" type="submit">
+                                    <i class="bi bi-person-plus"></i> Додати
+                                </button>
                             </div>
                         </form>
                     </div>
                 }
-            </div>
-        </div>
-        </div>
-
             </div>
         </div>
     </div>

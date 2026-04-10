@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@* 📄 TravelManager/TravelManager.UI/Views/Shared/_Layout.cshtml *@
+
+@using Microsoft.AspNetCore.Identity
 @using TravelManager.Domain.Entities
 @inject UserManager<User> UserManager
 
@@ -56,70 +58,124 @@
         .animate-compass {
             animation: compassSpin 20s linear infinite;
         }
+
+        .nav-link-pill {
+            transition: all 0.2s ease;
+            border-radius: 9999px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+            .nav-link-pill:hover {
+                background: rgba(99, 102, 241, 0.08);
+                color: #4f46e5;
+            }
+
+            .nav-link-pill.admin-link {
+                color: #dc2626;
+            }
+
+                .nav-link-pill.admin-link:hover {
+                    background: rgba(220, 38, 38, 0.08);
+                    color: #b91c1c;
+                }
     </style>
 </head>
 
 <body class="perfect-light-bg flex flex-col min-h-screen font-sans text-slate-800 antialiased selection:bg-blue-200">
 
-    <header class="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-        <nav class="pointer-events-auto bg-white/40 backdrop-blur-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-full px-6 py-3 flex items-center justify-between gap-6 transition-all hover:bg-white/60 hover:shadow-lg w-full max-w-5xl">
+    <header class="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <nav class="pointer-events-auto bg-white/60 backdrop-blur-3xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full px-5 py-2.5 flex items-center justify-between gap-4 transition-all hover:bg-white/70 hover:shadow-lg w-full max-w-6xl">
 
-            <a class="text-xl md:text-2xl font-black flex items-center gap-3 hover:opacity-80 transition-opacity duration-300 flex-shrink-0" asp-area="" asp-controller="Home" asp-action="Index">
-                <div class="relative w-10 h-10 group overflow-hidden rounded-full border border-blue-100 shadow-inner flex items-center justify-center">
-                    <span class="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-emerald-100/50 opacity-50"></span>
-                    <i class="bi bi-compass text-2xl text-blue-600 drop-shadow-md animate-compass transition-transform duration-500 group-hover:scale-110"></i>
-                    <div class="absolute -inset-1 bg-gradient-to-b from-white/30 via-transparent to-black/10 rounded-full blur-sm"></div>
+            @* Логотип *@
+            <a class="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
+               asp-area="" asp-controller="Home" asp-action="Index">
+                <div class="relative w-9 h-9 overflow-hidden rounded-full border border-blue-100 shadow-inner flex items-center justify-center bg-gradient-to-br from-blue-50 to-emerald-50">
+                    <i class="bi bi-compass text-xl text-blue-600 drop-shadow-md animate-compass"></i>
                 </div>
+                <span class="font-black text-slate-800 text-base hidden md:block tracking-tight">TravelManager</span>
+            </a>
 
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-4">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-airplane-engines-fill"></i> TravelManager
+            @* Навігація — центр *@
+            <div class="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-grow justify-center">
+                <a class="nav-link-pill" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house-fill me-1"></i>Головна
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Головна</a></li>
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Trips" asp-action="Index">Поїздки</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripDestinations" asp-action="Index">Маршрути</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Checklists" asp-action="Index">Списки речей</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Expenses" asp-action="Index">Витрати</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Transits" asp-action="Index">Транспорт</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="Accommodations" asp-action="Index">Проживання</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="TripActivities" asp-action="Index">Активності</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-area="" asp-controller="ExpenseSplits" asp-action="Index">Розподіл витрат</a></li>
-                        }
-                    </ul>
-                    
-                    <div class="d-flex align-items-center">
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            var currentUser = await UserManager.GetUserAsync(User);
-                            if (currentUser?.ProfilePicture != null)
-                            {
-                                var base64 = Convert.ToBase64String(currentUser.ProfilePicture);
-                                var imgSrc = String.Format("data:image/jpeg;base64,{0}", base64);
-                                <img src="@imgSrc" alt="Avatar" class="rounded-circle border me-2" style="width: 35px; height: 35px; object-fit:cover;" />
-                            }
-                            else
-                            {
-                                <i class="bi bi-person-circle text-muted fs-4 me-2"></i>
-                            }
-                        }
-                        <partial name="_LoginPartial" />
-                    </div>
-                </div>
+
+                @if (User.Identity!.IsAuthenticated)
+                {
+                    <a class="nav-link-pill" asp-controller="Trips" asp-action="Index">
+                        <i class="bi bi-airplane-fill me-1"></i>Поїздки
+                    </a>
+                    <a class="nav-link-pill" asp-controller="TripDestinations" asp-action="Index">
+                        <i class="bi bi-map-fill me-1"></i>Маршрути
+                    </a>
+                    <a class="nav-link-pill" asp-controller="Checklists" asp-action="Index">
+                        <i class="bi bi-list-check me-1"></i>Списки
+                    </a>
+                    <a class="nav-link-pill" asp-controller="Expenses" asp-action="Index">
+                        <i class="bi bi-cash-stack me-1"></i>Витрати
+                    </a>
+                    <a class="nav-link-pill" asp-controller="Transits" asp-action="Index">
+                        <i class="bi bi-train-front-fill me-1"></i>Транспорт
+                    </a>
+                    <a class="nav-link-pill" asp-controller="Accommodations" asp-action="Index">
+                        <i class="bi bi-building me-1"></i>Проживання
+                    </a>
+                    <a class="nav-link-pill" asp-controller="TripActivities" asp-action="Index">
+                        <i class="bi bi-bicycle me-1"></i>Активності
+                    </a>
+                    <a class="nav-link-pill" asp-controller="ExpenseSplits" asp-action="Index">
+                        <i class="bi bi-pie-chart-fill me-1"></i>Розподіл
+                    </a>
+
+                    @* Посилання адміна — тільки для ролі Admin *@
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a class="nav-link-pill admin-link" asp-controller="Admin" asp-action="AdminDashboard">
+                            <i class="bi bi-shield-lock-fill me-1"></i>Адмін
+                        </a>
+                    }
+                }
             </div>
+
+            @* Права частина — аватар + логін/логаут *@
+            <div class="flex items-center gap-3 flex-shrink-0">
+                @if (User.Identity!.IsAuthenticated)
+                {
+                    var currentUser = await UserManager.GetUserAsync(User);
+
+                    @* Посилання на профіль з аватаром *@
+                    <a asp-controller="Account" asp-action="Profile"
+                       class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                        @if (currentUser?.ProfilePicture != null)
+                        {
+                            var base64 = Convert.ToBase64String(currentUser.ProfilePicture);
+                            var imgSrc = $"data:image/jpeg;base64,{base64}";
+                            <img src="@imgSrc" alt="Avatar"
+                                 class="w-9 h-9 rounded-full border-2 border-white shadow object-cover" />
+                        }
+                        else
+                        {
+                            <div class="w-9 h-9 rounded-full border-2 border-slate-200 bg-slate-100 flex items-center justify-center shadow">
+                                <i class="bi bi-person-fill text-slate-400 text-lg"></i>
+                            </div>
+                        }
+                        <span class="text-xs font-bold text-slate-600 hidden md:block">
+                            @(currentUser?.FirstName ?? currentUser?.UserName ?? "Профіль")
+                        </span>
+                    </a>
+                }
+                <partial name="_LoginPartial" />
+            </div>
+
         </nav>
     </header>
 
-    <main role="main" class="flex-grow container mx-auto px-4 pt-36 pb-16 max-w-7xl relative z-0">
+    <main role="main" class="flex-grow container mx-auto px-4 pt-32 pb-16 max-w-7xl relative z-0">
         @RenderBody()
     </main>
 

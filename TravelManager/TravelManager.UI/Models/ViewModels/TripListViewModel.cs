@@ -10,5 +10,6 @@ namespace TravelManager.UI.Models.ViewModels
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string StatusName { get; set; }
+        public string CurrentUserRole { get; set; } = "Member";
     }
 }
