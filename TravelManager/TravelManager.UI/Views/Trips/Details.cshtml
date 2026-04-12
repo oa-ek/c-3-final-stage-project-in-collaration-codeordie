@@ -2,236 +2,482 @@
 
 @{
     ViewData["Title"] = "План: " + Model.Trip.Title;
+    var daysLeft = (Model.Trip.StartDate - DateTime.Today).Days;
+    var isActive = DateTime.Today >= Model.Trip.StartDate && DateTime.Today <= Model.Trip.EndDate;
+    var isPast = DateTime.Today > Model.Trip.EndDate;
+    var duration = (Model.Trip.EndDate - Model.Trip.StartDate).Days;
+
+    // ── Бюджет (Винесено сюди для безпеки компіляції) ──
+    decimal totalBudget = 0;
+    string baseCurr = Model.Trip.BaseCurrency ?? "UAH";
+    decimal usdRate = 43.83m, eurRate = 50.88m, plnRate = 11.10m, gbpRate = 59.50m;
+
+    if (Model.Expenses != null)
+    {
+        foreach (var exp in Model.Expenses)
+        {
+            decimal amt = exp.TotalAmount;
+            if (exp.Currency != baseCurr && baseCurr == "UAH")
+            {
+                if (exp.Currency == "USD") amt *= usdRate;
+                else if (exp.Currency == "EUR") amt *= eurRate;
+                else if (exp.Currency == "PLN") amt *= plnRate;
+                else if (exp.Currency == "GBP") amt *= gbpRate;
+            }
+            totalBudget += amt;
+        }
+    }
 }
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<div class="container py-4">
-    <div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden">
-        <div class="card-body p-4">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="display-5 fw-bold mb-1">@Model.Trip.Title</h1>
-                    <p class="lead opacity-75 mb-3">@Model.Trip.Description</p>
-                    <div class="d-flex flex-wrap gap-3 small mt-3">
-                        <span class="badge bg-white text-primary px-3 py-2 border-0">Статус: @Model.Trip.Status?.Name</span>
-                        @{
-                            var daysLeft = (Model.Trip.StartDate - DateTime.Today).Days;
-                            if (daysLeft > 0)
-                            {
-                                <span class="badge bg-warning text-dark px-3 py-2 border-0">⏳ До поїздки: @daysLeft днів</span>
-                            }
-                            else if (daysLeft == 0)
-                            {
-                                <span class="badge bg-danger px-3 py-2 border-0">🚀 Поїздка сьогодні!</span>
-                            }
-                        }
-                        <span class="bg-light text-dark px-2 py-1 rounded"><i class="bi bi-calendar"></i> @Model.Trip.StartDate.ToShortDateString() — @Model.Trip.EndDate.ToShortDateString()</span>
-                        <span class="bg-light text-dark px-2 py-1 rounded"><i class="bi bi-geo-alt"></i> @Model.Trip.DepartureLocation → @Model.Trip.ReturnLocation</span>
-                    </div>
-                </div>
-                <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                    <div class="btn-group">
-                        <a asp-action="Edit" asp-route-id="@Model.Trip.Id" class="btn btn-light shadow-sm">Редагувати</a>
-                        <a asp-action="Index" class="btn btn-outline-light">Усі поїздки</a>
-                    </div>
-                </div>
+<style>
+    body { background: #eef4f9; margin: 0; padding: 0; }
+
+    .det-root {
+        font-family: 'Inter', sans-serif;
+        background: #eef4f9;
+        min-height: 100vh;
+        padding-bottom: 5rem;
+        /* Додано відступ зверху, щоб плашка не прилипала до верху вікна */
+        padding-top: 2rem; 
+    }
+
+    @@keyframes fadeUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,.5); }
+        50%      { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+    }
+
+    /* ════ ОСЬ ВІН: СКЛЯНИЙ СИНІЙ ЗАОКРУГЛЕНИЙ КВАДРАТ (HERO) ════ */
+    .hero-glass-card {
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(30, 27, 75, 0.85) 100%);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 32px; /* Сильне заокруглення */
+        padding: 3rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp .5s ease both;
+    }
+    
+    .hero-dots {
+        position: absolute; inset: 0; opacity: 0.04;
+        background-image: radial-gradient(circle,#fff 1px,transparent 1px);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Кнопка "Назад" */
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 50px;
+        font-size: 0.85rem; font-weight: 600;
+        text-decoration: none;
+        margin-bottom: 2rem;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+    .btn-back:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(-3px); color: white; }
+
+    /* Головний заголовок */
+    .trip-main-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(3rem, 6vw, 4.5rem);
+        font-weight: 900;
+        color: white;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Інфо-бейджі (В процесі, Дати, Маршрут) */
+    .info-pills-row {
+        display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
+    }
+    .info-pill {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 50px;
+        padding: 0.5rem 1.2rem;
+        font-size: 0.8rem; font-weight: 700; color: white;
+        backdrop-filter: blur(10px);
+    }
+    .info-pill.active-status {
+        background: rgba(16, 185, 129, 0.2);
+        border-color: rgba(16, 185, 129, 0.4);
+    }
+    .info-pill.past-status { background: rgba(148, 163, 184, 0.2); border-color: rgba(148, 163, 184, 0.4); }
+    .info-pill i { opacity: 0.8; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+    /* Навігаційні кнопки меню */
+    .nav-buttons-row {
+        display: flex; flex-wrap: wrap; gap: 0.8rem;
+    }
+    .nav-btn {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        background: white;
+        color: #0f172a;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800; font-size: 0.85rem;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        border: none; cursor: pointer;
+    }
+    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,255,255,0.2); color: #0f172a; }
+    
+    .nav-btn.active { background: #10b981; color: white; box-shadow: 0 4px 20px rgba(16,185,129,0.4); }
+    .nav-btn.active:hover { color: white; box-shadow: 0 6px 25px rgba(16,185,129,0.6); }
+    
+    .nav-btn.ghost { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; box-shadow: none; }
+    .nav-btn.ghost:hover { background: rgba(255,255,255,0.2); color: white; }
+
+    /* ════ BODY СЕКЦІЯ (Картки внизу) ════ */
+    .content-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0;
+        position: relative;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: 1fr 380px; 
+        gap: 1.5rem;
+        align-items: start;
+    }
+    @@media(max-width:900px) { .content-container { grid-template-columns: 1fr; } }
+
+    /* ── Світла Скляна Картка (Маршрут, тощо) ── */
+    .light-glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 1);
+        border-radius: 24px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        animation: fadeUp .6s ease both;
+    }
+    .light-glass-card:hover { box-shadow: 0 16px 45px rgba(0, 0, 0, 0.08); }
+
+    .card-header {
+        padding: 1.5rem 1.8rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-header-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.1rem; font-weight: 800; color: #0f172a;
+        display: flex; align-items: center; gap: 0.6rem;
+    }
+    .icon-box {
+        width: 36px; height: 36px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .btn-add-small {
+        background: rgba(0, 0, 0, 0.04); color: #475569;
+        font-family: 'Montserrat', sans-serif; font-size: 0.75rem; font-weight: 700;
+        padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; transition: all .2s;
+    }
+    .btn-add-small:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #0f172a; }
+
+    /* Таблиця */
+    .clean-table { width: 100%; border-collapse: collapse; }
+    .clean-table th {
+        padding: 1rem 1.8rem; text-align: left;
+        font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
+    }
+    .clean-table td { padding: 1.2rem 1.8rem; font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .clean-table tr:last-child td { border-bottom: none; }
+
+    /* ── Темна Скляна Картка (Бюджет) ── */
+    .dark-glass-card {
+        background: rgba(30, 30, 30, 0.85);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+        animation: fadeUp .6s ease both;
+    }
+    .budget-amount {
+        font-family: 'Montserrat', sans-serif; font-size: 2.8rem; font-weight: 900;
+        line-height: 1; margin: 1rem 0 0.5rem; letter-spacing: -0.02em;
+    }
+
+    /* Інші елементи */
+    #map { height: 350px; width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
+    
+    .list-item-card {
+        border: 1px solid rgba(0,0,0,0.05); border-radius: 16px; padding: 1.2rem;
+        background: rgba(255,255,255,0.6); margin-bottom: 0.8rem; transition: all .3s;
+    }
+    .list-item-card:hover { background: white; border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px); }
+</style>
+
+<div class="det-root">
+
+    <div class="hero-glass-card">
+        <div class="hero-dots"></div>
+        <div class="hero-content">
+            
+            <a asp-action="Index" class="btn-back">
+                <i class="bi bi-arrow-left"></i> До всіх поїздок
+            </a>
+
+            <h1 class="trip-main-title">@Model.Trip.Title</h1>
+
+            <div class="info-pills-row">
+                @if (isActive)
+                {
+                    <span class="info-pill active-status">
+                        <span class="status-dot"></span> В процесі
+                    </span>
+                }
+                else if (isPast)
+                {
+                    <span class="info-pill past-status"><i class="bi bi-check-circle"></i> Завершено</span>
+                }
+                else
+                {
+                    <span class="info-pill"><i class="bi bi-clock"></i> @(daysLeft > 0 ? $"Через {daysLeft} днів" : "Сьогодні!")</span>
+                }
+                <span class="info-pill"><i class="bi bi-calendar3"></i> @Model.Trip.StartDate.ToString("dd MMM") — @Model.Trip.EndDate.ToString("dd MMM yyyy")</span>
+                @if (!string.IsNullOrEmpty(Model.Trip.DepartureLocation))
+                {
+                    <span class="info-pill"><i class="bi bi-geo-alt"></i> @Model.Trip.DepartureLocation → @Model.Trip.ReturnLocation</span>
+                }
+                <span class="info-pill"><i class="bi bi-currency-exchange"></i> @Model.Trip.BaseCurrency</span>
             </div>
+
+            <div class="nav-buttons-row">
+                <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn active"><i class="bi bi-cash-coin"></i> Витрата</a>
+                <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-building"></i> Житло</a>
+                <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-airplane"></i> Транзит</a>
+                <a asp-controller="TripActivities" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-lightning"></i> Активність</a>
+                <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-geo-alt"></i> Місто</a>
+                <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-check2-square"></i> Чекліст</a>
+                <a asp-action="Edit" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-pencil"></i> Редагувати</a>
+            </div>
+
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-primary">📍 Маршрут</h5>
-                    <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-primary">+ Додати місто</a>
+    <div class="content-container">
+
+        <div>
+            <div class="light-glass-card" style="animation-delay: 0.1s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #3b82f6;"><i class="bi bi-geo-alt-fill"></i></div>
+                        Маршрут
+                    </div>
+                    <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Місто</a>
                 </div>
-                <div class="card-body p-0">
-                    @if (!Model.Destinations.Any())
-                    {
-                        <div class="text-center py-4 text-muted fst-italic">Міста ще не додані.</div>
-                    }
-                    else
-                    {
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
+                @if (!Model.Destinations.Any())
+                {
+                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem;">Міста ще не додані.</div>
+                }
+                else
+                {
+                    <table class="clean-table">
+                        <thead>
+                            <tr>
+                                <th>Місто</th>
+                                <th>Прибуття</th>
+                                <th>Відбуття</th>
+                                <th style="text-align:right;">Дії</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.Destinations)
+                            {
                                 <tr>
-                                    <th class="ps-4">Місто</th>
-                                    <th>Прибуття</th>
-                                    <th>Відбуття</th>
-                                    <th class="text-end pe-4">Дії</th>
+                                    <td style="font-weight:800; color:#111827;">@d.CityName, @d.Country</td>
+                                    <td>@d.ArrivalDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@d.DepartureDate.ToString("dd.MM.yyyy")</td>
+                                    <td style="text-align:right;">
+                                        <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" style="color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var d in Model.Destinations)
-                                {
-                                    <tr>
-                                        <td class="ps-4 fw-bold">@d.CityName, @d.Country</td>
-                                        <td>@d.ArrivalDate.ToShortDateString()</td>
-                                        <td>@d.DepartureDate.ToShortDateString()</td>
-                                        <td class="text-end pe-4">
-                                            <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" class="btn btn-sm btn-link">⚙️</a>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                </div>
+                            }
+                        </tbody>
+                    </table>
+                }
             </div>
 
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-success">🏠 Житло</h5>
-                    <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-success">+ Забронювати</a>
+            <div class="light-glass-card" style="animation-delay: 0.2s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #f59e0b;"><i class="bi bi-map"></i></div>
+                        Карта подорожі
+                    </div>
                 </div>
-                <div class="card-body">
-                    @if (!Model.Accommodations.Any())
-                    {
-                        <p class="text-muted fst-italic mb-0">Дані про житло відсутні.</p>
-                    }
-                    else
-                    {
-                        <div class="row row-cols-1 row-cols-md-2 g-3">
-                            @foreach (var a in Model.Accommodations)
-                            {
-                                <div class="col">
-                                    <div class="p-3 border rounded h-100 bg-light shadow-sm">
-                                        <h6 class="fw-bold mb-1">@a.Name</h6>
-                                        <p class="small text-muted mb-2">@a.Address</p>
-                                        <div class="d-flex justify-content-between mt-2">
-                                            <span class="small fw-bold">Заїзд: @a.CheckInTime.ToShortDateString()</span>
-                                            <a asp-controller="Accommodations" asp-action="Edit" asp-route-id="@a.Id" class="small text-decoration-none">Редагувати</a>
-                                        </div>
+                <div id="map"></div>
+            </div>
+
+            <div class="light-glass-card" style="animation-delay: 0.3s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #8b5cf6;"><i class="bi bi-airplane-fill"></i></div>
+                        Транспорт
+                    </div>
+                    <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Квиток</a>
+                </div>
+                @if (!Model.Transits.Any())
+                {
+                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem;">Квитки відсутні.</div>
+                }
+                else
+                {
+                    <div style="padding: 0.5rem 0;">
+                        @foreach (var t in Model.Transits)
+                        {
+                            <div style="display:flex; align-items:center; gap:1rem; padding:1.2rem 1.8rem; border-bottom:1px solid rgba(0,0,0,0.04);">
+                                <div style="width:44px; height:44px; border-radius:14px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                                    @(t.TransitType?.Name switch { "Поїзд" => "🚄", "Автобус" => "🚌", "Корабель" => "🚢", "Авто" => "🚗", _ => "✈️" })
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-weight:800; color:#111827; font-size:1.05rem;">@t.DepartureLocation → @t.ArrivalLocation</div>
+                                    <div style="font-size:.85rem; color:#64748b; margin-top:.2rem;">
+                                        @t.TransitType?.Name · @t.DepartureTime.ToString("dd.MM.yyyy HH:mm")
                                     </div>
                                 </div>
-                            }
-                        </div>
-                    }
-                </div>
+                                @if (!string.IsNullOrEmpty(t.BookingReference))
+                                {
+                                    <span style="font-size:.75rem; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:50px; padding:.3rem .8rem; color:#475569; font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                        Квиток: @t.BookingReference
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </div>
+            
+            @if (!string.IsNullOrEmpty(Model.Trip.Description))
+            {
+                <div class="light-glass-card" style="animation-delay: 0.4s;">
+                    <div class="card-header">
+                        <div class="card-header-title">
+                            <div class="icon-box" style="background: #10b981;"><i class="bi bi-card-text"></i></div>
+                            Опис
+                        </div>
+                    </div>
+                    <div style="padding:1.8rem; color:#475569; line-height:1.6;">
+                        @Model.Trip.Description
+                    </div>
+                </div>
+            }
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 mb-4 overflow-hidden">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold text-danger"><i class="bi bi-map"></i> Карта подорожі</h5>
+        <div>
+            <div class="dark-glass-card" style="animation-delay: 0.1s;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.75rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.6);">Загальний бюджет</div>
+                    <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id"
+                       style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:0.4rem 1rem; color:white; text-decoration:none; font-size:0.75rem; font-weight:700; transition:all 0.2s;">
+                        + Витрата
+                    </a>
                 </div>
-                <div class="card-body p-0">
-                    <div id="map" style="height: 350px; width: 100%; z-index: 1;"></div>
-                </div>
+                <div class="budget-amount">@totalBudget.ToString("N0") @baseCurr</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5);">@Model.Expenses.Count() витрат · з конвертацією</div>
             </div>
 
-            @{
-                // ВИПРАВЛЕНО НА DECIMAL
-                decimal totalBudget = 0;
-                decimal usdRate = 43.83m;
-                decimal eurRate = 50.88m;
-                decimal plnRate = 11.10m;
-                decimal gbpRate = 59.50m;
-
-                string baseCurr = Model.Trip.BaseCurrency ?? "UAH";
-
-                foreach (var exp in Model.Expenses)
-                {
-                    decimal amount = exp.TotalAmount;
-
-                    if (exp.Currency != baseCurr)
-                    {
-                        if (baseCurr == "UAH")
-                        {
-                            if (exp.Currency == "USD") amount *= usdRate;
-                            else if (exp.Currency == "EUR") amount *= eurRate;
-                            else if (exp.Currency == "PLN") amount *= plnRate;
-                            else if (exp.Currency == "GBP") amount *= gbpRate;
-                        }
-                        else if (baseCurr == "USD")
-                        {
-                            if (exp.Currency == "UAH") amount /= usdRate;
-                            else if (exp.Currency == "EUR") amount *= (eurRate / usdRate);
-                        }
-                        else if (baseCurr == "EUR")
-                        {
-                            if (exp.Currency == "UAH") amount /= eurRate;
-                            else if (exp.Currency == "USD") amount *= (usdRate / eurRate);
-                        }
-                    }
-                    totalBudget += amount;
-                }
-            }
-
-            <div class="card shadow-sm border-0 mb-4 bg-light border-start border-4 border-danger">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-wallet2"></i> Бюджет</h5>
-                        <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-danger">+ Витрата</a>
+            <div class="light-glass-card" style="animation-delay: 0.2s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #14b8a6;"><i class="bi bi-building"></i></div>
+                        Житло
                     </div>
-                    <h3 class="fw-bold mb-0 text-danger">
-                        @totalBudget.ToString("N2") @baseCurr
-                    </h3>
-                    <small class="text-muted">Загальна сума (з конвертацією)</small>
+                    <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
                 </div>
-            </div>
-
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-info">✈️ Транспорт</h5>
-                    <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-info">+ Квиток</a>
-                </div>
-                <div class="card-body p-0">
-                    @if (!Model.Transits.Any())
+                <div style="padding:1.5rem;">
+                    @if (!Model.Accommodations.Any())
                     {
-                        <p class="text-muted small p-3 mb-0">Квитки відсутні.</p>
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Житло ще не додано.</div>
                     }
                     else
                     {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var t in Model.Transits)
-                            {
-                                <li class="list-group-item py-3">
-                                    <div class="fw-bold">@t.DepartureLocation → @t.ArrivalLocation</div>
-                                    <div class="small text-muted">@t.TransitType?.Name | @t.DepartureTime.ToShortDateString()</div>
-                                    <div class="badge bg-light text-dark border mt-1">🎫 @t.BookingReference</div>
-                                </li>
-                            }
-                        </ul>
+                        @foreach (var a in Model.Accommodations)
+                        {
+                            <div class="list-item-card">
+                                <div style="font-family:'Montserrat'; font-weight:800; color:#111827; font-size:1.05rem; margin-bottom:.2rem;">@a.Name</div>
+                                <div style="font-size:.85rem; color:#64748b; margin-bottom:.8rem;">@a.Address</div>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:.8rem; font-weight:700; color:#475569;">📅 @a.CheckInTime.ToString("dd.MM.yyyy")</span>
+                                    <a asp-controller="Accommodations" asp-action="Edit" asp-route-id="@a.Id" style="font-size:.8rem; color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                </div>
+                            </div>
+                        }
                     }
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">📝 Списки речей</h5>
-                    <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn btn-sm btn-outline-light">+ Новий</a>
+            <div class="light-glass-card" style="animation-delay: 0.3s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #64748b;"><i class="bi bi-check2-square"></i></div>
+                        Списки речей
+                    </div>
+                    <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Новий</a>
                 </div>
-                <div class="card-body">
+                <div style="padding:1.5rem;">
                     @if (!Model.Checklists.Any())
                     {
-                        <p class="text-muted small mb-0 fst-italic">Списків ще немає.</p>
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Списків ще немає.</div>
                     }
                     else
                     {
                         @foreach (var c in Model.Checklists)
                         {
-                            int totalItems = c.Items?.Count() ?? 0;
-                            int checkedItems = c.Items?.Count(i => i.IsChecked) ?? 0;
-                            int percent = totalItems > 0 ? (int)Math.Round((double)checkedItems / totalItems * 100) : 0;
+                            int total = c.Items?.Count() ?? 0;
+                            int checked_ = c.Items?.Count(i => i.IsChecked) ?? 0;
+                            int pct = total > 0 ? (int)Math.Round((double)checked_ / total * 100) : 0;
 
-                            <a asp-controller="Checklists" asp-action="Details" asp-route-id="@c.Id" class="text-decoration-none d-block border rounded shadow-sm mb-3 p-3 text-dark bg-white custom-hover">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-bold">@c.Title</span>
-                                    <span class="badge bg-secondary">@checkedItems / @totalItems</span>
+                            <a asp-controller="Checklists" asp-action="Details" asp-route-id="@c.Id" style="display:block; text-decoration:none;" class="list-item-card">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-family:'Montserrat'; font-weight:700; font-size:.95rem; color:#0f172a;">@c.Title</span>
+                                    <span style="font-size:.8rem; font-weight:800; color:#64748b;">@checked_ / @total</span>
                                 </div>
-                                <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: @percent%;" aria-valuenow="@percent" aria-valuemin="0" aria-valuemax="100"></div>
+                                <div style="height:6px; background:rgba(0,0,0,0.05); border-radius:50px; margin-top:0.8rem; overflow:hidden;">
+                                    <div style="height:100%; width:@pct%; background:#10b981; border-radius:50px;"></div>
                                 </div>
                             </a>
                         }
                     }
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -241,15 +487,15 @@
         var map = L.map('map').setView([48.3794, 31.1656], 5);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap'
         }).addTo(map);
 
         var allPoints = [];
         var routePoints = [];
 
         const delay = ms => new Promise(res => setTimeout(res, ms));
-
         const _geoCache = {};
+
         async function geocodeAddress(address) {
             if (!address || !address.trim()) return null;
             const key = address.trim().toLowerCase();
@@ -265,7 +511,7 @@
                     _geoCache[key] = latlng;
                     return latlng;
                 }
-            } catch (e) { console.warn('Geocode failed:', address, e); }
+            } catch (e) {}
             _geoCache[key] = null;
             return null;
         }
@@ -282,19 +528,14 @@
                 allPoints.push(startLatLng);
             }
 
-            var destinations = [
-                @foreach (var d in Model.Destinations)
-                {
-                            <text>
-                            {
-                                name: '@Html.Raw(d.CityName), @Html.Raw(d.Country)',
-                                hasCoords: @((d.Latitude.HasValue && d.Longitude.HasValue).ToString().ToLower()),
-                                lat: @(d.Latitude.HasValue? d.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "0"),
-                                lng: @(d.Longitude.HasValue? d.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "0")
-                            },
-                            </text>
-                }
-            ];
+            const destinations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Destinations.Select(d => new {
+                    name = $"{d.CityName}, {d.Country}",
+                    hasCoords = d.Latitude.HasValue && d.Longitude.HasValue,
+                    lat = d.Latitude,
+                    lng = d.Longitude
+                })
+            ));
 
             for (let dest of destinations) {
                 let latlng = null;
@@ -303,9 +544,8 @@
                 } else {
                     latlng = await geocodeAddress(dest.name);
                 }
-
                 if (latlng) {
-                    L.marker(latlng).addTo(map).bindPopup("<b>" + dest.name + "</b><br>Зупинка маршруту");
+                    L.marker(latlng).addTo(map).bindPopup("<b>" + dest.name + "</b>");
                     routePoints.push(latlng);
                     allPoints.push(latlng);
                 }
@@ -325,23 +565,16 @@
             if (endLatLng) fullPath.push(endLatLng);
 
             if (fullPath.length > 1) {
-                L.polyline(fullPath, { color: '#dc3545', weight: 3, opacity: 0.8, dashArray: '8, 8' }).addTo(map);
+                L.polyline(fullPath, { color: '#3b82f6', weight: 3, opacity: 0.85, dashArray: '8, 8' }).addTo(map);
             }
 
-            var accommodations = [
-                @foreach (var a in Model.Accommodations)
-                {
-                            <text>
-                            {
-                                name: '@Html.Raw(a.Name)',
-                                address: '@Html.Raw(a.Address)',
-                                hasCoords: @((a.Latitude.HasValue && a.Longitude.HasValue).ToString().ToLower()),
-                                lat: @(a.Latitude.HasValue? a.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "0"),
-                                lng: @(a.Longitude.HasValue? a.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "0")
-                            },
-                            </text>
-                }
-            ];
+            const accommodations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.Accommodations.Select(a => new {
+                    name = a.Name, address = a.Address,
+                    hasCoords = a.Latitude.HasValue && a.Longitude.HasValue,
+                    lat = a.Latitude, lng = a.Longitude
+                })
+            ));
 
             for (let acc of accommodations) {
                 let latlng = null;
@@ -350,26 +583,21 @@
                 } else {
                     latlng = await geocodeAddress(acc.address ? acc.address : acc.name);
                 }
-
                 if (latlng) {
                     L.marker(latlng, {
                         icon: L.divIcon({
-                            className: 'custom-div-icon',
-                            html: "<div style='background-color:#198754; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);'>🏠</div>",
-                            iconSize: [30, 30],
-                            iconAnchor: [15, 30]
+                            html: "<div style='background:#10b981;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.3);'>🏠</div>",
+                            className: '', iconSize: [30,30], iconAnchor: [15,30]
                         })
-                    }).addTo(map).bindPopup("<b>" + acc.name + "</b><br>" + acc.address);
+                    }).addTo(map).bindPopup("<b>" + acc.name + "</b>");
                     allPoints.push(latlng);
                 }
             }
 
             if (allPoints.length > 0) {
-                var bounds = new L.LatLngBounds(allPoints);
-                map.fitBounds(bounds, { padding: [30, 30] });
+                map.fitBounds(new L.LatLngBounds(allPoints), { padding: [30, 30] });
             }
         }
-
         buildFullRoute();
     </script>
 }

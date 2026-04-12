@@ -4,73 +4,227 @@
     ViewData["Title"] = "Додати місто";
 }
 
-<div class="container py-4">
-    <h2 class="mb-4">Додати місто до маршруту</h2>
-    <hr />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<style>
+    body {
+        background: #eef4f9;
+        margin: 0;
+    }
 
-                        <div class="form-group mb-3">
-                            <label asp-for="TripId" class="form-label fw-bold"></label>
-                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
-                                <option disabled selected>-- Оберіть поїздку --</option>
-                            </select>
-                            <span asp-validation-for="TripId" class="text-danger small"></span>
-                        </div>
+    .create-root {
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        padding: 4rem 1.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="CityName" class="form-label fw-bold"></label>
-                                <input asp-for="CityName" class="form-control" id="cityNameInput" autocomplete="off" />
-                                <span asp-validation-for="CityName" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="Country" class="form-label fw-bold"></label>
-                                <input asp-for="Country" class="form-control" id="countryInput" autocomplete="off" />
-                                <span asp-validation-for="Country" class="text-danger small"></span>
-                            </div>
-                        </div>
+    @@keyframes cardEntrance {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(30px);
+        }
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="ArrivalDate" class="form-label fw-bold"></label>
-                                <input asp-for="ArrivalDate" class="form-control" />
-                                <span asp-validation-for="ArrivalDate" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="DepartureDate" class="form-label fw-bold"></label>
-                                <input asp-for="DepartureDate" class="form-control" />
-                                <span asp-validation-for="DepartureDate" class="text-danger small"></span>
-                            </div>
-                        </div>
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label asp-for="Latitude" class="form-label fw-bold"></label>
-                                <input asp-for="Latitude" class="form-control" type="number" step="0.000001" id="latInput" />
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="Longitude" class="form-label fw-bold"></label>
-                                <input asp-for="Longitude" class="form-control" type="number" step="0.000001" id="lngInput" />
-                            </div>
-                        </div>
+    /* Головна скляна картка */
+    .glass-card {
+        width: 100%;
+        max-width: 600px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 1);
+        border-radius: 40px;
+        padding: 3.5rem;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.05);
+        animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
 
-                        <!-- Статус автогеокодування -->
-                        <div id="geocodeStatus" class="mb-3" style="display:none; font-size:.85rem; font-weight:600; padding:.5rem .8rem; border-radius:.5rem;"></div>
+    .form-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -0.05em;
+        margin-bottom: 0.5rem;
+    }
 
-                        <div class="form-group d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success px-5 shadow-sm">Зберегти</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
-                        </div>
-                    </form>
+    .form-sub {
+        color: #64748b;
+        margin-bottom: 3rem;
+        font-weight: 500;
+        font-size: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #475569;
+        margin-bottom: 0.7rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Поля вводу */
+    .glass-input, .glass-select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        border-radius: 20px;
+        padding: 1.1rem 1.4rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: #0f172a;
+        transition: all 0.3s ease;
+        outline: none;
+    }
+
+        .glass-input:focus, .glass-select:focus {
+            background: white;
+            border-color: #2563eb;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+
+    /* Статус геокодування (скляний бейдж) */
+    #geocodeStatus {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.9rem 1.3rem;
+        border-radius: 18px;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        display: none;
+        animation: cardEntrance 0.4s ease;
+    }
+
+    /* Кнопки */
+    .btn-row {
+        display: flex;
+        gap: 1.2rem;
+        margin-top: 1rem;
+    }
+
+    .btn-save {
+        flex: 1.8;
+        background: #2563eb;
+        color: white;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1.2rem;
+        border-radius: 22px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+    }
+
+        .btn-save:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.5);
+        }
+
+    .btn-cancel {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.04);
+        color: #475569;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1.2rem;
+        border-radius: 22px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+        .btn-cancel:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: #0f172a;
+        }
+
+    .error-text {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #ef4444;
+        margin-top: 0.5rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Ховаємо координати візуально */
+    .hidden-geo {
+        display: none;
+    }
+</style>
+
+<div class="create-root">
+    <div class="glass-card">
+        <h2 class="form-title">Додати місто</h2>
+        <p class="form-sub">Сплануй наступну зупинку у своїй пригоді</p>
+
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="error-text mb-4"></div>
+
+            <div class="mb-5">
+                <label asp-for="TripId" class="form-label">Поїздка</label>
+                <select asp-for="TripId" asp-items="Model.TripList" class="glass-select">
+                    <option disabled selected>-- Оберіть поїздку --</option>
+                </select>
+                <span asp-validation-for="TripId" class="error-text"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div>
+                    <label asp-for="CityName" class="form-label">Місто</label>
+                    <input asp-for="CityName" class="glass-input" id="cityNameInput" autocomplete="off" placeholder="Наприклад: Рим" />
+                    <span asp-validation-for="CityName" class="error-text"></span>
+                </div>
+                <div>
+                    <label asp-for="Country" class="form-label">Країна</label>
+                    <input asp-for="Country" class="glass-input" id="countryInput" autocomplete="off" placeholder="Наприклад: Італія" />
+                    <span asp-validation-for="Country" class="error-text"></span>
                 </div>
             </div>
-        </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;">
+                <div>
+                    <label asp-for="ArrivalDate" class="form-label">Прибуття</label>
+                    <input asp-for="ArrivalDate" type="date" class="glass-input" />
+                    <span asp-validation-for="ArrivalDate" class="error-text"></span>
+                </div>
+                <div>
+                    <label asp-for="DepartureDate" class="form-label">Відбуття</label>
+                    <input asp-for="DepartureDate" type="date" class="glass-input" />
+                    <span asp-validation-for="DepartureDate" class="error-text"></span>
+                </div>
+            </div>
+
+            @* Координати існують в HTML для роботи JS, але приховані від юзера *@
+            <div class="hidden-geo">
+                <input asp-for="Latitude" id="latInput" type="hidden" />
+                <input asp-for="Longitude" id="lngInput" type="hidden" />
+            </div>
+
+            <div id="geocodeStatus"></div>
+
+            <div class="btn-row">
+                <button type="submit" class="btn-save">Зберегти</button>
+                <a asp-action="Index" class="btn-cancel">Скасувати</a>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -78,12 +232,13 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
     <script>
-        const cityInput   = document.getElementById('cityNameInput');
+        const cityInput    = document.getElementById('cityNameInput');
         const countryInput = document.getElementById('countryInput');
-        const latInput    = document.getElementById('latInput');
-        const lngInput    = document.getElementById('lngInput');
-        const statusEl    = document.getElementById('geocodeStatus');
+        const latInput     = document.getElementById('latInput');
+        const lngInput     = document.getElementById('lngInput');
+        const statusEl     = document.getElementById('geocodeStatus');
 
         let geocodeTimer = null;
 
@@ -91,13 +246,14 @@
             statusEl.textContent = msg;
             statusEl.style.display = 'block';
             statusEl.style.background = type === 'ok'
-                ? 'rgba(25,135,84,.12)' : type === 'err'
-                ? 'rgba(220,53,69,.10)' : 'rgba(13,110,253,.08)';
-            statusEl.style.color = type === 'ok' ? '#145c32' : type === 'err' ? '#842029' : '#084298';
+                ? 'rgba(16,185,129,0.1)' : type === 'err'
+                ? 'rgba(239,68,68,0.1)' : 'rgba(37,99,235,0.1)';
+            statusEl.style.color = type === 'ok' ? '#065f46' : type === 'err' ? '#991b1b' : '#1e40af';
+            statusEl.style.border = `1px solid ${statusEl.style.color}22`;
         }
 
         async function tryGeocode() {
-            const city    = cityInput.value.trim();
+            const city     = cityInput.value.trim();
             const country = countryInput.value.trim();
             if (!city) return;
 
@@ -107,23 +263,21 @@
             try {
                 const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(query)}`;
                 const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (data && data.length > 0) {
-                    latInput.value = parseFloat(data[0].lat).toFixed(6);
-                    lngInput.value = parseFloat(data[0].lon).toFixed(6);
-                    showStatus(`✅ Знайдено: ${data[0].display_name.split(',').slice(0,2).join(',')}`, 'ok');
+                    latInput.value = data[0].lat;
+                    lngInput.value = data[0].lon;
+                    showStatus(`✅ Координати знайдено автоматично`, 'ok');
                 } else {
-                    showStatus('⚠️ Місто не знайдено — введіть координати вручну', 'err');
+                    showStatus('⚠️ Координати не знайдено (використано 0.0)', 'err');
                 }
             } catch (e) {
-                showStatus('⚠️ Помилка геокодування — введіть координати вручну', 'err');
+                showStatus('⚠️ Помилка мережі при геокодуванні', 'err');
             }
         }
 
         function scheduleGeocode() {
             clearTimeout(geocodeTimer);
-            // Запускаємо геокодування через 800мс після останнього введення
             geocodeTimer = setTimeout(tryGeocode, 800);
         }
 
