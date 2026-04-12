@@ -1,90 +1,842 @@
-﻿@model TravelManager.UI.Models.ViewModels.TransitFormViewModel
+﻿
+
+@model TravelManager.UI.Models.ViewModels.TransitFormViewModel
 
 @{
     ViewData["Title"] = "Додати транспорт";
 }
 
-<div class="container py-4">
-    <h2 class="mb-4">Додати транспорт</h2>
-    <hr />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<style>
+    .cr-root {
+        font-family: 'DM Sans', sans-serif;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+    }
 
-                        <div class="form-group mb-3">
-                            <label asp-for="TripId" class="form-label fw-bold">Поїздка</label>
-                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
-                                <option disabled selected>-- Оберіть поїздку --</option>
+        .cr-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 50% at 0% 0%, rgba(14,165,233,0.11) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 100% 100%, rgba(139,92,246,0.09) 0%, transparent 55%), radial-gradient(ellipse 40% 40% at 50% 50%, rgba(249,115,22,0.05) 0%, transparent 65%);
+            z-index: -1;
+            animation: bgPulse 16s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgPulse {
+        0% {
+            filter: hue-rotate(0deg)
+        }
+
+        100% {
+            filter: hue-rotate(30deg)
+        }
+    }
+
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.13;
+        z-index: -1;
+        pointer-events: none;
+        animation: blobDrift linear infinite;
+    }
+
+    .blob-sky {
+        width: 500px;
+        height: 500px;
+        background: #0ea5e9;
+        top: -120px;
+        left: -100px;
+        animation-duration: 24s;
+    }
+
+    .blob-purp {
+        width: 400px;
+        height: 400px;
+        background: #8b5cf6;
+        bottom: -80px;
+        right: -80px;
+        animation-duration: 30s;
+        animation-direction: reverse;
+    }
+
+    .blob-ora {
+        width: 280px;
+        height: 280px;
+        background: #f97316;
+        top: 40%;
+        left: 55%;
+        animation-duration: 20s;
+    }
+
+    @@keyframes blobDrift {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(40px,-35px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(-25px,45px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(22px);
+        animation: revUp 0.6s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .d1 {
+        animation-delay: .05s
+    }
+
+    .d2 {
+        animation-delay: .12s
+    }
+
+    .d3 {
+        animation-delay: .19s
+    }
+
+    .d4 {
+        animation-delay: .26s
+    }
+
+    .d5 {
+        animation-delay: .33s
+    }
+
+    .d6 {
+        animation-delay: .40s
+    }
+
+    .d7 {
+        animation-delay: .47s
+    }
+
+    .d8 {
+        animation-delay: .54s
+    }
+
+    /* Заголовок */
+    .page-title {
+        font-family: 'Syne',sans-serif;
+        font-size: clamp(1.8rem,4vw,3rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6, #f97316);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradFlow 6s ease infinite;
+        }
+
+    @@keyframes gradFlow {
+        0%, 100% {
+            background-position: 0% 50%
+        }
+
+        50% {
+            background-position: 100% 50%
+        }
+    }
+
+    /* Форм-картка */
+    .form-card {
+        background: rgba(255,255,255,0.62);
+        backdrop-filter: blur(28px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2.5rem;
+        box-shadow: 0 8px 50px rgba(14,165,233,0.08);
+        overflow: hidden;
+        transition: box-shadow 0.4s ease;
+    }
+
+        .form-card:hover {
+            box-shadow: 0 16px 60px rgba(14,165,233,0.13);
+        }
+
+    /* Hero */
+    .form-hero {
+        background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 55%, #f97316 100%);
+        background-size: 200% 200%;
+        animation: gradFlow 6s ease infinite;
+        padding: 2rem 2.5rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .form-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2.8rem;
+            background: rgba(255,255,255,0.62);
+            backdrop-filter: blur(28px);
+            border-radius: 2.5rem 2.5rem 0 0;
+        }
+
+    .hero-dots {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.12) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.10) 1px, transparent 1px), radial-gradient(circle at 55% 80%, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 38px 38px, 30px 30px, 44px 44px;
+        animation: dotsDrift 20s linear infinite;
+    }
+
+    @@keyframes dotsDrift {
+        from {
+            background-position: 0 0,0 0,0 0
+        }
+
+        to {
+            background-position: 38px 38px,-30px 30px,44px -44px
+        }
+    }
+
+    /* Іконки вибору транспорту */
+    .transport-picker {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+    }
+
+    .tp-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.75rem 1rem;
+        border-radius: 1.1rem;
+        cursor: pointer;
+        border: 2px solid rgba(226,232,240,0.8);
+        background: rgba(248,250,252,0.9);
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+        user-select: none;
+        min-width: 70px;
+    }
+
+        .tp-btn .tp-emoji {
+            font-size: 1.6rem;
+            line-height: 1;
+            transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        .tp-btn:hover {
+            border-color: #0ea5e9;
+            background: rgba(14,165,233,0.07);
+            color: #0ea5e9;
+            transform: translateY(-3px);
+        }
+
+            .tp-btn:hover .tp-emoji {
+                transform: scale(1.2) rotate(-5deg);
+            }
+
+        .tp-btn.selected {
+            border-color: #0ea5e9;
+            background: rgba(14,165,233,0.1);
+            color: #0ea5e9;
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(14,165,233,0.25);
+        }
+
+            .tp-btn.selected .tp-emoji {
+                transform: scale(1.25) rotate(-8deg);
+                animation: wiggle 0.5s cubic-bezier(.34,1.56,.64,1);
+            }
+
+    @@keyframes wiggle {
+        0% {
+            transform: scale(1.25) rotate(0)
+        }
+
+        30% {
+            transform: scale(1.3) rotate(-12deg)
+        }
+
+        60% {
+            transform: scale(1.25) rotate(8deg)
+        }
+
+        100% {
+            transform: scale(1.25) rotate(-8deg)
+        }
+    }
+
+    /* Маршрут-превью */
+    .route-preview {
+        background: rgba(14,165,233,0.06);
+        border: 1.5px solid rgba(14,165,233,0.15);
+        border-radius: 1.2rem;
+        padding: 1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        min-height: 60px;
+    }
+
+        .route-preview:has(.rp-city:not(:empty)) {
+            border-color: rgba(14,165,233,0.3);
+            background: rgba(14,165,233,0.08);
+        }
+
+    .rp-city {
+        font-family: 'Syne',sans-serif;
+        font-weight: 900;
+        font-size: 1.05rem;
+        color: #0f172a;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+        .rp-city.empty {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: 'DM Sans',sans-serif;
+        }
+
+    .rp-arrow {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        flex-shrink: 0;
+    }
+
+    .rp-line {
+        width: 50px;
+        height: 2px;
+        background: linear-gradient(90deg,#0ea5e9,#8b5cf6);
+        border-radius: 2px;
+        position: relative;
+    }
+
+    .rp-mover {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.85rem;
+        animation: movePreview 2.5s ease-in-out infinite;
+    }
+
+    @@keyframes movePreview {
+        0% {
+            left: 0;
+            opacity: 0
+        }
+
+        15% {
+            opacity: 1
+        }
+
+        85% {
+            opacity: 1
+        }
+
+        100% {
+            left: 80%;
+            opacity: 0
+        }
+    }
+
+    /* Поля */
+    .field-wrap {
+        background: rgba(248,250,252,0.9);
+        border: 1.5px solid rgba(226,232,240,0.8);
+        border-radius: 1.2rem;
+        padding: 0.85rem 1.1rem;
+        transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .field-wrap::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg,#0ea5e9,#8b5cf6);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .field-wrap:focus-within {
+            background: white;
+            border-color: rgba(14,165,233,0.4);
+            box-shadow: 0 0 0 4px rgba(14,165,233,0.09),0 4px 20px rgba(14,165,233,0.08);
+            transform: translateY(-3px);
+        }
+
+            .field-wrap:focus-within::before {
+                opacity: 1;
+            }
+
+    .field-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: color 0.2s;
+    }
+
+    .field-wrap:focus-within .field-label {
+        color: #0ea5e9;
+    }
+
+    .field-input, .field-select {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        width: 100%;
+        outline: none !important;
+        box-shadow: none !important;
+        font-family: 'DM Sans',sans-serif;
+    }
+
+    .field-select {
+        cursor: pointer;
+    }
+
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @@media(max-width:580px) {
+        .two-col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .optional-tag {
+        display: inline-block;
+        background: rgba(249,115,22,0.1);
+        color: #ea580c;
+        border-radius: 9999px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-left: 0.3rem;
+    }
+
+    /* Кнопки */
+    .btn-save {
+        background: linear-gradient(135deg,#0ea5e9,#8b5cf6);
+        background-size: 200% 200%;
+        animation: gradFlow 4s ease infinite;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 0.9rem 2.5rem;
+        font-family: 'Syne',sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(14,165,233,0.4);
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-save::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent);
+            animation: shine 3s ease-in-out infinite;
+        }
+
+    @@keyframes shine {
+        0% {
+            left: -100%
+        }
+
+        50% {
+            left: 150%
+        }
+
+        100% {
+            left: 150%
+        }
+    }
+
+    .btn-save:hover {
+        transform: translateY(-4px) scale(1.04);
+        box-shadow: 0 10px 35px rgba(14,165,233,0.55);
+        color: white;
+    }
+
+    .btn-save:active {
+        transform: scale(0.96);
+    }
+
+    .btn-cancel {
+        background: rgba(248,250,252,0.9);
+        border: 1.5px solid rgba(226,232,240,0.9);
+        border-radius: 1.2rem;
+        padding: 0.9rem 2rem;
+        font-family: 'DM Sans',sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #64748b;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+    }
+
+        .btn-cancel:hover {
+            background: white;
+            color: #ef4444;
+            border-color: rgba(239,68,68,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239,68,68,0.1);
+        }
+
+    /* Hero іконка */
+    .hero-icon {
+        width: 68px;
+        height: 68px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.35);
+        border-radius: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+        animation: iconPop 0.8s cubic-bezier(.34,1.56,.64,1) 0.2s both;
+        transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+        cursor: default;
+    }
+
+        .hero-icon:hover {
+            transform: rotate(-10deg) scale(1.12);
+        }
+
+    @@keyframes iconPop {
+        from {
+            transform: scale(0.3) rotate(-20deg);
+            opacity: 0
+        }
+
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1
+        }
+    }
+
+    .hero-title {
+        font-family: 'Syne',sans-serif;
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: white;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 15px rgba(0,0,0,0.12);
+    }
+
+    .hero-sub {
+        color: rgba(255,255,255,0.78);
+        font-size: 0.85rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+        margin-top: 0.2rem;
+    }
+
+    .form-body {
+        padding: 0 2.5rem 2.5rem;
+    }
+
+    .section-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin: 1.5rem 0 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(226,232,240,0.8);
+        }
+</style>
+
+<div class="blob blob-sky"></div>
+<div class="blob blob-purp"></div>
+<div class="blob blob-ora"></div>
+
+<div class="cr-root">
+    <div style="max-width:760px; margin:0 auto;">
+
+        <div class="reveal d1" style="margin-bottom:2rem;">
+            <h1 class="page-title">Новий <span>маршрут</span></h1>
+            <p style="color:#64748b;font-weight:500;margin-top:0.4rem;">Додай квиток, трансфер або будь-який переїзд</p>
+        </div>
+
+        <div class="form-card reveal d2">
+
+            <div class="form-hero">
+                <div class="hero-dots"></div>
+                <div class="hero-icon" id="heroIcon">✈️</div>
+                <div class="hero-title">Додати транспорт</div>
+                <div class="hero-sub">Заповни деталі маршруту нижче</div>
+            </div>
+
+            <div class="form-body">
+                <form asp-action="Create" method="post" id="transitForm">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" style="color:#ef4444;font-size:0.85rem;font-weight:600;margin-bottom:1rem;"></div>
+
+                    @* Вибір типу транспорту — візуальний picker *@
+                    <p class="section-label reveal d3">Тип транспорту</p>
+                    <div class="transport-picker reveal d3">
+                        <div class="tp-btn" data-value="" data-emoji="✈️" onclick="selectTransport(this, '✈️')">
+                            <span class="tp-emoji">✈️</span><span>Літак</span>
+                        </div>
+                        <div class="tp-btn" data-value="" data-emoji="🚄" onclick="selectTransport(this, '🚄')">
+                            <span class="tp-emoji">🚄</span><span>Поїзд</span>
+                        </div>
+                        <div class="tp-btn" data-value="" data-emoji="🚌" onclick="selectTransport(this, '🚌')">
+                            <span class="tp-emoji">🚌</span><span>Автобус</span>
+                        </div>
+                        <div class="tp-btn" data-value="" data-emoji="🚢" onclick="selectTransport(this, '🚢')">
+                            <span class="tp-emoji">🚢</span><span>Корабель</span>
+                        </div>
+                        <div class="tp-btn" data-value="" data-emoji="🚗" onclick="selectTransport(this, '🚗')">
+                            <span class="tp-emoji">🚗</span><span>Авто</span>
+                        </div>
+                    </div>
+
+                    @* Прихований select для реального значення *@
+                    <div style="display:none;">
+                        <select asp-for="TransitTypeId" asp-items="Model.TransitTypeList" id="transitTypeSelect"></select>
+                    </div>
+                    <span asp-validation-for="TransitTypeId" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+
+                    @* Поїздка та статус *@
+                    <p class="section-label reveal d3">Загальне</p>
+                    <div class="two-col reveal d3" style="margin-bottom:1rem;">
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-suitcase-fill"></i> Поїздка</label>
+                            <select asp-for="TripId" asp-items="Model.TripList" class="field-select">
+                                <option disabled selected value="">— Оберіть —</option>
                             </select>
-                            <span asp-validation-for="TripId" class="text-danger small"></span>
+                            <span asp-validation-for="TripId" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
                         </div>
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-bookmark-check-fill"></i> Статус бронювання</label>
+                            <select asp-for="BookingStatusId" asp-items="Model.BookingStatusList" class="field-select"></select>
+                            <span asp-validation-for="BookingStatusId" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                        </div>
+                    </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="TransitTypeId" class="form-label fw-bold">Тип транспорту</label>
-                                <select asp-for="TransitTypeId" asp-items="Model.TransitTypeList" class="form-select"></select>
-                                <span asp-validation-for="TransitTypeId" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="BookingStatusId" class="form-label fw-bold">Статус бронювання</label>
-                                <select asp-for="BookingStatusId" asp-items="Model.BookingStatusList" class="form-select"></select>
-                                <span asp-validation-for="BookingStatusId" class="text-danger small"></span>
-                            </div>
+                    @* Превью маршруту *@
+                    <p class="section-label reveal d4">Маршрут</p>
+                    <div class="route-preview reveal d4" id="routePreview">
+                        <div class="rp-city empty" id="rpFrom">Звідки...</div>
+                        <div class="rp-arrow">
+                            <div class="rp-line"><span class="rp-mover" id="rpMover">✈️</span></div>
                         </div>
+                        <div class="rp-city empty" id="rpTo">...Куди</div>
+                    </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="DepartureLocation" class="form-label fw-bold">Звідки (Місто/Аеропорт)</label>
-                                <input asp-for="DepartureLocation" class="form-control" />
-                                <span asp-validation-for="DepartureLocation" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="ArrivalLocation" class="form-label fw-bold">Куди (Місто/Аеропорт)</label>
-                                <input asp-for="ArrivalLocation" class="form-control" />
-                                <span asp-validation-for="ArrivalLocation" class="text-danger small"></span>
-                            </div>
+                    <div class="two-col reveal d4" style="margin-bottom:1rem;">
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-box-arrow-right"></i> Звідки</label>
+                            <input asp-for="DepartureLocation" class="field-input" placeholder="Київ, KBP..." id="depInput" />
+                            <span asp-validation-for="DepartureLocation" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
                         </div>
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-box-arrow-in-right"></i> Куди</label>
+                            <input asp-for="ArrivalLocation" class="field-input" placeholder="Варшава, WAW..." id="arrInput" />
+                            <span asp-validation-for="ArrivalLocation" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                        </div>
+                    </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="DepartureTime" class="form-label fw-bold">Час відправлення</label>
-                                <input asp-for="DepartureTime" class="form-control" type="datetime-local" />
-                                <span asp-validation-for="DepartureTime" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="ArrivalTime" class="form-label fw-bold">Час прибуття</label>
-                                <input asp-for="ArrivalTime" class="form-control" type="datetime-local" />
-                                <span asp-validation-for="ArrivalTime" class="text-danger small"></span>
-                            </div>
+                    @* Час *@
+                    <p class="section-label reveal d5">Час</p>
+                    <div class="two-col reveal d5" style="margin-bottom:1rem;">
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-play-circle-fill"></i> Відправлення</label>
+                            <input asp-for="DepartureTime" class="field-input" type="datetime-local" />
+                            <span asp-validation-for="DepartureTime" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
                         </div>
+                        <div class="field-wrap">
+                            <label class="field-label"><i class="bi bi-stop-circle-fill"></i> Прибуття</label>
+                            <input asp-for="ArrivalTime" class="field-input" type="datetime-local" />
+                            <span asp-validation-for="ArrivalTime" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                        </div>
+                    </div>
 
-                        <div class="form-group mb-3">
-                            <label asp-for="CarrierInfo" class="form-label fw-bold">Перевізник (Авіакомпанія/Автобус)</label>
-                            <input asp-for="CarrierInfo" class="form-control" placeholder="Напр. Ryanair, FlixBus" />
+                    @* Додаткова інфо *@
+                    <p class="section-label reveal d6">Додатково</p>
+                    <div class="two-col reveal d6" style="margin-bottom:1.75rem;">
+                        <div class="field-wrap">
+                            <label class="field-label">
+                                <i class="bi bi-building"></i> Перевізник
+                                <span class="optional-tag">необов'язково</span>
+                            </label>
+                            <input asp-for="CarrierInfo" class="field-input" placeholder="Ryanair, FlixBus..." />
                         </div>
+                        <div class="field-wrap">
+                            <label class="field-label">
+                                <i class="bi bi-ticket-perforated-fill"></i> Номер квитка / PNR
+                                <span class="optional-tag">необов'язково</span>
+                            </label>
+                            <input asp-for="BookingReference" class="field-input" placeholder="ABC123..." />
+                        </div>
+                    </div>
 
-                        <div class="form-group mb-4">
-                            <label asp-for="BookingReference" class="form-label fw-bold">Номер квитка / PNR</label>
-                            <input asp-for="BookingReference" class="form-control" />
-                        </div>
-
-                        <div class="form-group d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success px-5 shadow-sm">Зберегти</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
-                        </div>
-                    </form>
-                </div>
+                    <div class="reveal d7" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                        <a asp-action="Index" class="btn-cancel">
+                            <i class="bi bi-arrow-left"></i> Скасувати
+                        </a>
+                        <button type="submit" class="btn-save">
+                            <i class="bi bi-check2-circle"></i> Зберегти маршрут
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Синхронізація transport picker з реальним select
+        const typeSelect = document.getElementById('transitTypeSelect');
+        const heroIcon   = document.getElementById('heroIcon');
+        const rpMover    = document.getElementById('rpMover');
+
+        // Мапа назва → emoji
+        const emojiMap = { 'Літак':'✈️','Поїзд':'🚄','Автобус':'🚌','Корабель':'🚢','Авто':'🚗' };
+
+        // Ініціалізація — прив'язка picker до option-ів
+        document.addEventListener('DOMContentLoaded', () => {
+            const options = Array.from(typeSelect.options);
+            document.querySelectorAll('.tp-btn').forEach((btn, i) => {
+                if (options[i + 1]) btn.dataset.value = options[i + 1].value;
+            });
+
+            // Якщо вже є обране значення — підсвітити
+            if (typeSelect.value) {
+                const opt = typeSelect.options[typeSelect.selectedIndex];
+                const emoji = emojiMap[opt.text] || '🚀';
+                document.querySelectorAll('.tp-btn').forEach(b => {
+                    if (b.dataset.value === typeSelect.value) b.classList.add('selected');
+                });
+                heroIcon.textContent = emoji;
+                rpMover.textContent  = emoji;
+            }
+        });
+
+        function selectTransport(el, emoji) {
+            document.querySelectorAll('.tp-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            typeSelect.value     = el.dataset.value;
+            heroIcon.textContent = emoji;
+            rpMover.textContent  = emoji;
+        }
+
+        // Живе превью маршруту
+        const depInput = document.getElementById('depInput');
+        const arrInput = document.getElementById('arrInput');
+        const rpFrom   = document.getElementById('rpFrom');
+        const rpTo     = document.getElementById('rpTo');
+
+        function updatePreview() {
+            const dep = depInput.value.trim();
+            const arr = arrInput.value.trim();
+            rpFrom.textContent = dep || 'Звідки...';
+            rpFrom.className   = 'rp-city' + (dep ? '' : ' empty');
+            rpTo.textContent   = arr || '...Куди';
+            rpTo.className     = 'rp-city' + (arr ? '' : ' empty');
+        }
+
+        depInput.addEventListener('input', updatePreview);
+        arrInput.addEventListener('input', updatePreview);
+
+        // Spin при сабміті
+        document.querySelector('.btn-save').addEventListener('click', function () {
+            const icon = this.querySelector('i');
+            icon.className = 'bi bi-arrow-repeat';
+            if (!document.getElementById('spinStyle')) {
+                const s = document.createElement('style');
+                s.id = 'spinStyle';
+                s.textContent = '@@keyframes spin{to{transform:rotate(360deg)}} .bi-arrow-repeat{animation:spin 0.7s linear infinite;display:inline-block;}';
+                document.head.appendChild(s);
+            }
+        });
+    </script>
 }
