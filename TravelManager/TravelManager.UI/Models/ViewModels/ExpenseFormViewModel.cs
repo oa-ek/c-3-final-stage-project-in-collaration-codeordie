@@ -44,7 +44,7 @@ namespace TravelManager.UI.Models.ViewModels
         public int? TransitId { get; set; }
         public IEnumerable<SelectListItem>? TransitList { get; set; }
 
-        public int? AccommodationId { get; set; }
+        public int? AccommodationId { get; set; } 
         public IEnumerable<SelectListItem>? AccommodationList { get; set; }
 
         public int? TripActivityId { get; set; }
