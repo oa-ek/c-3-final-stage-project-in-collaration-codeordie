@@ -1,168 +1,646 @@
-﻿@* TravelManager/TravelManager.UI/Views/Trips/Index.cshtml *@
-
-@model IEnumerable<TravelManager.UI.Models.ViewModels.TripListViewModel>
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripListViewModel>
 
 @{
     ViewData["Title"] = "Мої поїздки";
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
 <style>
-    @@keyframes fadeSlideUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
+    .tr-root {
+        font-family: 'DM Sans', sans-serif;
+        padding: 2rem 0 4rem;
+        position: relative;
+    }
+
+        .tr-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 50% at 0% 0%, rgba(14,165,233,0.12) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 100% 100%, rgba(139,92,246,0.10) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(249,115,22,0.05) 0%, transparent 65%);
+            z-index: -1;
+            animation: bgPulse 16s ease-in-out infinite alternate;
         }
 
+    @@keyframes bgPulse {
+        0% {
+            filter: hue-rotate(0deg);
+        }
+
+        100% {
+            filter: hue-rotate(30deg);
+        }
+    }
+
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: 0.13;
+        z-index: -1;
+        pointer-events: none;
+        animation: blobDrift linear infinite;
+    }
+
+    .blob-sky {
+        width: 520px;
+        height: 520px;
+        background: #0ea5e9;
+        top: -120px;
+        left: -100px;
+        animation-duration: 24s;
+    }
+
+    .blob-purp {
+        width: 420px;
+        height: 420px;
+        background: #8b5cf6;
+        bottom: -100px;
+        right: -80px;
+        animation-duration: 30s;
+        animation-direction: reverse;
+    }
+
+    .blob-ora {
+        width: 300px;
+        height: 300px;
+        background: #f97316;
+        top: 45%;
+        left: 55%;
+        animation-duration: 20s;
+    }
+
+    @@keyframes blobDrift {
+        0% {
+            transform: translate(0,0) scale(1) rotate(0deg);
+        }
+
+        33% {
+            transform: translate(40px,-35px) scale(1.06) rotate(5deg);
+        }
+
+        66% {
+            transform: translate(-25px,45px) scale(0.94) rotate(-3deg);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1) rotate(0deg);
+        }
+    }
+
+    /* Stagger */
+    .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: revUp 0.65s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revUp {
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
 
-    .stagger-item {
-        animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        opacity: 0;
+    .d1 {
+        animation-delay: .05s
+    }
+
+    .d2 {
+        animation-delay: .12s
+    }
+
+    .d3 {
+        animation-delay: .19s
+    }
+
+    /* ── Заголовок ── */
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem,5vw,3.2rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6, #f97316);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradFlow 6s ease infinite;
+        }
+
+    @@keyframes gradFlow {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    /* ── Кнопка "Нова поїздка" ── */
+    .add-btn {
+        background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+        background-size: 200% 200%;
+        animation: gradFlow 4s ease infinite;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 0.85rem 1.8rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(14,165,233,0.4);
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+        .add-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+            animation: shine 3s ease-in-out infinite;
+        }
+
+    @@keyframes shine {
+        0% {
+            left: -100%;
+        }
+
+        50% {
+            left: 150%;
+        }
+
+        100% {
+            left: 150%;
+        }
+    }
+
+    .add-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 10px 35px rgba(14,165,233,.55);
+        color: white;
+    }
+
+    /* ── Статистика ── */
+    .stat-card {
+        background: rgba(255,255,255,.55);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,.85);
+        border-radius: 1.5rem;
+        padding: 1.2rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,.04);
+        transition: all .3s cubic-bezier(.34,1.56,.64,1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,.09);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--c1), var(--c2));
+            opacity: 0.06;
+            transition: opacity .3s;
+        }
+
+        .stat-card:hover::before {
+            opacity: 0.11;
+        }
+
+    .stat-num {
+        font-family: 'Syne', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .stat-lbl {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-top: 0.2rem;
+    }
+
+    /* ── Картка поїздки ── */
+    .trip-card {
+        background: rgba(255,255,255,.60);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,.88);
+        border-radius: 1.8rem;
+        box-shadow: 0 4px 28px rgba(14,165,233,.07);
+        overflow: hidden;
+        transition: all .4s cubic-bezier(.34,1.56,.64,1);
+        position: relative;
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+    }
+
+        .trip-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 16px 50px rgba(14,165,233,.16);
+            border-color: rgba(14,165,233,.3);
+        }
+
+    /* Кольоровий лівий бордер */
+    .trip-type-bar {
+        width: 6px;
+        align-self: stretch;
+        background: linear-gradient(180deg, var(--tc1), var(--tc2));
+        flex-shrink: 0;
+    }
+
+    /* Іконка статусу */
+    .trip-icon-wrap {
+        width: 70px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1.2rem 0.5rem;
+    }
+
+    .trip-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, var(--tc1), var(--tc2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: white;
+        box-shadow: 0 4px 16px rgba(0,0,0,.12);
+        transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+        flex-shrink: 0;
+    }
+
+    .trip-card:hover .trip-icon {
+        transform: rotate(-10deg) scale(1.15);
+    }
+
+    /* Тіло картки */
+    .trip-body {
+        padding: 1.2rem 1rem;
+        min-width: 0;
+    }
+
+    .trip-meta {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.4rem;
+    }
+
+    .trip-title-text {
+        font-family: 'Syne', sans-serif;
+        font-weight: 900;
+        font-size: 1.1rem;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0.5rem;
+    }
+
+    .trip-info-row {
+        display: flex;
+        gap: 1.2rem;
+        flex-wrap: wrap;
+    }
+
+    .trip-info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+        .trip-info-item i {
+            font-size: 0.8rem;
+            color: var(--tc1);
+        }
+
+    /* Права панель */
+    .trip-right {
+        padding: 1.2rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    /* Роль-бейдж */
+    .role-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .pill-org {
+        background: rgba(245,158,11,.12);
+        color: #92400e;
+        border: 1px solid rgba(245,158,11,.25);
+    }
+
+    .pill-part {
+        background: rgba(99,102,241,.10);
+        color: #3730a3;
+        border: 1px solid rgba(99,102,241,.2);
+    }
+
+    .pill-view {
+        background: rgba(148,163,184,.12);
+        color: #475569;
+        border: 1px solid rgba(148,163,184,.2);
+    }
+
+    /* Дії */
+    .trip-actions {
+        display: flex;
+        gap: 0.45rem;
+    }
+
+    .act-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1.5px solid transparent;
+        transition: all .25s cubic-bezier(.34,1.56,.64,1);
+        background: none;
+    }
+
+    .act-open {
+        background: rgba(14,165,233,.08);
+        color: #0ea5e9;
+        border-color: rgba(14,165,233,.2);
+    }
+
+        .act-open:hover {
+            background: #0ea5e9;
+            color: white;
+            transform: scale(1.2) rotate(-5deg);
+            box-shadow: 0 4px 14px rgba(14,165,233,.45);
+        }
+
+    .act-edit {
+        background: rgba(99,102,241,.08);
+        color: #6366f1;
+        border-color: rgba(99,102,241,.2);
+    }
+
+        .act-edit:hover {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.2) rotate(-5deg);
+            box-shadow: 0 4px 14px rgba(99,102,241,.45);
+        }
+
+    .act-del {
+        background: rgba(239,68,68,.08);
+        color: #ef4444;
+        border-color: rgba(239,68,68,.2);
+    }
+
+        .act-del:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.2) rotate(5deg);
+            box-shadow: 0 4px 14px rgba(239,68,68,.45);
+        }
+
+    /* Роздільник квитка */
+    .trip-notch {
+        width: 14px;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        border-left: 2px dashed rgba(148,163,184,.25);
+    }
+
+    /* Порожній стан */
+    .empty-wrap {
+        background: rgba(255,255,255,.55);
+        backdrop-filter: blur(20px);
+        border: 2px dashed rgba(14,165,233,.25);
+        border-radius: 2rem;
+        padding: 5rem 2rem;
+        text-align: center;
+        animation: revUp .7s cubic-bezier(.16,1,.3,1) .2s both;
+    }
+
+    .empty-plane {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 1rem;
+        animation: flyPlane 4s ease-in-out infinite;
+    }
+
+    @@keyframes flyPlane {
+        0%, 100% {
+            transform: translateX(-20px) translateY(0) rotate(-5deg);
+        }
+
+        50% {
+            transform: translateX(20px) translateY(-15px) rotate(5deg);
+        }
     }
 </style>
 
-@if (Model != null)
-{
-    var photos = new string[]
-    {
-        "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1502602898657-3e90760b2160?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80"
-    };
-    int photoCounter = 0;
+<div class="blob blob-sky"></div>
+<div class="blob blob-purp"></div>
+<div class="blob blob-ora"></div>
 
-    <div class="max-w-7xl mx-auto py-10 px-4">
+<div class="tr-root">
+    <div style="max-width:1100px; margin:0 auto; padding:0 1rem;">
 
-        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 stagger-item" style="animation-delay: 0.1s;">
+        @* ── Заголовок ── *@
+        <div class="reveal d1" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
             <div>
-                <h2 class="text-6xl font-black text-slate-900 tracking-tighter leading-tight">Мої поїздки</h2>
-                <p class="text-slate-500 mt-2 text-lg font-medium italic">Твої пригоди у світлих тонах.</p>
+                <h1 class="page-title">Мої <span>поїздки</span></h1>
+                <p style="color:#64748b;font-weight:500;margin-top:.4rem;">Всі твої пригоди та маршрути в одному місці</p>
             </div>
-            <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:-translate-y-1">
-                <i class="bi bi-plus-lg"></i> Створити нову
+            <a asp-action="Create" class="add-btn">
+                <i class="bi bi-plus-lg"></i> Нова поїздка
             </a>
         </div>
 
-        @if (!Model.Any())
+        @if (Model != null && Model.Any())
         {
-            <div class="text-center py-20 stagger-item" style="animation-delay: 0.2s;">
-                <div style="font-size:4rem;margin-bottom:1rem;">✈️</div>
-                <h3 class="text-2xl font-bold text-slate-700 mb-2">Поїздок ще немає</h3>
-                <p class="text-slate-400 mb-6">Створіть свою першу пригоду!</p>
-                <a asp-action="Create" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow hover:-translate-y-1 transition-all">
-                    Створити поїздку
-                </a>
+            @* ── Статистика ── *@
+            var total = Model.Count();
+            var orgCount = Model.Count(t => t.CurrentUserRole == "Organizer");
+            var active = Model.Count(t => DateTime.Today >= t.StartDate && DateTime.Today <= t.EndDate);
+
+            <div class="reveal d2" style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem;">
+                <div class="stat-card" style="--c1:#0ea5e9;--c2:#0284c7;">
+                    <div class="stat-num" style="color:#0ea5e9;">@total</div>
+                    <div class="stat-lbl">Всього поїздок</div>
+                </div>
+                <div class="stat-card" style="--c1:#10b981;--c2:#059669;">
+                    <div class="stat-num" style="color:#10b981;">@active</div>
+                    <div class="stat-lbl">Активних зараз</div>
+                </div>
+                <div class="stat-card" style="--c1:#8b5cf6;--c2:#7c3aed;">
+                    <div class="stat-num" style="color:#8b5cf6;">@orgCount</div>
+                    <div class="stat-lbl">Організатор</div>
+                </div>
+            </div>
+        }
+
+        @* ── Список ── *@
+        @if (Model == null || !Model.Any())
+        {
+            <div class="empty-wrap">
+                <span class="empty-plane">✈️</span>
+                <h3 style="font-family:'Syne',sans-serif;font-weight:900;color:#0f172a;font-size:1.5rem;margin-bottom:.5rem;">Поїздок ще немає</h3>
+                <p style="color:#94a3b8;font-weight:500;margin-bottom:1.5rem;">Створи свою першу пригоду прямо зараз!</p>
+                <a asp-action="Create" class="add-btn" style="margin:0 auto;"><i class="bi bi-plus-lg"></i> Створити поїздку</a>
             </div>
         }
         else
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div style="display:flex;flex-direction:column;gap:.9rem;">
+                @{
+                    int idx = 0;
+
+                    // Кольори статусів
+                    var statusColors = new Dictionary<string, (string c1, string c2, string icon)>
+                        {
+                        { "Planned",   ("#0ea5e9", "#0284c7", "bi-clock") },
+                        { "Active",    ("#10b981", "#059669", "bi-circle-fill") },
+                        { "Completed", ("#8b5cf6", "#7c3aed", "bi-check-circle-fill") },
+                        { "Cancelled", ("#ef4444", "#dc2626", "bi-x-circle-fill") },
+                        };
+                    var defaultColor = ("#64748b", "#475569", "bi-suitcase-fill");
+                }
+
                 @foreach (var item in Model)
                 {
-                    string photoPath = photos[photoCounter++ % photos.Length];
-
-                    // Виправлені ролі: Organizer може все, Participant — читати+редагувати, Viewer — тільки переглядати
+                    idx++;
+                    string animDelay = $"animation-delay:{0.05 + idx * 0.06}s";
                     bool isOrganizer = item.CurrentUserRole == "Organizer";
-                    bool canManage = item.CurrentUserRole == "Organizer" || item.CurrentUserRole == "Participant";
+                    bool isParticipant = item.CurrentUserRole == "Participant";
+                    bool canManage = isOrganizer;
 
-                    <div class="relative h-[520px] rounded-[3rem] overflow-hidden group shadow-xl transition-all duration-500 hover:-translate-y-2 isolate stagger-item" style="animation-delay: 0.2s;">
+                    var (c1, c2, statusIcon) = statusColors.ContainsKey(item.StatusName ?? "")
+                    ? statusColors[item.StatusName!]
+                    : defaultColor;
 
-                        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 -z-10" style="background-image: url('@photoPath');"></div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90 -z-10"></div>
+                    string pillClass = isOrganizer ? "pill-org" : isParticipant ? "pill-part" : "pill-view";
+                    string roleIcon = isOrganizer ? "bi-star-fill" : isParticipant ? "bi-pencil-fill" : "bi-eye-fill";
+                    var dur = (item.EndDate - item.StartDate).Days;
 
-                        <!-- Бейджі -->
-                        <div class="absolute top-6 left-6 z-20 flex gap-2 flex-wrap">
-                            <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
-                                @(item.StatusName ?? "Planned")
-                            </div>
-                            <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                                @if (isOrganizer)
-                                {
-                                    <i class="bi bi-star-fill text-yellow-300 mr-1"></i>
-                                }
-                                else if (canManage)
-                                {
-                                    <i class="bi bi-pencil-fill text-blue-300 mr-1"></i>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-eye-fill text-white/60 mr-1"></i>
-                                }
-                                @item.CurrentUserRole
+                    <div class="trip-card reveal" style="@animDelay; --tc1:@c1; --tc2:@c2;">
+
+                        @* Кольоровий бордер зліва *@
+                        <div class="trip-type-bar"></div>
+
+                        @* Іконка *@
+                        <div class="trip-icon-wrap">
+                            <div class="trip-icon">
+                                <i class="bi @statusIcon"></i>
                             </div>
                         </div>
 
-                        <div class="absolute inset-0 p-8 flex flex-col justify-end z-10">
-                            <h3 class="text-4xl font-black text-white mb-6 drop-shadow-xl transition-transform duration-500 group-hover:-translate-y-2">
-                                @item.Title
-                            </h3>
+                        @* Тіло *@
+                        <div class="trip-body">
+                            <div class="trip-meta">
+                                <i class="bi bi-geo-alt-fill" style="color:@c1;"></i>
+                                @(string.IsNullOrEmpty(item.DepartureLocation) ? "Без місця" : item.DepartureLocation)
+                            </div>
 
-                            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-6 space-y-4 transition-transform duration-500 group-hover:-translate-y-2 shadow-inner">
-                                @if (!string.IsNullOrEmpty(item.DepartureLocation))
-                                {
-                                    <div class="flex items-center gap-4 text-white">
-                                        <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
-                                            <i class="bi bi-geo-alt-fill"></i>
-                                        </span>
-                                        <div>
-                                            <p class="text-[9px] uppercase tracking-widest font-bold opacity-60">Відправлення</p>
-                                            <p class="font-bold">@item.DepartureLocation</p>
-                                        </div>
-                                    </div>
-                                }
-                                <div class="flex items-center gap-4 text-white">
-                                    <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
-                                        <i class="bi bi-calendar-event-fill"></i>
-                                    </span>
-                                    <div>
-                                        <p class="text-[9px] uppercase tracking-widest font-bold opacity-60">Дати</p>
-                                        <p class="font-bold">@item.StartDate.ToShortDateString() — @item.EndDate.ToShortDateString()</p>
-                                    </div>
+                            <div class="trip-title-text" title="@item.Title">@item.Title</div>
+
+                            <div class="trip-info-row">
+                                <div class="trip-info-item">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>@item.StartDate.ToString("dd.MM.yyyy") — @item.EndDate.ToString("dd.MM.yyyy")</span>
+                                </div>
+                                <div class="trip-info-item">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <span>@dur @(dur == 1 ? "день" : dur < 5 ? "дні" : "днів")</span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="mt-6 flex flex-col gap-4 transition-all duration-500 group-hover:-translate-y-2">
-                                <a asp-action="Details" asp-route-id="@item.Id"
-                                   class="w-full bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 text-white font-black py-5 px-8 rounded-3xl flex justify-between items-center transition-all duration-300 group/btn shadow-lg">
-                                    <span class="uppercase tracking-widest text-sm">Відкрити поїздку</span>
-                                    <i class="bi bi-arrow-right text-xl transition-transform group-hover/btn:translate-x-2"></i>
+                        @* Роздільник *@
+                        <div class="trip-notch"></div>
+
+                        @* Права панель *@
+                        <div class="trip-right">
+                            <div class="role-pill @pillClass">
+                                <i class="bi @roleIcon"></i>
+                                @item.CurrentUserRole
+                            </div>
+                            <div class="trip-actions">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="act-btn act-open" title="Відкрити">
+                                    <i class="bi bi-arrow-right-circle-fill"></i>
                                 </a>
-
-                                <!-- Кнопки керування видно тільки при hover, тільки якщо є права -->
                                 @if (canManage)
                                 {
-                                    <div class="flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity delay-150">
-                                        @if (isOrganizer)
-                                        {
-                                            <a asp-action="Edit" asp-route-id="@item.Id"
-                                               class="text-[10px] font-black text-white/60 hover:text-white uppercase tracking-widest flex items-center gap-1.5">
-                                                <i class="bi bi-pencil-square"></i> Редагувати
-                                            </a>
-
-                                            <form asp-action="Delete" method="post"
-                                                  onsubmit="return confirm('Видалити поїздку @item.Title?');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@item.Id" />
-                                                <button type="submit"
-                                                        class="text-[10px] font-black text-white/40 hover:text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                    <i class="bi bi-trash3"></i> Видалити
-                                                </button>
-                                            </form>
-                                        }
-                                    </div>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="act-btn act-edit" title="Редагувати">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    <form asp-action="Delete" method="post" style="display:contents"
+                                          onsubmit="return confirm('Видалити поїздку «@item.Title»?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="act-btn act-del" title="Видалити">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </form>
                                 }
                             </div>
                         </div>
+
                     </div>
                 }
             </div>
         }
+
     </div>
-}
+</div>
