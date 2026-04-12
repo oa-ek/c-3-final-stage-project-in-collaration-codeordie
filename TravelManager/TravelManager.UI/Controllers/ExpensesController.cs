@@ -23,12 +23,24 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var expenses = _unitOfWork.Expense.GetAll(includeProperties: "Trip,Category");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+                
+
+            var expenses = _unitOfWork.Expense.GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip, Category");
 
             var viewModels = expenses.Select(e => new ExpenseListViewModel
             {
                 Id = e.Id,
-                Description = e.Title, // У базі Title, у моделі відображення Description
+                Description = e.Title,
                 Amount = e.TotalAmount,
                 Currency = e.Currency,
                 Date = e.Date,
@@ -40,26 +52,39 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int tripId)
+        public IActionResult Create(int? tripId) 
         {
-            var trips = _unitOfWork.Trip.GetAll();
+            var allowedTrips = GetAllowedTripsForUser();
+
+            if (!allowedTrips.Any())
+            {
+                TempData["ErrorMessage"] = "У вас немає поїздок, де ви можете додавати записи.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            if (tripId.HasValue)
+            {
+                var role = GetUserRoleInTrip(tripId.Value);
+                if (role == "Viewer" || role == "None")
+                {
+                    TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
+                    return RedirectToAction("Index", "Trips"); 
+                }
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
+            }
+
             var participants = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.TripId == tripId, includeProperties: "User")
                 .ToList();
 
             var model = new ExpenseFormViewModel
             {
-                // ЗАПОВНЕННЯ СПИСКУ ПОДОРОЖЕЙ:
-                TripList = trips.Select(t => new SelectListItem
-                {
-                    Value = t.Id.ToString(),
-                    Text = t.Title,
-                    Selected = t.Id == tripId
-                }).ToList(),
+                TripId = tripId ?? 0,
+                TripList = allowedTrips,
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
                 CurrencyList = GetCurrencyList(),
-                // Завантажуємо списки для прив'язки
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == tripId)
                     .Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() }),
                 AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == tripId)
@@ -87,12 +112,23 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ExpenseFormViewModel model)
         {
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.TripList = GetAllowedTripsForUser(); 
+                return View(model);
+            }
             decimal totalSplits = model.Splits.Sum(s => s.OwedAmount);
             if (totalSplits != model.TotalAmount)
             {
                 TempData["ErrorMessage"] = $"Помилка: Сума часток ({totalSplits}) не збігається із загальною сумою ({model.TotalAmount})!";
 
-                // Перезавантажуємо списки при помилці
                 var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
                 model.CategoryList = GetCategoryList();
                 model.CurrencyList = GetCurrencyList();
@@ -116,7 +152,6 @@ namespace TravelManager.UI.Controllers
                 PayerId = model.PayerId,
                 ReceiptImageUrl = model.ReceiptImageUrl,
 
-                // Зберігаємо прив'язки!
                 TransitId = model.TransitId,
                 AccommodationId = model.AccommodationId,
                 TripActivityId = model.TripActivityId
@@ -153,6 +188,13 @@ namespace TravelManager.UI.Controllers
             {
                 return NotFound();
             }
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                return RedirectToAction("Index", "Trips"); 
+            }
+
 
             var participants = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.TripId == entity.TripId, includeProperties: "User")
@@ -170,7 +212,6 @@ namespace TravelManager.UI.Controllers
                 PayerId = entity.PayerId,
                 ReceiptImageUrl = entity.ReceiptImageUrl,
 
-                // ЗАВАНТАЖУЄМО ПОТОЧНІ ПРИВ'ЯЗКИ ДЛЯ РЕДАГУВАННЯ
                 TransitId = entity.TransitId,
                 AccommodationId = entity.AccommodationId,
                 TripActivityId = entity.TripActivityId,
@@ -179,7 +220,6 @@ namespace TravelManager.UI.Controllers
                 CategoryList = GetCategoryList(),
                 CurrencyList = GetCurrencyList(),
 
-                // ЗАВАНТАЖУЄМО СПИСКИ ДОСТУПНИХ СУТНОСТЕЙ ДЛЯ ВИПАДАЮЧИХ МЕНЮ
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == entity.TripId)
                     .Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() }),
                 AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == entity.TripId)
@@ -193,6 +233,7 @@ namespace TravelManager.UI.Controllers
                     Value = p.UserId
                 })
             };
+            model.TripList = GetAllowedTripsForUser();
 
             return View(model);
         }
@@ -203,15 +244,20 @@ namespace TravelManager.UI.Controllers
         {
             ModelState.Remove("Splits");
 
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                return RedirectToAction("Index", "Trips");
+            }
             if (!ModelState.IsValid)
             {
                 var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 model.CategoryList = GetCategoryList();
                 model.CurrencyList = GetCurrencyList();
                 model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
 
-                // Відновлюємо списки при помилці
                 model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
                 model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
                 model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
@@ -253,6 +299,12 @@ namespace TravelManager.UI.Controllers
             {
                 return NotFound();
             }
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                return RedirectToAction("Index", "Trips");
+            }
 
             _unitOfWork.Expense.Remove(entity);
             await _unitOfWork.SaveAsync();
@@ -293,5 +345,28 @@ namespace TravelManager.UI.Controllers
                 new SelectListItem { Text = "GBP (Фунт)", Value = "GBP" }
             };
         }
+
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
+        }
+
+        private IEnumerable<SelectListItem> GetAllowedTripsForUser()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            return _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip,Role")
+                .Select(tp => new SelectListItem
+                {
+                    Text = tp.Trip.Title,
+                    Value = tp.TripId.ToString()
+                }).ToList();
+        }
+
     }
 }

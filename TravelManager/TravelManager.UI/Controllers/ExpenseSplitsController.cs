@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
@@ -22,7 +23,19 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var splits = _unitOfWork.ExpenseSplit.GetAll(includeProperties: "Expense,Debtor");
+            var currentUserId = _userManager.GetUserId(User);
+            if (currentUserId == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var splits = _unitOfWork.ExpenseSplit
+                .GetAll(s => myTripIds.Contains(s.Expense.TripId), includeProperties: "Expense,Debtor");
 
             var viewModels = splits.Select(s => new ExpenseSplitListViewModel
             {
@@ -40,10 +53,18 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Settle(int id)
         {
-            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id);
+            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
+            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense", tracked: true);
             if (entity == null)
             {
                 return NotFound();
+            }
+
+            var role = GetUserRoleInTrip(entity.Expense.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть погашати борги.";
+                return RedirectToAction(nameof(Index));
             }
 
             entity.IsSettled = true;
@@ -59,16 +80,33 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id);
+            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
+            var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense");
             if (entity == null)
             {
                 return NotFound();
+            }
+
+            var role = GetUserRoleInTrip(entity.Expense.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                return RedirectToAction(nameof(Index));
             }
 
             _unitOfWork.ExpenseSplit.Remove(entity);
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
         }
     }
 }

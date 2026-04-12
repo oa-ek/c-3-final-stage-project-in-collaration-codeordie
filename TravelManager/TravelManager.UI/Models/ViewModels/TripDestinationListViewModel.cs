@@ -10,5 +10,7 @@ namespace TravelManager.UI.Models.ViewModels
         public string? Country { get; set; }
         public DateTime ArrivalDate { get; set; }
         public DateTime DepartureDate { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }

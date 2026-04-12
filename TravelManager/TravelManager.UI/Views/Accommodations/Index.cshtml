@@ -2,45 +2,790 @@
 
 @{
     ViewData["Title"] = "Житло";
+    var items = Model.ToList();
+    var hasItems = items.Any();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Житло</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати житло</a>
-</div>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Назва</th>
-                    <th>Адреса</th>
-                    <th>Заїзд</th>
-                    <th>Виїзд</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.Name</td>
-                        <td>@item.Address</td>
-                        <td>@item.CheckInTime.ToString("g")</td>
-                        <td>@item.CheckOutTime.ToString("g")</td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .acc-root {
+        font-family: 'DM Sans', sans-serif;
+        min-height: 100vh;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .acc-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99,102,241,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 90% 80%, rgba(236,72,153,0.10) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg) brightness(1);
+        }
+
+        100% {
+            filter: hue-rotate(25deg) brightness(1.03);
+        }
+    }
+
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.18;
+        z-index: -1;
+        animation: blobFloat linear infinite;
+        pointer-events: none;
+    }
+
+    .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: #6366f1;
+        top: -100px;
+        left: -100px;
+        animation-duration: 20s;
+    }
+
+    .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: #ec4899;
+        bottom: -80px;
+        right: -80px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+    }
+
+    .blob-3 {
+        width: 300px;
+        height: 300px;
+        background: #10b981;
+        top: 40%;
+        left: 60%;
+        animation-duration: 18s;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(40px,-30px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(-20px,40px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: revealUp 0.65s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .d1 {
+        animation-delay: 0.05s;
+    }
+
+    .d2 {
+        animation-delay: 0.15s;
+    }
+
+    .d3 {
+        animation-delay: 0.25s;
+    }
+
+    .d4 {
+        animation-delay: 0.35s;
+    }
+
+    .d5 {
+        animation-delay: 0.45s;
+    }
+
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            background-size: 200% 200%;
+            animation: heroGradient 5s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+    @@keyframes heroGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .add-btn {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background-size: 200% 200%;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 0.8rem 1.8rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+        position: relative;
+        overflow: hidden;
+        animation: btnGradient 4s ease infinite;
+    }
+
+    @@keyframes btnGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .add-btn::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+        animation: btnShimmer 3s ease-in-out infinite;
+    }
+
+    @@keyframes btnShimmer {
+        0% {
+            left: -100%;
+        }
+
+        50% {
+            left: 150%;
+        }
+
+        100% {
+            left: 150%;
+        }
+    }
+
+    .add-btn:hover {
+        transform: translateY(-4px) scale(1.04);
+        box-shadow: 0 10px 35px rgba(99,102,241,0.55);
+        color: white;
+    }
+
+    .add-btn:active {
+        transform: scale(0.96);
+    }
+
+    .glass-card {
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2rem;
+        box-shadow: 0 8px 40px rgba(99,102,241,0.08);
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
+    }
+
+        .glass-card:hover {
+            box-shadow: 0 12px 50px rgba(99,102,241,0.13);
+        }
+
+    .card-hero {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+        background-size: 200% 200%;
+        animation: heroGradient 5s ease infinite;
+        padding: 1.8rem 2rem 3.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .card-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+    .hero-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: white;
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-sub {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.75);
+        margin-top: 0.25rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 1.2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stat-pill {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 999px;
+        padding: 0.4rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .acc-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: -1.5rem;
+    }
+
+        .acc-table thead th {
+            padding: 0.85rem 1.25rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(99,102,241,0.1);
+            background: rgba(255,255,255,0.7);
+            white-space: nowrap;
+        }
+
+            .acc-table thead th:first-child {
+                padding-left: 2rem;
+            }
+
+            .acc-table thead th:last-child {
+                text-align: right;
+                padding-right: 2rem;
+            }
+
+    .acc-row {
+        border-bottom: 1px solid rgba(99,102,241,0.07);
+        transition: all 0.25s cubic-bezier(.4,0,.2,1);
+        opacity: 0;
+        transform: translateX(-16px);
+        animation: rowSlide 0.5s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes rowSlide {
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .acc-row:hover {
+        background: rgba(99,102,241,0.04);
+        transform: translateX(4px);
+    }
+
+    .acc-row:last-child {
+        border-bottom: none;
+    }
+
+    .acc-row td {
+        padding: 1.1rem 1.25rem;
+        font-size: 0.9rem;
+        color: #334155;
+        vertical-align: middle;
+    }
+
+        .acc-row td:first-child {
+            padding-left: 2rem;
+        }
+
+        .acc-row td:last-child {
+            padding-right: 2rem;
+            text-align: right;
+        }
+
+    .hotel-name {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .hotel-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+
+    .date-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(99,102,241,0.07);
+        border: 1px solid rgba(99,102,241,0.15);
+        border-radius: 999px;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #4f46e5;
+        white-space: nowrap;
+    }
+
+        .date-badge.checkout {
+            background: rgba(236,72,153,0.07);
+            border-color: rgba(236,72,153,0.15);
+            color: #be185d;
+        }
+
+    .action-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+        text-decoration: none;
+    }
+
+    .btn-edit {
+        background: rgba(245,158,11,0.1);
+        color: #b45309;
+        border: 1px solid rgba(245,158,11,0.2);
+    }
+
+        .btn-edit:hover {
+            background: #f59e0b;
+            color: white;
+            transform: scale(1.15) rotate(-5deg);
+            box-shadow: 0 4px 14px rgba(245,158,11,0.4);
+            border-color: transparent;
+        }
+
+    .btn-delete {
+        background: rgba(239,68,68,0.08);
+        color: #dc2626;
+        border: 1px solid rgba(239,68,68,0.15);
+    }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 4px 14px rgba(239,68,68,0.4);
+            border-color: transparent;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: #8b5cf6;
+        animation: emptyPulse 3s ease-in-out infinite;
+    }
+
+    @@keyframes emptyPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(99,102,241,0.2);
+        }
+
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 12px rgba(99,102,241,0);
+        }
+    }
+
+    .empty-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-sub {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 2rem;
+    }
+
+    .confirm-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.4);
+        backdrop-filter: blur(6px);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .confirm-modal-backdrop.show {
+            display: flex;
+        }
+
+    .confirm-box {
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2rem;
+        padding: 2.5rem 2rem;
+        max-width: 380px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        animation: modalPop 0.4s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    @@keyframes modalPop {
+        from {
+            transform: scale(0.85) translateY(30px);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .confirm-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(239,68,68,0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.25rem;
+        font-size: 1.6rem;
+        color: #dc2626;
+    }
+
+    .confirm-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+    }
+
+    .confirm-sub {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 1.75rem;
+    }
+
+    .confirm-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
+
+    .btn-cancel {
+        background: rgba(100,116,139,0.1);
+        border: 1px solid rgba(100,116,139,0.2);
+        color: #475569;
+        border-radius: 1rem;
+        padding: 0.7rem 1.5rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+        .btn-cancel:hover {
+            background: rgba(100,116,139,0.18);
+            transform: translateY(-2px);
+        }
+
+    .btn-confirm-delete {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: none;
+        color: white;
+        border-radius: 1rem;
+        padding: 0.7rem 1.5rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+        font-family: 'Syne', sans-serif;
+        box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+    }
+
+        .btn-confirm-delete:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 8px 22px rgba(239,68,68,0.5);
+        }
+</style>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="confirm-modal-backdrop" id="deleteModal">
+    <div class="confirm-box">
+        <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
+        <div class="confirm-title">Видалити житло?</div>
+        <div class="confirm-sub">Цю дію неможливо скасувати.</div>
+        <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Скасувати</button>
+            <button class="btn-confirm-delete" onclick="submitDelete()">
+                <i class="bi bi-trash3-fill"></i> Так, видалити
+            </button>
+        </div>
     </div>
 </div>
+<form id="deleteForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="acc-root">
+    <div style="max-width:1100px; margin:0 auto;">
+
+        <div class="reveal d1" style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:2.5rem;">
+            <div>
+                <h1 class="page-title">Моє <span>житло</span></h1>
+                <p style="color:#64748b;font-weight:500;margin-top:0.5rem;">
+                    Готелі, хостели та апартаменти для ваших подорожей
+                </p>
+            </div>
+            <a asp-action="Create" class="add-btn">
+                <i class="bi bi-plus-lg"></i> Додати житло
+            </a>
+        </div>
+
+        <div class="glass-card reveal d2">
+
+            <div class="card-hero">
+                <div class="hero-title"><i class="bi bi-building me-2"></i>Список помешкань</div>
+                <div class="hero-sub">Керуй бронюваннями у всіх своїх поїздках</div>
+                <div class="hero-stats">
+                    <div class="stat-pill">
+                        <i class="bi bi-house-door-fill"></i>
+                        @items.Count об'єктів
+                    </div>
+                    @if (hasItems)
+                    {
+                        <div class="stat-pill">
+                            <i class="bi bi-calendar3"></i>
+                            Найближчий: @items.OrderBy(i => i.CheckInTime).First().CheckInTime.ToString("dd MMM")
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (!hasItems)
+            {
+                <div class="empty-state reveal d3">
+                    <div class="empty-icon"><i class="bi bi-building"></i></div>
+                    <div class="empty-title">Ще немає житла</div>
+                    <div class="empty-sub">Додай перше помешкання для своєї подорожі</div>
+                    <a asp-action="Create" class="add-btn">
+                        <i class="bi bi-plus-lg"></i> Додати перше житло
+                    </a>
+                </div>
+            }
+            else
+            {
+                <table class="acc-table">
+                    <thead>
+                        <tr>
+                            <th>Назва</th>
+                            <th>Адреса</th>
+                            <th>Заїзд</th>
+                            <th>Виїзд</th>
+                            <th style="text-align:right;">Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int rowIdx = 0;
+                        }
+                        @foreach (var item in items.OrderBy(i => i.CheckInTime))
+                        {
+                            var delay = 0.3 + rowIdx * 0.07;
+                            rowIdx++;
+                            <tr class="acc-row" style="animation-delay: @(delay.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))s">
+                                <td>
+                                    <div class="hotel-name">
+                                        <div class="hotel-icon">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        @item.Name
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Address))
+                                    {
+                                        <span style="color:#64748b;font-size:0.875rem;">
+                                            <i class="bi bi-geo-alt" style="color:#8b5cf6;margin-right:4px;"></i>@item.Address
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#cbd5e1;font-size:0.875rem;font-style:italic;">Не вказано</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="date-badge">
+                                        <i class="bi bi-box-arrow-in-right"></i>
+                                        @item.CheckInTime.ToString("dd MMM, HH:mm")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="date-badge checkout">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        @item.CheckOutTime.ToString("dd MMM, HH:mm")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-wrap">
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="icon-btn btn-edit" title="Редагувати">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="icon-btn btn-delete"
+                                                title="Видалити"
+                                                onclick="openDeleteModal('@Url.Action("Delete", "Accommodations", new { id = item.Id })', '@item.Name')">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let _deleteUrl = '';
+
+        function openDeleteModal(url, name) {
+            _deleteUrl = url;
+            document.querySelector('.confirm-sub').textContent =
+                `«${name}» — цю дію неможливо скасувати.`;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        function submitDelete() {
+            const form = document.getElementById('deleteForm');
+            form.action = _deleteUrl;
+            form.submit();
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+    </script>
+}

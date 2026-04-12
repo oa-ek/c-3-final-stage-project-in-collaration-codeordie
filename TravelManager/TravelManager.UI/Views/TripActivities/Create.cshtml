@@ -1,78 +1,642 @@
-﻿@model TravelManager.UI.Models.ViewModels.TripActivityFormViewModel
+﻿
+
+@model TravelManager.UI.Models.ViewModels.TripActivityFormViewModel
 
 @{
     ViewData["Title"] = "Додати активність";
 }
 
-<div class="container py-4">
-    <h2 class="mb-4">Додати активність</h2>
-    <hr />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<style>
+    .cr-root {
+        font-family: 'DM Sans', sans-serif;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+    }
 
-                        <div class="form-group mb-3">
-                            <label asp-for="TripId" class="form-label fw-bold">Поїздка</label>
-                            <select asp-for="TripId" asp-items="Model.TripList" class="form-select">
-                                <option disabled selected>-- Оберіть поїздку --</option>
-                            </select>
-                            <span asp-validation-for="TripId" class="text-danger small"></span>
+        /* Фон */
+        .cr-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 5% 15%, rgba(16,185,129,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 70% at 95% 85%, rgba(245,158,11,0.09) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 14s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg);
+        }
+
+        100% {
+            filter: hue-rotate(20deg);
+        }
+    }
+
+    /* Blob-и */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.14;
+        z-index: -1;
+        pointer-events: none;
+        animation: blobFloat linear infinite;
+    }
+
+    .blob-a {
+        width: 500px;
+        height: 500px;
+        background: #10b981;
+        top: -100px;
+        right: -100px;
+        animation-duration: 22s;
+    }
+
+    .blob-b {
+        width: 380px;
+        height: 380px;
+        background: #f59e0b;
+        bottom: -80px;
+        left: -80px;
+        animation-duration: 28s;
+        animation-direction: reverse;
+    }
+
+    .blob-c {
+        width: 280px;
+        height: 280px;
+        background: #6366f1;
+        top: 50%;
+        left: 30%;
+        animation-duration: 18s;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(-30px,40px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(40px,-20px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    /* Stagger */
+    .reveal {
+        opacity: 0;
+        transform: translateY(22px);
+        animation: revealUp 0.6s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .d1 {
+        animation-delay: .05s
+    }
+
+    .d2 {
+        animation-delay: .12s
+    }
+
+    .d3 {
+        animation-delay: .19s
+    }
+
+    .d4 {
+        animation-delay: .26s
+    }
+
+    .d5 {
+        animation-delay: .33s
+    }
+
+    .d6 {
+        animation-delay: .40s
+    }
+
+    .d7 {
+        animation-delay: .47s
+    }
+
+    .d8 {
+        animation-delay: .54s
+    }
+
+    /* Заголовок */
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(1.8rem,4vw,3rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #10b981, #f59e0b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradShift 5s ease infinite;
+        }
+
+    @@keyframes gradShift {
+        0%, 100% {
+            background-position: 0% 50%
+        }
+
+        50% {
+            background-position: 100% 50%
+        }
+    }
+
+    /* Головна картка */
+    .form-card {
+        background: rgba(255,255,255,0.62);
+        backdrop-filter: blur(28px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2.5rem;
+        box-shadow: 0 8px 50px rgba(16,185,129,0.08);
+        overflow: hidden;
+        transition: box-shadow 0.4s ease;
+    }
+
+        .form-card:hover {
+            box-shadow: 0 16px 60px rgba(16,185,129,0.13);
+        }
+
+    /* Hero-шапка */
+    .form-hero {
+        background: linear-gradient(135deg, #10b981 0%, #059669 40%, #f59e0b 100%);
+        background-size: 200% 200%;
+        animation: gradShift 6s ease infinite;
+        padding: 2rem 2.5rem 3.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .form-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2.5rem;
+            background: rgba(255,255,255,0.62);
+            backdrop-filter: blur(28px);
+            border-radius: 2.5rem 2.5rem 0 0;
+        }
+
+    .hero-dots {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 15% 50%, rgba(255,255,255,0.12) 1px, transparent 1px), radial-gradient(circle at 85% 25%, rgba(255,255,255,0.10) 1px, transparent 1px), radial-gradient(circle at 50% 80%, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 38px 38px, 32px 32px, 44px 44px;
+        animation: dotsDrift 18s linear infinite;
+    }
+
+    @@keyframes dotsDrift {
+        from {
+            background-position: 0 0, 0 0, 0 0;
+        }
+
+        to {
+            background-position: 38px 38px, -32px 32px, 44px -44px;
+        }
+    }
+
+    /* Іконка у hero */
+    .hero-icon {
+        width: 68px;
+        height: 68px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255,255,255,0.35);
+        border-radius: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 1rem;
+        position: relative;
+        z-index: 1;
+        animation: iconPop 0.8s cubic-bezier(.34,1.56,.64,1) 0.2s both;
+        transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+        cursor: default;
+    }
+
+        .hero-icon:hover {
+            transform: rotate(-10deg) scale(1.12);
+        }
+
+    @@keyframes iconPop {
+        from {
+            transform: scale(0.3) rotate(-20deg);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
+    }
+
+    .hero-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: white;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 15px rgba(0,0,0,0.12);
+    }
+
+    .hero-sub {
+        color: rgba(255,255,255,0.78);
+        font-size: 0.85rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+        margin-top: 0.2rem;
+    }
+
+    /* Форма */
+    .form-body {
+        padding: 0 2.5rem 2.5rem;
+    }
+
+    /* Поля */
+    .field-wrap {
+        background: rgba(248,250,252,0.9);
+        border: 1.5px solid rgba(226,232,240,0.8);
+        border-radius: 1.2rem;
+        padding: 0.85rem 1.1rem;
+        transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .field-wrap::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #10b981, #f59e0b);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .field-wrap:focus-within {
+            background: white;
+            border-color: rgba(16,185,129,0.4);
+            box-shadow: 0 0 0 4px rgba(16,185,129,0.09), 0 4px 20px rgba(16,185,129,0.08);
+            transform: translateY(-3px);
+        }
+
+            .field-wrap:focus-within::before {
+                opacity: 1;
+            }
+
+    .field-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: color 0.2s;
+    }
+
+    .field-wrap:focus-within .field-label {
+        color: #10b981;
+    }
+
+    .field-input, .field-select, .field-textarea {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        width: 100%;
+        outline: none !important;
+        box-shadow: none !important;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .field-select {
+        cursor: pointer;
+    }
+
+    .field-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* Сітка часу */
+    .time-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @@media (max-width: 580px) {
+        .time-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Кнопки */
+    .btn-save {
+        background: linear-gradient(135deg, #10b981, #059669);
+        background-size: 200% 200%;
+        animation: gradShift 4s ease infinite;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 0.9rem 2.5rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-save::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+    @@keyframes shimmer {
+        0% {
+            left: -100%
+        }
+
+        50% {
+            left: 150%
+        }
+
+        100% {
+            left: 150%
+        }
+    }
+
+    .btn-save:hover {
+        transform: translateY(-4px) scale(1.04);
+        box-shadow: 0 10px 35px rgba(16,185,129,0.55);
+        color: white;
+    }
+
+    .btn-save:active {
+        transform: scale(0.96);
+    }
+
+    .btn-cancel {
+        background: rgba(248,250,252,0.9);
+        border: 1.5px solid rgba(226,232,240,0.9);
+        border-radius: 1.2rem;
+        padding: 0.9rem 2rem;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #64748b;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+    }
+
+        .btn-cancel:hover {
+            background: white;
+            color: #ef4444;
+            border-color: rgba(239,68,68,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239,68,68,0.1);
+        }
+
+    /* Підказка необов'язково */
+    .optional-tag {
+        display: inline-block;
+        background: rgba(245,158,11,0.1);
+        color: #d97706;
+        border-radius: 9999px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        vertical-align: middle;
+        margin-left: 0.3rem;
+    }
+
+    /* Крок-індикатор */
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .step-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(16,185,129,0.25);
+        transition: all 0.4s cubic-bezier(.34,1.56,.64,1);
+    }
+
+        .step-dot.active {
+            background: #10b981;
+            transform: scale(1.5);
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.2);
+        }
+
+        .step-dot.done {
+            background: #10b981;
+        }
+</style>
+
+<div class="blob blob-a"></div>
+<div class="blob blob-b"></div>
+<div class="blob blob-c"></div>
+
+<div class="cr-root">
+    <div style="max-width:720px; margin:0 auto;">
+
+        @* Заголовок *@
+        <div class="reveal d1" style="margin-bottom:2rem;">
+            <h1 class="page-title">Нова <span>активність</span></h1>
+            <p style="color:#64748b;font-weight:500;margin-top:0.4rem;">Заплануй екскурсію, атракцію або пригоду</p>
+        </div>
+
+        <div class="form-card reveal d2">
+
+            @* Hero *@
+            <div class="form-hero">
+                <div class="hero-dots"></div>
+                <div class="hero-icon">🎭</div>
+                <div class="hero-title">Додати активність</div>
+                <div class="hero-sub">Заповни деталі нижче</div>
+            </div>
+
+            <div class="form-body">
+                <form asp-action="Create" method="post" id="actForm">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" style="color:#ef4444;font-size:0.85rem;font-weight:600;margin-bottom:1rem;"></div>
+
+                    @* Крок-індикатор *@
+                    <div class="step-indicator reveal d3">
+                        <div class="step-dot active" id="dot1"></div>
+                        <div class="step-dot" id="dot2"></div>
+                        <div class="step-dot" id="dot3"></div>
+                        <div class="step-dot" id="dot4"></div>
+                        <span style="font-size:0.72rem;font-weight:700;color:#94a3b8;margin-left:0.3rem;" id="stepLabel">Основне</span>
+                    </div>
+
+                    @* Поїздка *@
+                    <div class="field-wrap reveal d3" style="margin-bottom:1rem;" data-step="1">
+                        <label class="field-label"><i class="bi bi-airplane-fill"></i> Поїздка</label>
+                        <select asp-for="TripId" asp-items="Model.TripList" class="field-select">
+                            <option disabled selected value="">— Оберіть поїздку —</option>
+                        </select>
+                        <span asp-validation-for="TripId" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                    </div>
+
+                    @* Назва *@
+                    <div class="field-wrap reveal d4" style="margin-bottom:1rem;" data-step="2">
+                        <label class="field-label"><i class="bi bi-card-heading"></i> Назва активності</label>
+                        <input asp-for="Title" class="field-input" placeholder="Екскурсія, Музей, Парк..." />
+                        <span asp-validation-for="Title" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                    </div>
+
+                    @* Статус бронювання *@
+                    <div class="field-wrap reveal d4" style="margin-bottom:1rem;" data-step="2">
+                        <label class="field-label"><i class="bi bi-bookmark-check-fill"></i> Статус бронювання</label>
+                        <select asp-for="BookingStatusId" asp-items="Model.BookingStatusList" class="field-select"></select>
+                        <span asp-validation-for="BookingStatusId" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                    </div>
+
+                    @* Адреса *@
+                    <div class="field-wrap reveal d5" style="margin-bottom:1rem;" data-step="3">
+                        <label class="field-label">
+                            <i class="bi bi-geo-alt-fill"></i> Локація / Адреса
+                            <span class="optional-tag">необов'язково</span>
+                        </label>
+                        <input asp-for="Address" class="field-input" placeholder="вул. Хрещатик, 1, Київ..." />
+                        <span asp-validation-for="Address" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                    </div>
+
+                    @* Час *@
+                    <div class="time-grid reveal d5" style="margin-bottom:1rem;">
+                        <div class="field-wrap" data-step="3">
+                            <label class="field-label"><i class="bi bi-play-circle-fill"></i> Початок</label>
+                            <input asp-for="StartTime" class="field-input" type="datetime-local" />
+                            <span asp-validation-for="StartTime" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
                         </div>
-
-                        <div class="form-group mb-3">
-                            <label asp-for="Title" class="form-label fw-bold">Назва (Екскурсія, Музей тощо)</label>
-                            <input asp-for="Title" class="form-control" />
-                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        <div class="field-wrap" data-step="3">
+                            <label class="field-label">
+                                <i class="bi bi-stop-circle-fill"></i> Завершення
+                                <span class="optional-tag">необов'язково</span>
+                            </label>
+                            <input asp-for="EndTime" class="field-input" type="datetime-local" />
+                            <span asp-validation-for="EndTime" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
                         </div>
+                    </div>
 
-                        <div class="form-group mb-3">
-                            <label asp-for="BookingStatusId" class="form-label fw-bold">Статус бронювання</label>
-                            <select asp-for="BookingStatusId" asp-items="Model.BookingStatusList" class="form-select"></select>
-                            <span asp-validation-for="BookingStatusId" class="text-danger small"></span>
-                        </div>
+                    @* Нотатки *@
+                    <div class="field-wrap reveal d6" style="margin-bottom:1.75rem;" data-step="4">
+                        <label class="field-label">
+                            <i class="bi bi-pencil-fill"></i> Нотатки
+                            <span class="optional-tag">необов'язково</span>
+                        </label>
+                        <textarea asp-for="Notes" class="field-textarea" placeholder="Квитки заброньовано, зустріч о 10:00 біля входу..."></textarea>
+                        <span asp-validation-for="Notes" style="color:#ef4444;font-size:0.75rem;font-weight:600;"></span>
+                    </div>
 
-                        <div class="form-group mb-3">
-                            <label asp-for="Address" class="form-label fw-bold">Локація / Адреса</label>
-                            <input asp-for="Address" class="form-control" />
-                            <span asp-validation-for="Address" class="text-danger small"></span>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label asp-for="StartTime" class="form-label fw-bold">Час початку</label>
-                                <input asp-for="StartTime" class="form-control" type="datetime-local" />
-                                <span asp-validation-for="StartTime" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6 mt-3 mt-md-0">
-                                <label asp-for="EndTime" class="form-label fw-bold">Час завершення (необов'язково)</label>
-                                <input asp-for="EndTime" class="form-control" type="datetime-local" />
-                                <span asp-validation-for="EndTime" class="text-danger small"></span>
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-4">
-                            <label asp-for="Notes" class="form-label fw-bold">Нотатки</label>
-                            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Notes" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-group d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success px-5 shadow-sm">Зберегти</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary px-4">Скасувати</a>
-                        </div>
-                    </form>
-                </div>
+                    @* Кнопки *@
+                    <div class="reveal d7" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                        <a asp-action="Index" class="btn-cancel">
+                            <i class="bi bi-arrow-left"></i> Скасувати
+                        </a>
+                        <button type="submit" class="btn-save">
+                            <i class="bi bi-check2-circle"></i> Зберегти активність
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Крок-індикатор — підсвічує крок залежно від активного поля
+        const dots  = [1,2,3,4].map(i => document.getElementById('dot' + i));
+        const label = document.getElementById('stepLabel');
+        const stepLabels = ['Основне', 'Деталі', 'Час та місце', 'Нотатки'];
+
+        document.querySelectorAll('[data-step]').forEach(wrap => {
+            const inputs = wrap.querySelectorAll('input, select, textarea');
+            inputs.forEach(inp => {
+                inp.addEventListener('focus', () => {
+                    const step = parseInt(wrap.dataset.step) - 1;
+                    dots.forEach((d, i) => {
+                        d.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+                    });
+                    label.textContent = stepLabels[step] || '';
+                });
+            });
+        });
+
+        // Micro-анімація кнопки submit — іконка кружляє при кліку
+        document.querySelector('.btn-save').addEventListener('click', function () {
+            const icon = this.querySelector('i');
+            icon.className = 'bi bi-arrow-repeat';
+            icon.style.animation = 'spin 0.8s linear infinite';
+            if (!document.getElementById('spinStyle')) {
+                const s = document.createElement('style');
+                s.id = 'spinStyle';
+                s.textContent = '@@keyframes spin { to { transform: rotate(360deg); } }';
+                document.head.appendChild(s);
+            }
+        });
+    </script>
 }

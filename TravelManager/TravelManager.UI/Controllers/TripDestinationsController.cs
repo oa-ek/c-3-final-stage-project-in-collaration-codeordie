@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
@@ -6,19 +10,33 @@ using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
 {
+    [Authorize]
     public class TripDestinationsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<User> _userManager;
 
-        public TripDestinationsController(IUnitOfWork unitOfWork)
+        public TripDestinationsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult Index(int? tripId)
         {
-            var destinations = _unitOfWork.TripDestination.GetAll(includeProperties: "Trip");
+            var currentUserId = _userManager.GetUserId(User);
+
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
+            var destinations = _unitOfWork.TripDestination
+                .GetAll(d => myTripIds.Contains(d.TripId), includeProperties: "Trip");
+
+            if (tripId.HasValue)
+                destinations = destinations.Where(d => d.TripId == tripId.Value);
 
             var viewModels = destinations.Select(d => new TripDestinationListViewModel
             {
@@ -26,20 +44,48 @@ namespace TravelManager.UI.Controllers
                 TripName = d.Trip?.Title ?? string.Empty,
                 CityName = d.CityName,
                 Country = d.Country,
+                Latitude = d.Latitude,
+                Longitude = d.Longitude,
                 ArrivalDate = d.ArrivalDate,
                 DepartureDate = d.DepartureDate
             }).OrderBy(d => d.ArrivalDate).ToList();
 
+            ViewBag.CurrentTripId = tripId;
             return View(viewModels);
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult Create(int? tripId)
         {
+            var allowedTrips = GetAllowedTripsForUser();
+
+            if (!allowedTrips.Any())
+            {
+                TempData["ErrorMessage"] = "У вас немає поїздок, де ви можете додавати записи.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            if (tripId.HasValue)
+            {
+                var role = GetUserRoleInTrip(tripId.Value);
+                if (role == "Viewer" || role == "None")
+                {
+                    TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
+                    return RedirectToAction("Index", "Trips");
+                }
+
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
+            }
+
             var model = new TripDestinationFormViewModel
             {
-                TripList = GetTripList()
+                TripId = tripId ?? 0,
+                TripList = allowedTrips,
+                ArrivalDate = DateTime.Today,
+                DepartureDate = DateTime.Today.AddDays(1)
             };
+
             return View(model);
         }
 
@@ -47,9 +93,16 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TripDestinationFormViewModel model)
         {
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
+                return RedirectToAction("Index", "Trips");
+            }
+
             if (!ModelState.IsValid)
             {
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
             }
 
@@ -67,16 +120,21 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = $"Місто {model.CityName} успішно додано!";
+            return RedirectToAction(nameof(Index), new { tripId = model.TripId });
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
-            if (entity == null)
+            if (entity == null) return NotFound();
+
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
+                return RedirectToAction("Index", "Trips");
             }
 
             var model = new TripDestinationFormViewModel
@@ -89,7 +147,7 @@ namespace TravelManager.UI.Controllers
                 Longitude = entity.Longitude,
                 ArrivalDate = entity.ArrivalDate,
                 DepartureDate = entity.DepartureDate,
-                TripList = GetTripList()
+                TripList = GetAllowedTripsForUser()
             };
 
             return View(model);
@@ -99,17 +157,21 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TripDestinationFormViewModel model)
         {
+            var role = GetUserRoleInTrip(model.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
+                return RedirectToAction("Index", "Trips");
+            }
+
             if (!ModelState.IsValid)
             {
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
             }
 
             var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             entity.TripId = model.TripId;
             entity.CityName = model.CityName;
@@ -122,7 +184,8 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = $"Місто {model.CityName} оновлено!";
+            return RedirectToAction(nameof(Index), new { tripId = entity.TripId });
         }
 
         [HttpPost]
@@ -130,24 +193,42 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
-            if (entity == null)
+            if (entity == null) return NotFound();
+
+            var role = GetUserRoleInTrip(entity.TripId);
+            if (role == "Viewer" || role == "None")
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "У вас немає прав для видалення.";
+                return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.TripDestination.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = "Місто видалено з маршруту.";
+            return RedirectToAction(nameof(Index), new { tripId });
         }
 
-        private IEnumerable<SelectListItem> GetTripList()
+        private string GetUserRoleInTrip(int tripId)
         {
-            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+            return participant?.Role?.Name ?? "None";
+        }
+
+        private List<SelectListItem> GetAllowedTripsForUser()
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            return _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer",
+                        includeProperties: "Trip,Role")
+                .Select(tp => new SelectListItem
+                {
+                    Text = tp.Trip.Title,
+                    Value = tp.TripId.ToString()
+                }).ToList();
         }
     }
 }

@@ -1,48 +1,437 @@
 ﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripDestinationListViewModel>
 
 @{
-    ViewData["Title"] = "Маршрути";
+    ViewData["Title"] = "Маршрут";
+    var totalCities = Model.Count();
+    var totalDays = Model.Any()
+        ? Model.Sum(x => Math.Max(1, (x.DepartureDate - x.ArrivalDate).Days))
+        : 0;
+    var withCoords = Model.Where(d => d.Latitude.HasValue && d.Longitude.HasValue).ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Маршрути (Міста)</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Додати місто</a>
-</div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Поїздка</th>
-                    <th>Місто</th>
-                    <th>Країна</th>
-                    <th>Прибуття</th>
-                    <th>Відбуття</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
+<style>
+    .dest-root { font-family: 'DM Sans', sans-serif; padding: 2rem 0 4rem; }
+
+    .dest-root::before {
+        content: '';
+        position: fixed; inset: 0;
+        background:
+            radial-gradient(ellipse 70% 50% at 0% 0%,   rgba(59,130,246,0.10) 0%, transparent 55%),
+            radial-gradient(ellipse 60% 60% at 100% 100%, rgba(16,185,129,0.09) 0%, transparent 55%),
+            radial-gradient(ellipse 40% 40% at 50% 50%,  rgba(99,102,241,0.04) 0%, transparent 65%);
+        z-index: -1;
+        animation: bgPulse 16s ease-in-out infinite alternate;
+    }
+    @@keyframes bgPulse { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(20deg)} }
+
+    .blob { position:fixed; border-radius:50%; filter:blur(90px); opacity:0.13; z-index:-1; pointer-events:none; animation:blobDrift linear infinite; }
+    .blob-b1 { width:480px; height:480px; background:#3b82f6; top:-100px; left:-80px; animation-duration:22s; }
+    .blob-b2 { width:380px; height:380px; background:#10b981; bottom:-80px; right:-60px; animation-duration:28s; animation-direction:reverse; }
+    @@keyframes blobDrift { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-35px) scale(1.05)} 66%{transform:translate(-25px,45px) scale(0.95)} 100%{transform:translate(0,0) scale(1)} }
+
+    .reveal { opacity:0; transform:translateY(20px); animation:revUp 0.65s cubic-bezier(.16,1,.3,1) forwards; }
+    @@keyframes revUp { to{opacity:1;transform:translateY(0)} }
+    .d1{animation-delay:.05s} .d2{animation-delay:.12s} .d3{animation-delay:.19s}
+
+    .page-title { font-family:'Syne',sans-serif; font-size:clamp(2rem,5vw,3.5rem); font-weight:900; color:#0f172a; line-height:1; letter-spacing:-0.03em; }
+    .page-title span { background:linear-gradient(135deg,#3b82f6,#10b981); background-size:200% 200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:gradFlow 5s ease infinite; }
+    @@keyframes gradFlow { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+    /* Кнопки */
+    .add-btn {
+        background:linear-gradient(135deg,#3b82f6,#6366f1); background-size:200% 200%;
+        animation:gradFlow 4s ease infinite;
+        color:white; border:none; border-radius:1.2rem; padding:0.85rem 1.8rem;
+        font-family:'Syne',sans-serif; font-weight:800; font-size:0.9rem;
+        text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem;
+        transition:all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow:0 4px 20px rgba(59,130,246,0.4); position:relative; overflow:hidden;
+    }
+    .add-btn::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent); animation:shine 3s ease-in-out infinite; }
+    @@keyframes shine { 0%{left:-100%} 50%{left:150%} 100%{left:150%} }
+    .add-btn:hover { transform:translateY(-3px) scale(1.04); box-shadow:0 10px 35px rgba(59,130,246,0.55); color:white; }
+
+    .back-btn {
+        background:rgba(255,255,255,0.6); backdrop-filter:blur(20px);
+        border:1px solid rgba(255,255,255,0.85); border-radius:1.2rem; padding:0.85rem 1.5rem;
+        font-family:'DM Sans',sans-serif; font-weight:700; font-size:0.875rem; color:#64748b;
+        text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem;
+        transition:all 0.25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .back-btn:hover { background:white; color:#3b82f6; transform:translateY(-2px); box-shadow:0 4px 15px rgba(59,130,246,0.15); }
+
+    /* Стат-карти */
+    .stat-card {
+        background:rgba(255,255,255,0.58); backdrop-filter:blur(20px);
+        border:1px solid rgba(255,255,255,0.88); border-radius:1.5rem;
+        padding:1.2rem 1.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.04);
+        transition:all 0.3s cubic-bezier(.34,1.56,.64,1); position:relative; overflow:hidden;
+    }
+    .stat-card:hover { transform:translateY(-5px); box-shadow:0 12px 40px rgba(0,0,0,0.08); }
+    .stat-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,var(--c1),var(--c2)); opacity:0.06; transition:opacity 0.3s; }
+    .stat-card:hover::before { opacity:0.11; }
+    .stat-num { font-family:'Syne',sans-serif; font-size:2.2rem; font-weight:900; line-height:1; }
+    .stat-lbl { font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#94a3b8; margin-top:0.2rem; }
+
+    /* Карта */
+    .map-card {
+        background:rgba(255,255,255,0.60); backdrop-filter:blur(24px);
+        border:1px solid rgba(255,255,255,0.9); border-radius:2rem;
+        box-shadow:0 8px 40px rgba(59,130,246,0.10); overflow:hidden;
+        transition:box-shadow 0.4s ease;
+    }
+    .map-card:hover { box-shadow:0 16px 60px rgba(59,130,246,0.16); }
+    #map { height:420px; width:100%; border-radius:0; }
+
+    /* Картки міст */
+    .city-card {
+        background:rgba(255,255,255,0.60); backdrop-filter:blur(20px);
+        border:1px solid rgba(255,255,255,0.88); border-radius:1.8rem;
+        overflow:hidden; transition:all 0.4s cubic-bezier(.34,1.56,.64,1);
+        display:flex; flex-direction:column;
+        box-shadow:0 4px 24px rgba(0,0,0,0.05);
+    }
+    .city-card:hover { transform:translateY(-6px); box-shadow:0 16px 50px rgba(59,130,246,0.14); border-color:rgba(59,130,246,0.25); }
+
+    .city-num {
+        width:36px; height:36px; border-radius:0.75rem;
+        background:linear-gradient(135deg,#3b82f6,#6366f1);
+        color:white; font-family:'Syne',sans-serif; font-weight:900;
+        font-size:0.85rem; display:flex; align-items:center; justify-content:center;
+        box-shadow:0 4px 12px rgba(59,130,246,0.35);
+        flex-shrink:0;
+    }
+    .city-name { font-family:'Syne',sans-serif; font-weight:900; font-size:1.4rem; color:#0f172a; }
+    .city-country { color:#94a3b8; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:0.3rem; }
+
+    /* Маршрутна лінія між містами */
+    @@keyframes routeMove { 0%{background-position:0% 0} 100%{background-position:200% 0} }
+    @@keyframes planeFly { 0%{transform:translateX(-6px)} 50%{transform:translateX(6px)} 100%{transform:translateX(-6px)} }
+
+    .route-line { height:3px; background:linear-gradient(90deg,#cbd5f5,#60a5fa,#cbd5f5); background-size:200% 100%; animation:routeMove 4s linear infinite; border-radius:4px; }
+    .plane-icon { animation:planeFly 3s ease-in-out infinite; display:inline-block; }
+
+    .date-badge { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.18); border-radius:0.75rem; padding:0.3rem 0.75rem; font-size:0.72rem; font-weight:800; color:#1d4ed8; }
+
+    /* Дії */
+    .act-btn { width:34px; height:34px; border-radius:0.75rem; display:flex; align-items:center; justify-content:center; font-size:0.85rem; cursor:pointer; text-decoration:none; border:1.5px solid transparent; transition:all 0.25s cubic-bezier(.34,1.56,.64,1); background:none; }
+    .btn-edit { background:rgba(99,102,241,0.08); color:#6366f1; border-color:rgba(99,102,241,0.2); }
+    .btn-edit:hover { background:#6366f1; color:white; transform:scale(1.2) rotate(-5deg); box-shadow:0 4px 14px rgba(99,102,241,0.45); }
+    .btn-del  { background:rgba(239,68,68,0.08); color:#ef4444; border-color:rgba(239,68,68,0.2); }
+    .btn-del:hover  { background:#ef4444; color:white; transform:scale(1.2) rotate(5deg); box-shadow:0 4px 14px rgba(239,68,68,0.45); }
+    .btn-map  { background:rgba(59,130,246,0.08); color:#3b82f6; border-color:rgba(59,130,246,0.2); }
+    .btn-map:hover  { background:#3b82f6; color:white; transform:scale(1.2); box-shadow:0 4px 14px rgba(59,130,246,0.45); }
+
+    /* Порожній стан */
+    .empty-wrap { background:rgba(255,255,255,0.55); backdrop-filter:blur(20px); border:2px dashed rgba(59,130,246,0.25); border-radius:2rem; padding:5rem 2rem; text-align:center; }
+    .empty-globe { font-size:4rem; display:block; margin-bottom:1rem; animation:globeFloat 4s ease-in-out infinite; }
+    @@keyframes globeFloat { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-12px) rotate(5deg)} }
+
+    /* Leaflet кастом */
+    .leaflet-popup-content-wrapper { border-radius:1rem!important; border:none!important; box-shadow:0 8px 30px rgba(0,0,0,0.15)!important; font-family:'DM Sans',sans-serif!important; }
+    .custom-marker-label { background:white; border-radius:0.5rem; padding:0.2rem 0.5rem; font-weight:800; font-size:0.75rem; color:#1e293b; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+</style>
+
+<div class="blob blob-b1"></div>
+<div class="blob blob-b2"></div>
+
+<div class="dest-root">
+    <div style="max-width:1200px; margin:0 auto; padding:0 1rem;">
+
+        @* Заголовок *@
+        <div class="reveal d1" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+            <div>
+                <h1 class="page-title">Мій <span>маршрут</span></h1>
+                <p style="color:#64748b;font-weight:500;margin-top:0.4rem;">Міста та точки твоєї подорожі на карті</p>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                <a asp-controller="Trips" asp-action="Index" class="back-btn">
+                    <i class="bi bi-arrow-left"></i> До поїздок
+                </a>
+                <a asp-action="Create" asp-route-tripId="@ViewBag.CurrentTripId" class="add-btn">
+                    <i class="bi bi-plus-lg"></i> Додати місто
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="reveal d1" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:1rem;padding:0.9rem 1.2rem;margin-bottom:1.5rem;font-weight:600;color:#065f46;font-size:0.875rem;display:flex;align-items:center;gap:0.75rem;">
+                <i class="bi bi-check-circle-fill" style="color:#10b981;font-size:1.2rem;"></i>
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @* Статистика *@
+        @if (Model.Any())
+        {
+            <div class="reveal d2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;">
+                <div class="stat-card" style="--c1:#3b82f6;--c2:#6366f1;">
+                    <div class="stat-num" style="color:#3b82f6;">@totalCities</div>
+                    <div class="stat-lbl">Міст у маршруті</div>
+                </div>
+                <div class="stat-card" style="--c1:#10b981;--c2:#059669;">
+                    <div class="stat-num" style="color:#10b981;">@totalDays</div>
+                    <div class="stat-lbl">Днів подорожі</div>
+                </div>
+                @if (withCoords.Any())
+                {
+                    <div class="stat-card" style="--c1:#f59e0b;--c2:#d97706;">
+                        <div class="stat-num" style="color:#f59e0b;">@withCoords.Count</div>
+                        <div class="stat-lbl">На карті</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* ===== ГОЛОВНА WOW-ФІЧА: ІНТЕРАКТИВНА КАРТА ===== *@
+        @if (withCoords.Any())
+        {
+            <div class="map-card reveal d2" style="margin-bottom:2rem;">
+                <div style="padding:1.25rem 1.5rem;border-bottom:1px solid rgba(226,232,240,0.5);display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:40px;height:40px;border-radius:0.9rem;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-size:1.1rem;box-shadow:0 4px 12px rgba(59,130,246,0.35);">
+                            <i class="bi bi-map-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-family:'Syne',sans-serif;font-weight:800;color:#0f172a;font-size:1rem;">Інтерактивна карта маршруту</div>
+                            <div style="font-size:0.72rem;font-weight:600;color:#94a3b8;">Клікни на маркер щоб побачити деталі міста</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.72rem;font-weight:700;color:#94a3b8;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);border-radius:9999px;padding:0.3rem 0.75rem;">
+                        @withCoords.Count з @totalCities міст на карті
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+        }
+
+        @* Список міст *@
+        @if (!Model.Any())
+        {
+            <div class="empty-wrap reveal d3">
+                <span class="empty-globe">🌍</span>
+                <h3 style="font-family:'Syne',sans-serif;font-weight:900;color:#0f172a;font-size:1.5rem;margin-bottom:0.5rem;">Маршрут порожній</h3>
+                <p style="color:#94a3b8;font-weight:500;margin-bottom:1.5rem;">Додай перше місто — і твоя пригода почнеться!</p>
+                <a asp-action="Create" asp-route-tripId="@ViewBag.CurrentTripId" class="add-btn" style="margin:0 auto;">
+                    <i class="bi bi-plus-lg"></i> Додати місто
+                </a>
+            </div>
+        }
+        else
+        {
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.2rem;">
+                @{ int cityIdx = 0; }
                 @foreach (var item in Model)
                 {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.TripName</td>
-                        <td class="fw-bold text-primary">@item.CityName</td>
-                        <td>@item.Country</td>
-                        <td>@item.ArrivalDate.ToShortDateString()</td>
-                        <td>@item.DepartureDate.ToShortDateString()</td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning text-dark">Редагувати</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
+                    cityIdx++;
+                    var itemDays = Math.Max(1, (item.DepartureDate - item.ArrivalDate).Days);
+                    var animDelay = $"animation-delay:{0.1 + cityIdx * 0.07}s";
+
+                    <div class="city-card reveal" style="@animDelay">
+
+                        @* Верхня частина *@
+                        <div style="padding:1.4rem 1.5rem 1rem;border-bottom:1px solid rgba(226,232,240,0.5);">
+                            <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.75rem;">
+                                <div class="city-num">@cityIdx</div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="city-name">@item.CityName</div>
+                                    <div class="city-country">
+                                        <i class="bi bi-globe-europe-africa" style="color:#3b82f6;"></i>
+                                        @(item.Country ?? "Невідома країна")
+                                    </div>
+                                </div>
+                                @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                {
+                                    <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:0.6rem;padding:0.25rem 0.5rem;font-size:0.65rem;font-weight:800;color:#3b82f6;white-space:nowrap;">
+                                        <i class="bi bi-geo-alt-fill"></i> На карті
+                                    </div>
+                                }
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+
+                        @* Маршрут прибуття/відбуття *@
+                        <div style="padding:1rem 1.5rem;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                                <div>
+                                    <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;">Прибуття</div>
+                                    <div style="font-family:'Syne',sans-serif;font-weight:900;font-size:1.1rem;color:#0f172a;">
+                                        @item.ArrivalDate.ToString("dd MMM", new System.Globalization.CultureInfo("uk-UA"))
+                                    </div>
+                                </div>
+                                <div style="flex:1;padding:0 0.75rem;display:flex;flex-direction:column;align-items:center;gap:0.3rem;">
+                                    <div class="route-line" style="width:100%;"></div>
+                                    <div style="background:white;border:1px solid rgba(226,232,240,0.8);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-top:-18px;">
+                                        <i class="plane-icon bi bi-airplane-fill" style="color:#3b82f6;font-size:0.7rem;"></i>
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;">Відбуття</div>
+                                    <div style="font-family:'Syne',sans-serif;font-weight:900;font-size:1.1rem;color:#0f172a;">
+                                        @item.DepartureDate.ToString("dd MMM", new System.Globalization.CultureInfo("uk-UA"))
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;">
+                                <span class="date-badge">
+                                    <i class="bi bi-clock"></i> @itemDays @(itemDays == 1 ? "день" : itemDays < 5 ? "дні" : "днів")
+                                </span>
+                                <div style="display:flex;gap:0.45rem;">
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        <button type="button" class="act-btn btn-map"
+                                                onclick="flyToCity(@item.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), @item.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), '@item.CityName')"
+                                                title="Показати на карті">
+                                            <i class="bi bi-geo-alt-fill"></i>
+                                        </button>
+                                    }
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="act-btn btn-edit" title="Редагувати">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:contents"
+                                          onsubmit="return confirm('Видалити @item.CityName з маршруту?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="act-btn btn-del" title="Видалити">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            </div>
+        }
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Передаємо значення з C# у JavaScript безпечним шляхом
+        const hasCoords = @(withCoords.Any() ? "true" : "false");
+
+        if (hasCoords) {
+            // ===== ІНІЦІАЛІЗАЦІЯ КАРТИ =====
+            const destinations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                withCoords.Select((d, i) => new {
+                    index  = i + 1,
+                    city   = d.CityName,
+                    country= d.Country ?? "",
+                    lat    = d.Latitude,
+                    lng    = d.Longitude,
+                    arrive = d.ArrivalDate.ToString("dd.MM.yyyy"),
+                    depart = d.DepartureDate.ToString("dd.MM.yyyy"),
+                    days   = Math.Max(1, (d.DepartureDate - d.ArrivalDate).Days)
+                })
+            ));
+
+            const map = L.map('map', {
+                zoomControl: true,
+                scrollWheelZoom: true,
+                attributionControl: false
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            function makeIcon(num, isFirst, isLast) {
+                const color = isFirst ? '#10b981' : isLast ? '#ef4444' : '#3b82f6';
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+                    <ellipse cx="18" cy="42" rx="8" ry="3" fill="rgba(0,0,0,0.15)"/>
+                    <path d="M18 2C10.268 2 4 8.268 4 16c0 10 14 26 14 26S32 26 32 16C32 8.268 25.732 2 18 2z" fill="${color}"/>
+                    <circle cx="18" cy="16" r="9" fill="white"/>
+                    <text x="18" y="20" text-anchor="middle" fill="${color}" font-size="11" font-weight="900" font-family="sans-serif">${num}</text>
+                </svg>`;
+                return L.divIcon({
+                    html: svg,
+                    className: '',
+                    iconSize: [36, 44],
+                    iconAnchor: [18, 44],
+                    popupAnchor: [0, -46]
+                });
+            }
+
+            const markers = [];
+
+            destinations.forEach((d, i) => {
+                const isFirst = i === 0;
+                const isLast  = i === destinations.length - 1;
+                const icon    = makeIcon(d.index, isFirst, isLast);
+
+                const marker = L.marker([d.lat, d.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="font-family:'DM Sans',sans-serif;min-width:180px;padding:0.25rem;">
+                            <div style="font-size:1.1rem;font-weight:900;color:#0f172a;margin-bottom:0.25rem;">
+                                ${d.index}. ${d.city}
+                            </div>
+                            <div style="font-size:0.78rem;font-weight:600;color:#64748b;margin-bottom:0.6rem;">
+                                🌍 ${d.country}
+                            </div>
+                            <div style="display:flex;gap:0.5rem;font-size:0.72rem;font-weight:700;">
+                                <span style="background:#dbeafe;color:#1d4ed8;padding:0.2rem 0.5rem;border-radius:0.4rem;">
+                                    ✈ ${d.arrive}
+                                </span>
+                                <span style="background:#fee2e2;color:#dc2626;padding:0.2rem 0.5rem;border-radius:0.4rem;">
+                                    🏁 ${d.depart}
+                                </span>
+                            </div>
+                            <div style="margin-top:0.5rem;font-size:0.7rem;font-weight:700;color:#94a3b8;">
+                                ⏱ ${d.days} ${d.days === 1 ? 'день' : d.days < 5 ? 'дні' : 'днів'}
+                            </div>
+                        </div>
+                    `, { maxWidth: 240 });
+
+                markers.push({ lat: d.lat, lng: d.lng, marker });
+            });
+
+            if (destinations.length > 1) {
+                const latlngs = destinations.map(d => [d.lat, d.lng]);
+
+                L.polyline(latlngs, {
+                    color: '#3b82f6',
+                    weight: 2,
+                    opacity: 0.4,
+                    dashArray: '8, 8'
+                }).addTo(map);
+
+                for (let i = 0; i < latlngs.length - 1; i++) {
+                    const t = i / (latlngs.length - 1);
+                    const r = Math.round(59  + t * (239 - 59));
+                    const g = Math.round(130 + t * (68  - 130));
+                    const b = Math.round(246 + t * (68  - 246));
+                    L.polyline([latlngs[i], latlngs[i+1]], {
+                        color: `rgb(${r},${g},${b})`,
+                        weight: 3,
+                        opacity: 0.8
+                    }).addTo(map);
+                }
+            }
+
+            if (markers.length === 1) {
+                map.setView([markers[0].lat, markers[0].lng], 10);
+            } else {
+                const group = L.featureGroup(markers.map(m => m.marker));
+                map.fitBounds(group.getBounds().pad(0.2));
+            }
+
+            window.flyToCity = function(lat, lng, cityName) {
+                map.flyTo([lat, lng], 12, { animate: true, duration: 1.2 });
+                markers.forEach(m => {
+                    if (Math.abs(m.lat - lat) < 0.001 && Math.abs(m.lng - lng) < 0.001) {
+                        setTimeout(() => m.marker.openPopup(), 1300);
+                    }
+                });
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+        } else {
+            window.flyToCity = function() {};
+        }
+    </script>
+}

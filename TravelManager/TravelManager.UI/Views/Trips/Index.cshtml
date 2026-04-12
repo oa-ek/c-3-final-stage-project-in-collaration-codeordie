@@ -1,48 +1,155 @@
-﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TripListViewModel>
+﻿@* 📄 TravelManager/TravelManager.UI/Views/Trips/Index.cshtml *@
+
+@model IEnumerable<TravelManager.UI.Models.ViewModels.TripListViewModel>
 
 @{
     ViewData["Title"] = "Мої поїздки";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="display-6">Мої поїздки</h2>
-    <a asp-action="Create" class="btn btn-primary shadow-sm">Створити нову поїздку</a>
-</div>
+<style>
+    @@keyframes fadeSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th class="ps-4">Назва</th>
-                    <th>Звідки</th>
-                    <th>Дати</th>
-                    <th>Статус</th>
-                    <th class="text-end pe-4">Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td class="ps-4 fw-bold">@item.Title</td>
-                        <td>@item.DepartureLocation</td>
-                        <td>@item.StartDate.ToShortDateString() - @item.EndDate.ToShortDateString()</td>
-                        <td>
-                            <span class="badge bg-info text-dark">@item.StatusName</span>
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group">
-<a asp-action="Details" asp-route-id="@item.Id">Деталі</a>
-<a asp-action="Edit" asp-route-id="@item.Id">Редагувати</a> 
-<form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Ви впевнені, що хочете видалити цю поїздку?')">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-1">Видалити</button>
-                                </form>
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stagger-item {
+        animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+</style>
+
+@if (Model != null)
+{
+    var photos = new string[]
+    {
+        "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1502602898657-3e90760b2160?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
+        "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80"
+    };
+    int photoCounter = 0;
+
+    <div class="max-w-7xl mx-auto py-10 px-4">
+
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 stagger-item" style="animation-delay: 0.1s;">
+            <div>
+                <h2 class="text-6xl font-black text-slate-900 tracking-tighter leading-tight">Мої поїздки</h2>
+                <p class="text-slate-500 mt-2 text-lg font-medium italic">Твої пригоди у світлих тонах.</p>
+            </div>
+            <a asp-action="Create" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:-translate-y-1">
+                <i class="bi bi-plus-lg"></i> Створити нову
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            @foreach (var item in Model)
+            {
+                string photoPath = photos[photoCounter++ % photos.Length];
+
+                @* Визначаємо права один раз для кожної картки *@
+                bool canManage = item.CurrentUserRole == "Owner" || item.CurrentUserRole == "Editor";
+                bool isOwner = item.CurrentUserRole == "Owner";
+
+                <div class="relative h-[520px] rounded-[3rem] overflow-hidden group shadow-xl transition-all duration-500 hover:-translate-y-2 isolate stagger-item" style="animation-delay: 0.2s;">
+
+                    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 -z-10" style="background-image: url('@photoPath');"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90 -z-10"></div>
+
+                    @* Бейдж ролі юзера у поїздці *@
+                    <div class="absolute top-6 left-6 z-20 flex gap-2">
+                        <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
+                            @item.StatusName
+                        </div>
+                        @* Бейдж ролі *@
+                        <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
+                            @if (isOwner)
+                            {
+                                <i class="bi bi-star-fill text-yellow-300 mr-1"></i>
+                            }
+                            else if (canManage)
+                            {
+                                <i class="bi bi-pencil-fill text-blue-300 mr-1"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-eye-fill text-white/60 mr-1"></i>
+                            }
+                            @item.CurrentUserRole
+                        </div>
+                    </div>
+
+                    <div class="absolute inset-0 p-8 flex flex-col justify-end z-10">
+                        <h3 class="text-4xl font-black text-white mb-6 drop-shadow-xl transition-transform duration-500 group-hover:-translate-y-2">
+                            @item.Title
+                        </h3>
+
+                        <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-6 space-y-4 transition-transform duration-500 group-hover:-translate-y-2 shadow-inner">
+                            <div class="flex items-center gap-4 text-white">
+                                <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </span>
+                                <div>
+                                    <p class="text-[9px] uppercase tracking-widest font-bold opacity-60">Відправлення</p>
+                                    <p class="font-bold">@item.DepartureLocation</p>
+                                </div>
                             </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                            <div class="flex items-center gap-4 text-white">
+                                <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+                                    <i class="bi bi-calendar-event-fill"></i>
+                                </span>
+                                <div>
+                                    <p class="text-[9px] uppercase tracking-widest font-bold opacity-60">Дати</p>
+                                    <p class="font-bold">@item.StartDate.ToShortDateString() — @item.EndDate.ToShortDateString()</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex flex-col gap-4 transition-all duration-500 group-hover:-translate-y-2">
+                            <a asp-action="Details" asp-route-id="@item.Id"
+                               class="w-full bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 text-white font-black py-5 px-8 rounded-3xl flex justify-between items-center transition-all duration-300 group/btn shadow-lg">
+                                <span class="uppercase tracking-widest text-sm">Відкрити поїздку</span>
+                                <i class="bi bi-arrow-right text-xl transition-transform group-hover/btn:translate-x-2"></i>
+                            </a>
+
+                            @* Кнопки керування — видно тільки при hover, тільки якщо є права *@
+                            @if (canManage)
+                            {
+                                <div class="flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity delay-150">
+
+                                    @* Редагувати — Owner і Editor *@
+                                    <a asp-action="Edit" asp-route-id="@item.Id"
+                                       class="text-[10px] font-black text-white/60 hover:text-white uppercase tracking-widest flex items-center gap-1.5">
+                                        <i class="bi bi-pencil-square"></i> Редагувати
+                                    </a>
+
+                                    @* Видалити — тільки Owner *@
+                                    @if (isOwner)
+                                    {
+                                        <form asp-action="Delete" method="post"
+                                              onsubmit="return confirm('Видалити поїздку @item.Title?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit"
+                                                    class="text-[10px] font-black text-white/40 hover:text-rose-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                <i class="bi bi-trash3"></i> Видалити
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
-</div>
+}

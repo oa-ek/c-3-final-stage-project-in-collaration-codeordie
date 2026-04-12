@@ -13,6 +13,7 @@ namespace TravelManager.UI.Models.ViewModels
         public IEnumerable<SelectListItem>? TripList { get; set; }
 
         [Required(ErrorMessage = "Введіть опис/назву витрати")]
+        public decimal Amount { get; set; } = 0;
         public string Description { get; set; }
 
         [Required(ErrorMessage = "Оберіть категорію")]

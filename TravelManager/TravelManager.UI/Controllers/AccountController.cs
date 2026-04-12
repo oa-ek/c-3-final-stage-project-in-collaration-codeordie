@@ -207,8 +207,13 @@ namespace TravelManager.UI.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult ChangePassword()
+        public async Task<IActionResult> ChangePassword()
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            // Перевіряємо, чи є у користувача встановлений пароль
+            ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
             return View();
         }
 
@@ -217,22 +222,39 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return NotFound();
 
-            var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            var hasPassword = await _userManager.HasPasswordAsync(user);
+            ViewBag.HasPassword = hasPassword;
 
-            if (changePasswordResult.Succeeded)
+            if (!hasPassword)
+            {
+                ModelState.Remove("CurrentPassword");
+            }
+
+            if (!ModelState.IsValid) return View(model);
+
+            IdentityResult result;
+
+            if (hasPassword)
+            {
+                result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            }
+            else
+            {
+                result = await _userManager.AddPasswordAsync(user, model.NewPassword);
+            }
+
+            if (result.Succeeded)
             {
                 await _signInManager.RefreshSignInAsync(user);
 
-                TempData["StatusMessage"] = "Ваш пароль успішно змінено!";
+                TempData["StatusMessage"] = hasPassword ? "Ваш пароль успішно змінено!" : "Пароль успішно встановлено!";
                 return RedirectToAction(nameof(ChangePassword));
             }
 
-            foreach (var error in changePasswordResult.Errors)
+            foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
@@ -268,6 +290,10 @@ namespace TravelManager.UI.Controllers
             if (result.Succeeded) return LocalRedirect(returnUrl);
 
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+
+            var firstName = info.Principal.FindFirstValue(ClaimTypes.GivenName) ?? "Користувач";
+            var lastName = info.Principal.FindFirstValue(ClaimTypes.Surname) ?? "Google";
+
             if (email != null)
             {
                 var user = await _userManager.FindByEmailAsync(email);
@@ -278,13 +304,15 @@ namespace TravelManager.UI.Controllers
                     {
                         UserName = email,
                         Email = email,
-                        CreatedAt = DateTime.Now 
+                        FirstName = firstName, 
+                        LastName = lastName,   
+                        CreatedAt = DateTime.Now
                     };
 
                     var createResult = await _userManager.CreateAsync(user);
                     if (!createResult.Succeeded) return View(nameof(Login));
 
-                    await _userManager.AddToRoleAsync(user, "User"); 
+                    await _userManager.AddToRoleAsync(user, "User");
                 }
 
                 var addLoginResult = await _userManager.AddLoginAsync(user, info);
@@ -296,7 +324,7 @@ namespace TravelManager.UI.Controllers
             }
 
             return RedirectToAction(nameof(Login));
-
         }
+
     }
 }

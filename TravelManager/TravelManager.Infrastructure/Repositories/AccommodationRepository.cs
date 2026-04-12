@@ -23,10 +23,14 @@ namespace TravelManager.Infrastructure.Repositories
             {
                 accFromDb.Name = entity.Name;
                 accFromDb.Address = entity.Address;
-                accFromDb.CheckInTime = accFromDb.CheckInTime;
-                accFromDb.CheckOutTime = accFromDb.CheckOutTime;
+                accFromDb.CheckInTime = entity.CheckInTime;   
+                accFromDb.CheckOutTime = entity.CheckOutTime; 
                 accFromDb.BookingReference = entity.BookingReference;
                 accFromDb.BookingStatusId = entity.BookingStatusId;
+                accFromDb.ContactPhone = entity.ContactPhone;
+                accFromDb.WebsiteUrl = entity.WebsiteUrl;
+                accFromDb.Latitude = entity.Latitude;
+                accFromDb.Longitude = entity.Longitude;
             }
         }
     }
