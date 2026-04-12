@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,6 +10,7 @@ namespace TravelManager.UI.Models.ViewModels
     public class TripDestinationFormViewModel
     {
         public int Id { get; set; }
+
 
         [Required(ErrorMessage = "Оберіть поїздку")]
         [Display(Name = "Поїздка")]
@@ -23,10 +26,10 @@ namespace TravelManager.UI.Models.ViewModels
         [Display(Name = "Країна")]
         public string? Country { get; set; }
 
-        [Display(Name = "Широта (Latitude)")]
+        [Display(Name = "Широта")]
         public double? Latitude { get; set; }
 
-        [Display(Name = "Довгота (Longitude)")]
+        [Display(Name = "Довгота")]
         public double? Longitude { get; set; }
 
         [Required(ErrorMessage = "Вкажіть дату прибуття")]

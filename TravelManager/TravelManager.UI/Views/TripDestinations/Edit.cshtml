@@ -5,7 +5,6 @@
 }
 
 <style>
-    /* Анімації появи */
     @@keyframes fadeSlideUp {
         0% {
             opacity: 0;
@@ -23,7 +22,6 @@
         opacity: 0;
     }
 
-    /* Плаваючі хмари/плями */
     @@keyframes blob {
         0% {
             transform: translate(0px, 0px) scale(1);
@@ -54,7 +52,6 @@
         animation-delay: 4s;
     }
 
-    /* Ефект радара/пульсації для іконки */
     @@keyframes radar {
         0% {
             box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
@@ -73,18 +70,6 @@
         animation: radar 2s infinite;
     }
 
-    /* Блік кнопки */
-    @@keyframes shimmer {
-        0% {
-            transform: translateX(-100%) skewX(-15deg);
-        }
-
-        100% {
-            transform: translateX(200%) skewX(-15deg);
-        }
-    }
-
-    /* Кастомний скролбар */
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
     }
@@ -102,7 +87,6 @@
             background: rgba(37, 99, 235, 0.8);
         }
 
-    /* Сучасний календар */
     input[type="date"]::-webkit-calendar-picker-indicator {
         background-color: white;
         padding: 6px;
@@ -118,7 +102,7 @@
         }
 </style>
 
-<div class="relative w-full max-w-5xl mx-auto min-h-[85vh] py-12 z-10 px-4 flex flex-col justify-center overflow-hidden">
+<div class="relative w-full max-w-3xl mx-auto min-h-[85vh] py-12 z-10 px-4 flex flex-col justify-center overflow-hidden">
 
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div class="absolute top-0 right-10 w-96 h-96 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-[100px] animate-blob"></div>
@@ -132,34 +116,32 @@
             <span class="text-xs font-black text-slate-600 uppercase tracking-widest">Редагування маршруту</span>
         </div>
         <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 tracking-tighter drop-shadow-sm pb-2">
-            Змінюємо координати 🗺️
+            Змінюємо зупинку 🗺️
         </h1>
+        <p class="text-slate-400 mt-3 font-medium">Координати оновляться на карті автоматично</p>
     </div>
 
-    <div class="relative z-20 bg-white/50 backdrop-blur-[40px] border border-white/60 rounded-[3rem] p-8 md:p-14 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:shadow-[0_30px_70px_-15px_rgba(59,130,246,0.15)] transition-shadow duration-700 stagger-item" style="animation-delay: 0.2s;">
-
+    <div class="relative z-20 bg-white/50 backdrop-blur-[40px] border border-white/60 rounded-[3rem] p-8 md:p-14 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] stagger-item" style="animation-delay: 0.2s;">
         <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80"></div>
 
-        <form asp-action="Edit" method="post" class="relative z-10" id="destinationForm">
+        <form asp-action="Edit" method="post" class="relative z-10">
             <input type="hidden" asp-for="Id" />
 
-            <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-8 text-sm font-bold text-center bg-rose-100/50 backdrop-blur-md py-4 rounded-2xl border border-rose-200/50 animate-pulse"></div>
+            <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-8 text-sm font-bold text-center bg-rose-100/50 backdrop-blur-md py-4 rounded-2xl border border-rose-200/50"></div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
+                <!-- Поїздка -->
                 <div class="flex flex-col group relative z-50 md:col-span-2">
                     <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-blue-600 transition-colors">
-                        <i class="bi bi-briefcase text-lg"></i> До якої подорожі додаємо?
+                        <i class="bi bi-briefcase text-lg"></i> До якої подорожі?
                     </label>
-
                     <select asp-for="TripId" asp-items="Model.TripList" class="sr-only real-select"></select>
-
                     <div class="relative custom-dropdown w-full">
-                        <button type="button" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-lg font-bold text-slate-700 outline-none hover:bg-white/90 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] flex justify-between items-center focus:ring-4 focus:ring-blue-400/30 focus:border-blue-400" onclick="toggleDropdown(this)">
+                        <button type="button" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-lg font-bold text-slate-700 outline-none hover:bg-white/90 transition-all flex justify-between items-center focus:ring-4 focus:ring-blue-400/30" onclick="toggleDropdown(this)">
                             <span class="selected-text text-slate-400">-- Оберіть маршрут --</span>
                             <i class="bi bi-chevron-down transition-transform duration-300 text-slate-400"></i>
                         </button>
-
                         <div class="dropdown-menu absolute left-0 right-0 mt-2 bg-white/95 backdrop-blur-[40px] border border-white/80 rounded-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15)] opacity-0 invisible translate-y-4 transition-all duration-300 overflow-hidden">
                             <ul class="max-h-56 overflow-y-auto py-2 custom-scrollbar">
                                 <li class="px-6 py-3 text-slate-400 text-sm font-bold cursor-pointer hover:bg-slate-100/50 transition-colors" onclick="selectItem(this, '')">-- Не обрано --</li>
@@ -175,73 +157,60 @@
                             </ul>
                         </div>
                     </div>
-                    <span asp-validation-for="TripId" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
+                    <span asp-validation-for="TripId" class="text-xs text-rose-500 font-bold mt-2 pl-4 block"></span>
                 </div>
 
+                <!-- Місто -->
                 <div class="flex flex-col group relative z-40">
                     <label asp-for="CityName" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-emerald-500 transition-colors flex items-center gap-2">
                         <i class="bi bi-buildings text-lg"></i> Місто
                     </label>
-                    <input asp-for="CityName" placeholder="Наприклад: Рим" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-xl font-black text-slate-800 outline-none focus:ring-4 focus:ring-emerald-400/30 focus:border-emerald-400 focus:bg-white/90 hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] placeholder:text-slate-300 placeholder:font-medium" />
-                    <span asp-validation-for="CityName" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
+                    <input asp-for="CityName" placeholder="Наприклад: Рим" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-xl font-black text-slate-800 outline-none focus:ring-4 focus:ring-emerald-400/30 focus:border-emerald-400 focus:bg-white/90 hover:bg-white/80 transition-all placeholder:text-slate-300 placeholder:font-medium" />
+                    <span asp-validation-for="CityName" class="text-xs text-rose-500 font-bold mt-2 pl-4 block"></span>
                 </div>
 
+                <!-- Країна -->
                 <div class="flex flex-col group relative z-40">
                     <label asp-for="Country" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-emerald-500 transition-colors flex items-center gap-2">
                         <i class="bi bi-globe-europe-africa text-lg"></i> Країна
                     </label>
-                    <input asp-for="Country" placeholder="Наприклад: Італія" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-xl font-black text-slate-800 outline-none focus:ring-4 focus:ring-emerald-400/30 focus:border-emerald-400 focus:bg-white/90 hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] placeholder:text-slate-300 placeholder:font-medium" />
-                    <span asp-validation-for="Country" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
+                    <input asp-for="Country" placeholder="Наприклад: Італія" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-xl font-black text-slate-800 outline-none focus:ring-4 focus:ring-emerald-400/30 focus:border-emerald-400 focus:bg-white/90 hover:bg-white/80 transition-all placeholder:text-slate-300 placeholder:font-medium" />
+                    <span asp-validation-for="Country" class="text-xs text-rose-500 font-bold mt-2 pl-4 block"></span>
                 </div>
 
+                <!-- Дата прибуття -->
                 <div class="flex flex-col group relative z-30">
                     <label asp-for="ArrivalDate" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-cyan-500 transition-colors flex items-center gap-2">
                         <i class="bi bi-box-arrow-in-right text-lg"></i> Дата прибуття
                     </label>
-                    <input asp-for="ArrivalDate" type="date" class="w-full h-[76px] bg-white/60 border-2 border-white/70 rounded-3xl pl-6 pr-4 text-base font-bold text-slate-700 outline-none focus:ring-4 focus:ring-cyan-400/30 focus:border-cyan-400 focus:bg-white/90 hover:bg-white/80 transition-all cursor-pointer shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]" />
-                    <span asp-validation-for="ArrivalDate" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
+                    <input asp-for="ArrivalDate" type="date" class="w-full h-[76px] bg-white/60 border-2 border-white/70 rounded-3xl pl-6 pr-4 text-base font-bold text-slate-700 outline-none focus:ring-4 focus:ring-cyan-400/30 focus:border-cyan-400 focus:bg-white/90 hover:bg-white/80 transition-all cursor-pointer" />
+                    <span asp-validation-for="ArrivalDate" class="text-xs text-rose-500 font-bold mt-2 pl-4 block"></span>
                 </div>
 
+                <!-- Дата відбуття -->
                 <div class="flex flex-col group relative z-30">
                     <label asp-for="DepartureDate" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-rose-400 transition-colors flex items-center gap-2">
                         <i class="bi bi-box-arrow-right text-lg"></i> Дата відбуття
                     </label>
-                    <input asp-for="DepartureDate" type="date" class="w-full h-[76px] bg-white/60 border-2 border-white/70 rounded-3xl pl-6 pr-4 text-base font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-400/30 focus:border-rose-400 focus:bg-white/90 hover:bg-white/80 transition-all cursor-pointer shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]" />
-                    <span asp-validation-for="DepartureDate" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                </div>
-
-                <div class="md:col-span-2 mt-4 p-6 rounded-[2.5rem] bg-slate-800/5 border border-slate-900/10 shadow-inner relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-40 transition-opacity">
-                        <i class="bi bi-crosshair text-6xl text-blue-500"></i>
-                    </div>
-
-                    <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-600 mb-6 flex items-center gap-2">
-                        <i class="bi bi-geo-alt-fill text-blue-500"></i> Точні GPS координати
-                    </h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex flex-col relative z-20">
-                            <label asp-for="Latitude" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 pl-2">Широта (Latitude)</label>
-                            <input asp-for="Latitude" type="number" step="0.000001" placeholder="41.902782" class="w-full bg-white/80 border border-white rounded-2xl py-3 pl-4 pr-4 font-mono text-lg font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all shadow-sm placeholder:text-slate-300" />
-                            <span asp-validation-for="Latitude" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-2"></span>
-                        </div>
-                        <div class="flex flex-col relative z-20">
-                            <label asp-for="Longitude" class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 pl-2">Довгота (Longitude)</label>
-                            <input asp-for="Longitude" type="number" step="0.000001" placeholder="12.496366" class="w-full bg-white/80 border border-white rounded-2xl py-3 pl-4 pr-4 font-mono text-lg font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all shadow-sm placeholder:text-slate-300" />
-                            <span asp-validation-for="Longitude" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-2"></span>
-                        </div>
-                    </div>
+                    <input asp-for="DepartureDate" type="date" class="w-full h-[76px] bg-white/60 border-2 border-white/70 rounded-3xl pl-6 pr-4 text-base font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-400/30 focus:border-rose-400 focus:bg-white/90 hover:bg-white/80 transition-all cursor-pointer" />
+                    <span asp-validation-for="DepartureDate" class="text-xs text-rose-500 font-bold mt-2 pl-4 block"></span>
                 </div>
 
             </div>
 
-            <div class="mt-14 flex flex-col sm:flex-row items-center justify-end gap-6 pt-8 border-t border-slate-200/50">
-                <a asp-controller="TripDestinations" asp-action="Index" class="w-full sm:w-auto px-8 py-5 rounded-full font-black text-slate-500 hover:text-slate-800 bg-white/50 hover:bg-white border border-white shadow-sm hover:shadow-md transition-all text-sm uppercase tracking-widest text-center flex items-center justify-center gap-2">
+            <!-- Інфо: координати автоматично -->
+            <div class="mt-8 p-5 rounded-2xl bg-blue-50/60 border border-blue-200/50 flex items-center gap-3">
+                <i class="bi bi-geo-alt-fill text-blue-500 text-xl flex-shrink-0"></i>
+                <p class="text-sm text-blue-700 font-medium">
+                    Координати оновляться <strong>автоматично</strong> на карті поїздки через Nominatim API при наступному відкритті.
+                </p>
+            </div>
+
+            <div class="mt-10 flex flex-col sm:flex-row items-center justify-end gap-6 pt-8 border-t border-slate-200/50">
+                <a asp-controller="Trips" asp-action="Index" class="w-full sm:w-auto px-8 py-5 rounded-full font-black text-slate-500 hover:text-slate-800 bg-white/50 hover:bg-white border border-white shadow-sm hover:shadow-md transition-all text-sm uppercase tracking-widest text-center">
                     Скасувати
                 </a>
-
                 <button type="submit" class="w-full sm:w-auto group relative inline-flex items-center justify-center px-12 py-5 font-black text-white transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(59,130,246,0.6)] hover:-translate-y-1 hover:scale-105 uppercase tracking-widest text-sm overflow-hidden active:scale-95">
-                    <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
                     <span class="relative flex items-center gap-3">
                         Зберегти зміни 🚀
                     </span>
@@ -255,25 +224,17 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Ініціалізація значень у кастомних селектах при завантаженні (для Edit)
             document.querySelectorAll('.real-select').forEach(select => {
-                if(select.value) {
-                    let selectedOption = select.options[select.selectedIndex];
-                    let customBtn = select.nextElementSibling.querySelector('.selected-text');
-
-                    if(selectedOption && customBtn) {
-                        customBtn.innerText = selectedOption.text;
-                        customBtn.classList.remove('text-slate-400');
-                        customBtn.classList.add('text-slate-800');
-                    }
+                if (select.value) {
+                    let opt = select.options[select.selectedIndex];
+                    let btn = select.nextElementSibling.querySelector('.selected-text');
+                    if (opt && btn) { btn.innerText = opt.text; btn.classList.remove('text-slate-400'); btn.classList.add('text-slate-800'); }
                 }
             });
         });
 
-        // ЛОГІКА ДЛЯ КАСТОМНИХ ВИПАДАЮЧИХ СПИСКІВ
         function toggleDropdown(button) {
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu !== button.nextElementSibling) {
@@ -282,13 +243,10 @@
                     menu.parentElement.classList.remove('z-[60]');
                 }
             });
-
             const menu = button.nextElementSibling;
             const icon = button.querySelector('.bi-chevron-down');
             const container = button.parentElement;
-
             const isOpening = menu.classList.contains('opacity-0');
-
             if (isOpening) {
                 menu.classList.remove('opacity-0', 'invisible', 'translate-y-4');
                 icon.classList.add('rotate-180');
@@ -300,25 +258,17 @@
             }
         }
 
-        function selectItem(liElement, value) {
-            const text = liElement.innerText.trim();
-            const container = liElement.closest('.custom-dropdown');
+        function selectItem(li, value) {
+            const container = li.closest('.custom-dropdown');
             const triggerBtn = container.querySelector('.selected-text');
             const realSelect = container.parentElement.querySelector('.real-select');
             const menu = container.querySelector('.dropdown-menu');
             const icon = container.querySelector('.bi-chevron-down');
-
-            triggerBtn.innerText = text;
+            triggerBtn.innerText = li.innerText.trim();
             triggerBtn.classList.remove('text-slate-400');
             triggerBtn.classList.add('text-slate-800');
-
             realSelect.value = value;
-
             realSelect.dispatchEvent(new Event('change'));
-            if (typeof $(realSelect).valid === "function") {
-                $(realSelect).valid();
-            }
-
             menu.classList.add('opacity-0', 'invisible', 'translate-y-4');
             icon.classList.remove('rotate-180');
             setTimeout(() => container.classList.remove('z-[60]'), 300);
@@ -330,9 +280,7 @@
                     menu.classList.add('opacity-0', 'invisible', 'translate-y-4');
                     menu.parentElement.classList.remove('z-[60]');
                 });
-                document.querySelectorAll('.bi-chevron-down').forEach(icon => {
-                    icon.classList.remove('rotate-180');
-                });
+                document.querySelectorAll('.bi-chevron-down').forEach(icon => icon.classList.remove('rotate-180'));
             }
         });
     </script>
