@@ -54,30 +54,29 @@
             {
                 string photoPath = photos[photoCounter++ % photos.Length];
 
-                @* Визначаємо права один раз для кожної картки *@
-                bool canManage = item.CurrentUserRole == "Owner" || item.CurrentUserRole == "Editor";
-                bool isOwner = item.CurrentUserRole == "Owner";
+                @* ВИПРАВЛЕНО: "Organizer" замість "Owner"/"Editor" *@
+                bool canManage = item.CurrentUserRole == "Organizer";
+                bool isOrganizer = item.CurrentUserRole == "Organizer";
 
                 <div class="relative h-[520px] rounded-[3rem] overflow-hidden group shadow-xl transition-all duration-500 hover:-translate-y-2 isolate stagger-item" style="animation-delay: 0.2s;">
 
                     <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 -z-10" style="background-image: url('@photoPath');"></div>
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90 -z-10"></div>
 
-                    @* Бейдж ролі юзера у поїздці *@
+                    @* Бейджі статусу та ролі *@
                     <div class="absolute top-6 left-6 z-20 flex gap-2">
                         <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
                             <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
                             @item.StatusName
                         </div>
-                        @* Бейдж ролі *@
                         <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                            @if (isOwner)
+                            @if (isOrganizer)
                             {
                                 <i class="bi bi-star-fill text-yellow-300 mr-1"></i>
                             }
-                            else if (canManage)
+                            else if (item.CurrentUserRole == "Participant")
                             {
-                                <i class="bi bi-pencil-fill text-blue-300 mr-1"></i>
+                                <i class="bi bi-person-fill text-blue-300 mr-1"></i>
                             }
                             else
                             {
@@ -120,19 +119,15 @@
                                 <i class="bi bi-arrow-right text-xl transition-transform group-hover/btn:translate-x-2"></i>
                             </a>
 
-                            @* Кнопки керування — видно тільки при hover, тільки якщо є права *@
+                            @* ВИПРАВЛЕНО: тільки Organizer бачить кнопки керування *@
                             @if (canManage)
                             {
                                 <div class="flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity delay-150">
-
-                                    @* Редагувати — Owner і Editor *@
                                     <a asp-action="Edit" asp-route-id="@item.Id"
                                        class="text-[10px] font-black text-white/60 hover:text-white uppercase tracking-widest flex items-center gap-1.5">
                                         <i class="bi bi-pencil-square"></i> Редагувати
                                     </a>
-
-                                    @* Видалити — тільки Owner *@
-                                    @if (isOwner)
+                                    @if (isOrganizer)
                                     {
                                         <form asp-action="Delete" method="post"
                                               onsubmit="return confirm('Видалити поїздку @item.Title?');">

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
@@ -7,6 +8,8 @@ using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
 {
+
+    [Authorize]
     public class ChecklistsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -21,20 +24,15 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-
             var currentUserId = _userManager.GetUserId(User);
-            if (currentUserId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
 
             var myTripIds = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId)
                 .Select(tp => tp.TripId)
                 .ToList();
 
-            var checklists = _unitOfWork.Checklist.
-                GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip");
+            var checklists = _unitOfWork.Checklist
+                .GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip");
 
             var viewModels = checklists.Select(c => new ChecklistListViewModel
             {
@@ -50,10 +48,14 @@ namespace TravelManager.UI.Controllers
         public IActionResult Details(int id)
         {
             var checklist = _unitOfWork.Checklist.Get(c => c.Id == id, includeProperties: "Trip,Items");
+            if (checklist == null) return NotFound();
 
-            if (checklist == null)
+            // Перевірка доступу
+            var role = GetUserRoleInTrip(checklist.TripId);
+            if (role == "None")
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "У вас немає доступу до цього чекліста.";
+                return RedirectToAction("Index", "Trips");
             }
 
             var model = new ChecklistDetailsViewModel
@@ -61,8 +63,6 @@ namespace TravelManager.UI.Controllers
                 Id = checklist.Id,
                 Title = checklist.Title,
                 TripName = checklist.Trip?.Title ?? "Невідомо",
-
-               
                 Items = checklist.Items.Select(i => new ChecklistItemListViewModel
                 {
                     Id = i.Id,
@@ -92,8 +92,11 @@ namespace TravelManager.UI.Controllers
                 if (role == "Viewer" || role == "None")
                 {
                     TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
-                    return RedirectToAction("Index", "Trips"); 
+                    return RedirectToAction("Index", "Trips");
                 }
+
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
             }
 
             var model = new ChecklistFormViewModel
@@ -111,18 +114,14 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
+                TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
                 return RedirectToAction("Index", "Trips");
             }
 
+            // ВИПРАВЛЕНО: прибрано дублюючий ModelState.IsValid
             if (!ModelState.IsValid)
             {
-                model.TripList = GetAllowedTripsForUser(); 
-                return View(model);
-            }
-            if (!ModelState.IsValid)
-            {
-                model.TripList = GetTripList();
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
             }
 
@@ -135,6 +134,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Checklist.Add(entity);
             await _unitOfWork.SaveAsync();
 
+            TempData["SuccessMessage"] = "Чекліст успішно створено!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -142,15 +142,13 @@ namespace TravelManager.UI.Controllers
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.Checklist.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
-                return RedirectToAction("Index", "Trips"); 
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
+                return RedirectToAction("Index", "Trips");
             }
 
             var model = new ChecklistFormViewModel
@@ -171,7 +169,7 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
                 return RedirectToAction("Index", "Trips");
             }
 
@@ -182,10 +180,7 @@ namespace TravelManager.UI.Controllers
             }
 
             var entity = _unitOfWork.Checklist.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             entity.TripId = model.TripId;
             entity.Title = model.Title;
@@ -193,6 +188,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Checklist.Update(entity);
             await _unitOfWork.SaveAsync();
 
+            TempData["SuccessMessage"] = "Чекліст оновлено!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -201,30 +197,20 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Checklist.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                TempData["ErrorMessage"] = "У вас немає прав для видалення.";
                 return RedirectToAction("Index", "Trips");
             }
 
             _unitOfWork.Checklist.Remove(entity);
             await _unitOfWork.SaveAsync();
 
+            TempData["SuccessMessage"] = "Чекліст видалено.";
             return RedirectToAction(nameof(Index));
-        }
-
-        private IEnumerable<SelectListItem> GetTripList()
-        {
-            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
         }
 
         private string GetUserRoleInTrip(int tripId)
@@ -232,22 +218,20 @@ namespace TravelManager.UI.Controllers
             var currentUserId = _userManager.GetUserId(User);
             var participant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
-
             return participant?.Role?.Name ?? "None";
         }
 
         private IEnumerable<SelectListItem> GetAllowedTripsForUser()
         {
             var currentUserId = _userManager.GetUserId(User);
-
             return _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip,Role")
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer",
+                        includeProperties: "Trip,Role")
                 .Select(tp => new SelectListItem
                 {
                     Text = tp.Trip.Title,
                     Value = tp.TripId.ToString()
                 }).ToList();
         }
-
     }
 }
