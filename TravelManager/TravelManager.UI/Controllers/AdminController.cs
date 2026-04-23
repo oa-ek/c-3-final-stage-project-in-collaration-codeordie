@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Data;
 using TravelManager.UI.Models.ViewModels.Admin;
-using TravelManager.Infrastructure.Interfaces; 
+using TravelManager.Infrastructure.Interfaces;
+using System;
 
 namespace TravelManager.UI.Controllers
 {
@@ -14,7 +15,7 @@ namespace TravelManager.UI.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly ApplicationDbContext _context;
-        private readonly IEmailService _emailService; 
+        private readonly IEmailService _emailService;
 
         public AdminController(UserManager<User> userManager, ApplicationDbContext context, IEmailService emailService)
         {
@@ -79,7 +80,7 @@ namespace TravelManager.UI.Controllers
             }
             else
             {
-                targetUsers = allUsers;
+                targetUsers = allUsers; // "All"
             }
 
             string formattedMessage = message.Replace("\n", "<br>");
@@ -92,6 +93,8 @@ namespace TravelManager.UI.Controllers
                 </div>";
 
             int successCount = 0;
+            int errorCount = 0;
+            string lastErrorMessage = "";
 
             foreach (var user in targetUsers)
             {
@@ -102,13 +105,29 @@ namespace TravelManager.UI.Controllers
                         await _emailService.SendEmailAsync(user.Email, subject, mailBody);
                         successCount++;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        // Тепер ми ловимо помилку!
+                        errorCount++;
+                        lastErrorMessage = ex.Message;
                     }
                 }
             }
 
-            TempData["SuccessMessage"] = $"Розсилку успішно відправлено {successCount} користувачам (Група: {targetGroup})!";
+            if (successCount > 0)
+            {
+                TempData["SuccessMessage"] = $"Розсилку успішно відправлено {successCount} користувачам (Група: {targetGroup})!";
+                if (errorCount > 0)
+                {
+                    TempData["SuccessMessage"] += $" Проте {errorCount} листів не відправлено.";
+                }
+            }
+            else
+            {
+                // Якщо 0 успіхів, показуємо реальну причину:
+                TempData["ErrorMessage"] = $"Помилка відправки. Перевірте налаштування SMTP. Деталі: {lastErrorMessage}";
+            }
+
             return RedirectToAction(nameof(AdminDashboard));
         }
 
@@ -189,6 +208,5 @@ namespace TravelManager.UI.Controllers
 
             return RedirectToAction(nameof(UserList));
         }
-
     }
 }
