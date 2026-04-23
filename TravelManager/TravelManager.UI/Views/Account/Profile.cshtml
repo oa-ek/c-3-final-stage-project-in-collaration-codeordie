@@ -1,6 +1,4 @@
-﻿@* 📄 TravelManager/TravelManager.UI/Views/Account/Profile.cshtml *@
-
-@model TravelManager.UI.Models.ViewModels.Account.ProfileViewModel
+﻿@model TravelManager.UI.Models.ViewModels.Account.ProfileViewModel
 @{
     ViewData["Title"] = "Мій профіль";
     var hasPicture = Model.CurrentProfilePicture != null;
@@ -20,7 +18,6 @@
         min-height: 100vh;
         padding: 2rem 1rem 4rem;
         position: relative;
-        overflow: hidden;
     }
 
         /* Живий фон */
@@ -100,7 +97,6 @@
         }
     }
 
-    /* Stagger-анімація появи елементів */
     .reveal {
         opacity: 0;
         transform: translateY(24px);
@@ -222,7 +218,6 @@
             box-shadow: 0 16px 60px rgba(99,102,241,0.13);
         }
 
-    /* Hero-шапка */
     .card-hero {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
         background-size: 200% 200%;
@@ -348,7 +343,7 @@
         transform: scale(1.08) rotate(4deg);
         box-shadow: 0 14px 45px rgba(99,102,241,0.55);
     }
-    /* Пульсуюче кільце навколо аватара */
+
     .avatar-pulse {
         position: absolute;
         inset: -6px;
@@ -437,7 +432,7 @@
         position: relative;
         overflow: hidden;
     }
-        /* Лівий акцент-бордер */
+
         .field-wrap::before {
             content: '';
             position: absolute;
@@ -450,7 +445,7 @@
             transition: opacity 0.3s ease;
             border-radius: 3px 0 0 3px;
         }
-        /* Shimmer при фокусі */
+
         .field-wrap::after {
             content: '';
             position: absolute;
@@ -480,11 +475,7 @@
         transform: translateY(-3px);
     }
 
-        .field-wrap:focus-within::before {
-            opacity: 1;
-        }
-
-        .field-wrap:focus-within::after {
+        .field-wrap:focus-within::before, .field-wrap:focus-within::after {
             opacity: 1;
         }
 
@@ -522,7 +513,7 @@
             cursor: not-allowed;
         }
 
-    /* Кнопка зберегти з shimmer */
+    /* Кнопка зберегти */
     .save-btn {
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         background-size: 200% 200%;
@@ -555,7 +546,7 @@
             background-position: 0% 50%;
         }
     }
-    /* Shimmer-смужка на кнопці */
+
     .save-btn::after {
         content: '';
         position: absolute;
@@ -593,7 +584,6 @@
         box-shadow: 0 2px 10px rgba(99,102,241,0.3);
     }
 
-    /* Toast */
     .success-toast {
         display: flex;
         align-items: center;
@@ -702,7 +692,6 @@
         max-width: 100%;
     }
 
-    /* Заголовок сторінки */
     .page-title {
         font-family: 'Syne', sans-serif;
         font-size: clamp(2rem, 5vw, 3.5rem);
@@ -722,14 +711,11 @@
         }
 </style>
 
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
-<div class="blob blob-3"></div>
+<div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
 
 <div class="profile-root">
     <div style="max-width: 1000px; margin: 0 auto;">
 
-        @* Заголовок *@
         <div class="reveal delay-1" style="margin-bottom: 2.5rem;">
             <h1 class="page-title">Мій <span>профіль</span></h1>
             <p style="color:#64748b; font-weight:500; margin-top:0.5rem;">Керуй особистими даними та налаштуваннями акаунту</p>
@@ -737,28 +723,19 @@
 
         <div style="display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap;">
 
-            @* Сайдбар *@
             <div class="sidebar reveal delay-2" style="width:200px; flex-shrink:0;">
                 <p class="sidebar-label">Акаунт</p>
-                <a asp-controller="Account" asp-action="Profile" class="s-link active">
-                    <i class="bi bi-person-fill"></i><span>Особисті дані</span>
-                </a>
-                <a asp-controller="Account" asp-action="ChangePassword" class="s-link">
-                    <i class="bi bi-shield-lock-fill"></i><span>Пароль</span>
-                </a>
+                <a asp-controller="Account" asp-action="Profile" class="s-link active"><i class="bi bi-person-fill"></i><span>Особисті дані</span></a>
+                <a asp-controller="Account" asp-action="ChangePassword" class="s-link"><i class="bi bi-shield-lock-fill"></i><span>Пароль</span></a>
             </div>
 
-            @* Головна картка *@
             <div class="main-card reveal delay-3" style="flex:1; min-width:300px;">
-
-                @* Hero *@
                 <div class="card-hero">
                     <div class="hero-pattern"></div>
                     <div class="hero-title">Особисті дані</div>
                     <div class="hero-sub">Оновлюй інформацію про себе</div>
                 </div>
 
-                @* Аватар *@
                 <div class="avatar-wrap">
                     <div class="avatar-pulse"></div>
                     <div class="avatar-ring" onclick="document.getElementById('ProfileImageInput').click()" title="Змінити фото">
@@ -766,6 +743,7 @@
                             @if (hasPicture)
                             {
                                 <img id="profilePreview" src="@imgSrc" alt="Аватар" style="width:100%;height:100%;object-fit:cover;" />
+                                <i id="profilePlaceholder" class="bi bi-person-fill" style="font-size:3rem;color:#cbd5e1;display:none;"></i>
                             }
                             else
                             {
@@ -780,7 +758,6 @@
                 </div>
 
                 <div class="form-body">
-
                     @if (TempData["SuccessMessage"] != null)
                     {
                         <div class="success-toast">
@@ -791,6 +768,7 @@
 
                     <form asp-action="Profile" method="post" enctype="multipart/form-data" id="profileForm">
                         <div asp-validation-summary="ModelOnly" style="color:#ef4444;font-size:0.85rem;font-weight:600;margin-bottom:1rem;"></div>
+
                         <input asp-for="ProfileImage" id="ProfileImageInput" type="file" style="display:none;" accept="image/png,image/jpeg,image/jpg" />
 
                         <div class="fields-grid">
@@ -816,7 +794,7 @@
                         </div>
 
                         <div style="display:flex;justify-content:flex-end;margin-top:1.75rem;" class="reveal delay-5">
-                            <button type="submit" class="save-btn">
+                            <button type="submit" class="save-btn" id="mainSubmitBtn">
                                 <i class="bi bi-save2-fill" style="margin-right:0.5rem;"></i> Зберегти зміни
                             </button>
                         </div>
@@ -833,7 +811,7 @@
         <div class="modal-content">
             <div class="crop-header">
                 <div class="crop-title"><i class="bi bi-crop me-2"></i>Обрізати фото</div>
-                <button class="crop-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+                <button type="button" class="crop-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-body p-4">
                 <div style="max-height:450px;overflow:hidden;border-radius:1rem;">
@@ -841,9 +819,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0 px-4 pb-4 gap-3">
-                <button type="button" class="btn btn-light rounded-3 fw-bold px-4" data-bs-dismiss="modal">
-                    Скасувати
-                </button>
+                <button type="button" class="btn btn-light rounded-3 fw-bold px-4" data-bs-dismiss="modal">Скасувати</button>
                 <button type="button" id="btnCropAndSave" class="save-btn" style="padding:0.7rem 2rem;">
                     <i class="bi bi-check2-circle me-2"></i>Підтвердити обрізання
                 </button>
@@ -854,7 +830,9 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             let cropper;
@@ -863,35 +841,95 @@
             const previewImage = document.getElementById('profilePreview');
             const placeholder  = document.getElementById('profilePlaceholder');
             const cropModalEl  = document.getElementById('cropModal');
-            const cropModal    = new bootstrap.Modal(cropModalEl);
+            const btnCrop      = document.getElementById('btnCropAndSave');
+
+            // Надійне створення інстансу
+            const cropModal = new bootstrap.Modal(cropModalEl);
 
             imageInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = ev => { imageToCrop.src = ev.target.result; cropModal.show(); };
+                reader.onload = ev => {
+                    imageToCrop.src = ev.target.result;
+                    cropModal.show();
+                };
                 reader.readAsDataURL(file);
             });
 
             cropModalEl.addEventListener('shown.bs.modal', () => {
-                cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 2, autoCropArea: 1 });
+                if (cropper) { cropper.destroy(); }
+                // viewMode: 1 краще адаптує зображення під екран
+                cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 1, autoCropArea: 1 });
             });
+
             cropModalEl.addEventListener('hidden.bs.modal', () => {
                 if (cropper) { cropper.destroy(); cropper = null; }
             });
 
-            document.getElementById('btnCropAndSave').addEventListener('click', () => {
+            btnCrop.addEventListener('click', () => {
                 if (!cropper) return;
-                cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob(blob => {
-                    previewImage.src = URL.createObjectURL(blob);
-                    previewImage.style.display = 'block';
-                    if (placeholder) placeholder.style.display = 'none';
-                    const dt = new DataTransfer();
-                    dt.items.add(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-                    imageInput.files = dt.files;
-                    cropModal.hide();
-                }, 'image/jpeg');
+
+                // Зміна стану кнопки, щоб показати, що йде обробка
+                const originalHtml = btnCrop.innerHTML;
+                btnCrop.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Обробляємо...';
+                btnCrop.disabled = true;
+
+                try {
+                    cropper.getCroppedCanvas({ width: 400, height: 400 }).toBlob(blob => {
+                        if(blob) {
+                            previewImage.src = URL.createObjectURL(blob);
+                            previewImage.style.display = 'block';
+                            if (placeholder) placeholder.style.display = 'none';
+
+                            const dt = new DataTransfer();
+                            dt.items.add(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+                            imageInput.files = dt.files;
+                        }
+
+                        // Гарантоване закриття через глобальний інстанс
+                        bootstrap.Modal.getInstance(cropModalEl).hide();
+
+                        // Повертаємо кнопку в нормальний стан
+                        btnCrop.innerHTML = originalHtml;
+                        btnCrop.disabled = false;
+
+                        // Невеличка підказка (щоб юзер не забув зберегти)
+                        const submitBtn = document.getElementById('mainSubmitBtn');
+                        submitBtn.classList.add('pulse-alert');
+                        submitBtn.innerHTML = '<i class="bi bi-save2-fill" style="margin-right:0.5rem;"></i> Тепер збережіть зміни!';
+
+                    }, 'image/jpeg', 0.95);
+                } catch (err) {
+                    console.error("Помилка при обрізанні: ", err);
+                    btnCrop.innerHTML = originalHtml;
+                    btnCrop.disabled = false;
+                }
             });
         });
     </script>
+
+    <style>
+        .pulse-alert {
+            animation: pulseSubmit 1.5s infinite;
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+        }
+
+        @@keyframes pulseSubmit {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+    </style>
 }

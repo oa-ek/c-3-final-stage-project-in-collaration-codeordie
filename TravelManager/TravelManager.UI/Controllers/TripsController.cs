@@ -26,7 +26,6 @@ namespace TravelManager.UI.Controllers
         {
             var currentUserId = _userManager.GetUserId(User);
 
-            // ВИПРАВЛЕНО: додано "Trip.Status" — без цього StatusName завжди повертав null/"Planned"
             var userTrips = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip,Trip.Status,Role")
                 .Select(tp => new TripListViewModel
@@ -55,6 +54,7 @@ namespace TravelManager.UI.Controllers
 
             var currentParticipant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
+
             if (currentParticipant == null)
             {
                 TempData["ErrorMessage"] = "У вас немає доступу до цієї поїздки.";
@@ -110,7 +110,8 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            var model = new CreateTripViewModel { UserList = GetUserList() };
+            // Більше не викликаємо GetUserList()
+            var model = new CreateTripViewModel();
             return View(model);
         }
 
@@ -118,13 +119,8 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTripViewModel model)
         {
-            ModelState.Remove("CreatorId");
-            ModelState.Remove("Participants");
-            ModelState.Remove("UserList");
-
             if (!ModelState.IsValid)
             {
-                model.UserList = GetUserList();
                 return View(model);
             }
 
@@ -141,7 +137,7 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = model.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
-                CreatorId = currentUserId
+                CreatorId = currentUserId // Призначаємо поточного юзера автоматично
             };
 
             _unitOfWork.Trip.Add(newTrip);
@@ -188,9 +184,8 @@ namespace TravelManager.UI.Controllers
                 ReturnLocation = trip.ReturnLocation,
                 StartDate = trip.StartDate,
                 EndDate = trip.EndDate,
-                BaseCurrency = trip.BaseCurrency,
-                CreatorId = trip.CreatorId,
-                UserList = GetUserList()
+                BaseCurrency = trip.BaseCurrency
+                // UserList і CreatorId видалені з маппінгу
             };
 
             return View(model);
@@ -210,13 +205,8 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id });
             }
 
-            ModelState.Remove("CreatorId");
-            ModelState.Remove("Participants");
-            ModelState.Remove("UserList");
-
             if (!ModelState.IsValid)
             {
-                model.UserList = GetUserList();
                 return View(model);
             }
 
@@ -230,7 +220,6 @@ namespace TravelManager.UI.Controllers
             tripFromDb.StartDate = model.StartDate;
             tripFromDb.EndDate = model.EndDate;
             tripFromDb.BaseCurrency = model.BaseCurrency;
-            // ВИПРАВЛЕНО: CreatorId НЕ оновлюємо з форми (захист від підміни через hidden input)
 
             _unitOfWork.Trip.Update(tripFromDb);
             await _unitOfWork.SaveAsync();
@@ -292,6 +281,7 @@ namespace TravelManager.UI.Controllers
 
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
+
             if (existingParticipant != null)
             {
                 TempData["ErrorMessage"] = "Цей користувач вже є учасником поїздки.";
@@ -385,16 +375,6 @@ namespace TravelManager.UI.Controllers
 
             TempData["SuccessMessage"] = "Роль учасника успішно оновлено!";
             return RedirectToAction("Details", new { id = tripId });
-        }
-
-        // HELPERS
-        private IEnumerable<SelectListItem> GetUserList()
-        {
-            return _userManager.Users.ToList().Select(u => new SelectListItem
-            {
-                Text = u.UserName,
-                Value = u.Id
-            });
         }
 
         private string GetUserRoleInTrip(int tripId)

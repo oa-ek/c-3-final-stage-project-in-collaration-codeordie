@@ -262,6 +262,20 @@
     <div class="hero-glass-card">
         <div class="hero-dots"></div>
         <div class="hero-content">
+
+            @* TempData повідомлення *@
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); border-radius:16px; color:#d1fae5; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
+                    <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> @TempData["SuccessMessage"]
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:16px; color:#fecaca; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#f87171;"></i> @TempData["ErrorMessage"]
+                </div>
+            }
             
             <a asp-action="Index" class="btn-back">
                 <i class="bi bi-arrow-left"></i> До всіх поїздок
@@ -488,6 +502,100 @@
                             </a>
                         }
                     }
+                </div>
+            </div>
+
+            @* ── УЧАСНИКИ ── *@
+            <div class="light-glass-card" style="animation-delay: 0.4s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #6366f1;"><i class="bi bi-people-fill"></i></div>
+                        Учасники
+                    </div>
+                </div>
+                <div style="padding:1.5rem;">
+
+                    @if (!Model.Participants.Any())
+                    {
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Учасників ще немає.</div>
+                    }
+                    else
+                    {
+                        @foreach (var p in Model.Participants)
+                        {
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:.7rem 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+                                <div style="display:flex; align-items:center; gap:.75rem;">
+                                    <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:1rem;">
+                                        @(p.UserName?.Length > 0 ? p.UserName[0].ToString().ToUpper() : "?")
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700; color:#111827; font-size:.9rem;">@p.UserName</div>
+                                        <div style="font-size:.75rem; color:#64748b;">@p.Role</div>
+                                    </div>
+                                </div>
+                                @if (Model.CurrentUserRole == "Organizer" && p.Role != "Organizer")
+                                {
+                                    <form asp-action="RemoveParticipant" method="post" style="margin:0;"
+                                          onsubmit="return confirm('Видалити @p.UserName з поїздки?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="tripId" value="@Model.Trip.Id" />
+                                        <input type="hidden" name="userId" value="@p.UserId" />
+                                        <button type="submit"
+                                                style="background:none; border:none; color:#ef4444; font-size:.8rem; font-weight:700; cursor:pointer; padding:.3rem .6rem; border-radius:8px; transition:background .2s;"
+                                                onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+                                                onmouseout="this.style.background='none'">
+                                            <i class="bi bi-person-dash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    }
+
+                    @* Форма запрошення — тільки для організатора *@
+                    @if (Model.CurrentUserRole == "Organizer")
+                    {
+                        <div style="margin-top:1.2rem; padding-top:1.2rem; border-top:1px solid rgba(0,0,0,0.06);">
+                            <div style="font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#64748b; margin-bottom:.8rem;">
+                                Запросити учасника
+                            </div>
+                            <form asp-action="InviteParticipant" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tripId" value="@Model.Trip.Id" />
+
+                                <div style="margin-bottom:.7rem;">
+                                    <input type="email" name="email" required placeholder="Email користувача"
+                                           style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; transition:border-color .2s;"
+                                           onfocus="this.style.borderColor='#6366f1'"
+                                           onblur="this.style.borderColor='rgba(0,0,0,0.1)'" />
+                                </div>
+
+                                <div style="margin-bottom:.9rem;">
+                                    <select name="roleId" required
+                                            style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; appearance:none; cursor:pointer; transition:border-color .2s;"
+                                            onfocus="this.style.borderColor='#6366f1'"
+                                            onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                                        <option value="" disabled selected>Оберіть роль</option>
+                                        @foreach (var role in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.AvailableRoles)
+                                        {
+                                            if (role.Text != "Organizer" && role.Text != "Організатор")
+                                            {
+                                                <option value="@role.Value">@role.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+
+                                <button type="submit"
+                                        style="width:100%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:12px; padding:.7rem 1rem; font-family:'Montserrat',sans-serif; font-weight:800; font-size:.85rem; cursor:pointer; transition:all .2s; box-shadow:0 4px 15px rgba(99,102,241,0.35);"
+                                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(99,102,241,0.5)';"
+                                        onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 15px rgba(99,102,241,0.35)';">
+                                    <i class="bi bi-person-plus-fill"></i> Запросити
+                                </button>
+                            </form>
+                        </div>
+                    }
+
                 </div>
             </div>
 

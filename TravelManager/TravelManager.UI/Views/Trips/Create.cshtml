@@ -1,6 +1,4 @@
-﻿@* 📄 TravelManager/TravelManager.UI/Views/Trips/Create.cshtml *@
-
-@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
+﻿@model TravelManager.UI.Models.ViewModels.CreateTripViewModel
 
 @{
     ViewData["Title"] = "Створити поїздку";
@@ -98,6 +96,13 @@
     .field-group:focus-within .field-inner {
         box-shadow: 0 8px 30px rgba(59,130,246,0.15);
     }
+
+    /* Кастомний стиль для select щоб прибрати дефолтну стрілочку браузера */
+    .custom-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
 </style>
 
 <div class="max-w-4xl mx-auto px-4 relative z-10 py-10">
@@ -147,7 +152,7 @@
                         <div class="relative field-group">
                             <label asp-for="DepartureLocation" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-all duration-300 group-focus-within:text-blue-600"></label>
                             <div class="field-inner relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:border-blue-200 group-focus-within:border-blue-300 group-focus-within:bg-white/90">
-                                <i class="bi bi-geo-alt-fill absolute left-6 top-1/2 -translate-y-1/2 text-blue-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <i class="bi bi-geo-alt-fill absolute left-6 top-1/2 -translate-y-1/2 text-blue-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12 pointer-events-none"></i>
                                 <input asp-for="DepartureLocation"
                                        class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400"
                                        placeholder="Місто відправлення" />
@@ -159,7 +164,7 @@
                         <div class="relative field-group">
                             <label asp-for="ReturnLocation" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-all duration-300 group-focus-within:text-emerald-600"></label>
                             <div class="field-inner relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:border-emerald-200 group-focus-within:border-emerald-300 group-focus-within:bg-white/90">
-                                <i class="bi bi-geo-fill absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <i class="bi bi-geo-fill absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12 pointer-events-none"></i>
                                 <input asp-for="ReturnLocation"
                                        class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400"
                                        placeholder="Місто повернення" />
@@ -171,7 +176,7 @@
                         <div class="relative field-group">
                             <label asp-for="StartDate" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-all duration-300 group-focus-within:text-amber-600"></label>
                             <div class="field-inner relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:border-amber-200 group-focus-within:border-amber-300 group-focus-within:bg-white/90">
-                                <i class="bi bi-calendar-event absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <i class="bi bi-calendar-event absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12 pointer-events-none"></i>
                                 <input asp-for="StartDate" type="date"
                                        class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold cursor-pointer" />
                             </div>
@@ -182,21 +187,24 @@
                         <div class="relative field-group">
                             <label asp-for="EndDate" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-all duration-300 group-focus-within:text-amber-600"></label>
                             <div class="field-inner relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:border-amber-200 group-focus-within:border-amber-300 group-focus-within:bg-white/90">
-                                <i class="bi bi-calendar-check absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
+                                <i class="bi bi-calendar-check absolute left-6 top-1/2 -translate-y-1/2 text-amber-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12 pointer-events-none"></i>
                                 <input asp-for="EndDate" type="date"
                                        class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold cursor-pointer" />
                             </div>
                             <span asp-validation-for="EndDate" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
                         </div>
 
-                        @* Валюта *@
+                        @* Валюта (Оновлено на Select) *@
                         <div class="relative field-group md:col-span-2">
                             <label asp-for="BaseCurrency" class="absolute -top-3 left-6 px-3 bg-white/90 backdrop-blur-md border border-white text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm z-10 transition-all duration-300 group-focus-within:text-violet-600"></label>
                             <div class="field-inner relative bg-white/70 backdrop-blur-lg border border-white/80 rounded-[2rem] shadow-sm transition-all duration-300 group-hover:border-violet-200 group-focus-within:border-violet-300 group-focus-within:bg-white/90">
-                                <i class="bi bi-cash-coin absolute left-6 top-1/2 -translate-y-1/2 text-violet-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12"></i>
-                                <input asp-for="BaseCurrency"
-                                       class="w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-6 py-5 focus:outline-none font-bold placeholder-slate-400"
-                                       placeholder="UAH, USD, EUR..." />
+                                <i class="bi bi-cash-coin absolute left-6 top-1/2 -translate-y-1/2 text-violet-500 text-xl transition-transform duration-500 group-focus-within:scale-125 group-focus-within:rotate-12 pointer-events-none z-10"></i>
+
+                                <select asp-for="BaseCurrency" asp-items="Model.CurrencyList"
+                                        class="custom-select w-full bg-transparent text-slate-800 rounded-[2rem] pl-16 pr-10 py-5 focus:outline-none font-bold cursor-pointer relative z-0">
+                                </select>
+
+                                <i class="bi bi-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
                             </div>
                             <span asp-validation-for="BaseCurrency" class="text-red-500 text-xs font-bold pl-5 mt-2 block"></span>
                         </div>
