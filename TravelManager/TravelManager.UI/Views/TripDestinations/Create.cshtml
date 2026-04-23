@@ -33,7 +33,6 @@
         }
     }
 
-    /* Головна скляна картка */
     .glass-card {
         width: 100%;
         max-width: 600px;
@@ -75,7 +74,6 @@
         margin-left: 0.5rem;
     }
 
-    /* Поля вводу */
     .glass-input, .glass-select {
         width: 100%;
         background: rgba(255, 255, 255, 0.5);
@@ -96,7 +94,6 @@
             transform: translateY(-2px);
         }
 
-    /* Статус геокодування (скляний бейдж) */
     #geocodeStatus {
         font-size: 0.8rem;
         font-weight: 700;
@@ -108,7 +105,6 @@
         animation: cardEntrance 0.4s ease;
     }
 
-    /* Кнопки */
     .btn-row {
         display: flex;
         gap: 1.2rem;
@@ -164,7 +160,6 @@
         margin-left: 0.5rem;
     }
 
-    /* Ховаємо координати візуально */
     .hidden-geo {
         display: none;
     }
@@ -175,7 +170,8 @@
         <h2 class="form-title">Додати місто</h2>
         <p class="form-sub">Сплануй наступну зупинку у своїй пригоді</p>
 
-        <form asp-action="Create">
+        @* ВИПРАВЛЕНО: додано method="post" — без нього браузер робив GET і дані не зберігались *@
+        <form asp-action="Create" method="post">
             <div asp-validation-summary="ModelOnly" class="error-text mb-4"></div>
 
             <div class="mb-5">
@@ -189,12 +185,14 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                 <div>
                     <label asp-for="CityName" class="form-label">Місто</label>
-                    <input asp-for="CityName" class="glass-input" id="cityNameInput" autocomplete="off" placeholder="Наприклад: Рим" />
+                    <input asp-for="CityName" class="glass-input" id="cityNameInput"
+                           autocomplete="off" placeholder="Наприклад: Рим" />
                     <span asp-validation-for="CityName" class="error-text"></span>
                 </div>
                 <div>
                     <label asp-for="Country" class="form-label">Країна</label>
-                    <input asp-for="Country" class="glass-input" id="countryInput" autocomplete="off" placeholder="Наприклад: Італія" />
+                    <input asp-for="Country" class="glass-input" id="countryInput"
+                           autocomplete="off" placeholder="Наприклад: Італія" />
                     <span asp-validation-for="Country" class="error-text"></span>
                 </div>
             </div>
@@ -212,7 +210,7 @@
                 </div>
             </div>
 
-            @* Координати існують в HTML для роботи JS, але приховані від юзера *@
+            @* Координати — приховані, заповнюються JS автоматично *@
             <div class="hidden-geo">
                 <input asp-for="Latitude" id="latInput" type="hidden" />
                 <input asp-for="Longitude" id="lngInput" type="hidden" />
@@ -249,11 +247,11 @@
                 ? 'rgba(16,185,129,0.1)' : type === 'err'
                 ? 'rgba(239,68,68,0.1)' : 'rgba(37,99,235,0.1)';
             statusEl.style.color = type === 'ok' ? '#065f46' : type === 'err' ? '#991b1b' : '#1e40af';
-            statusEl.style.border = `1px solid ${statusEl.style.color}22`;
+            statusEl.style.border = `1px solid rgba(0,0,0,0.06)`;
         }
 
         async function tryGeocode() {
-            const city     = cityInput.value.trim();
+            const city    = cityInput.value.trim();
             const country = countryInput.value.trim();
             if (!city) return;
 
@@ -261,15 +259,15 @@
             showStatus('⏳ Визначаємо координати...', 'info');
 
             try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(query)}`;
+                const url  = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(query)}`;
                 const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
                 const data = await res.json();
                 if (data && data.length > 0) {
                     latInput.value = data[0].lat;
                     lngInput.value = data[0].lon;
-                    showStatus(`✅ Координати знайдено автоматично`, 'ok');
+                    showStatus('✅ Координати знайдено автоматично', 'ok');
                 } else {
-                    showStatus('⚠️ Координати не знайдено (використано 0.0)', 'err');
+                    showStatus('⚠️ Координати не знайдено — місто буде без маркера на карті', 'err');
                 }
             } catch (e) {
                 showStatus('⚠️ Помилка мережі при геокодуванні', 'err');

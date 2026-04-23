@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization; // ВИПРАВЛЕНО: прибрано дублюючий using
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
@@ -53,7 +52,6 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Settle(int id)
         {
-            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
             var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense", tracked: true);
             if (entity == null)
             {
@@ -80,7 +78,6 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            // ВИПРАВЛЕНО: додано includeProperties: "Expense" щоб уникнути NullReferenceException
             var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense");
             if (entity == null)
             {

@@ -20,16 +20,15 @@ namespace TravelManager.UI.Controllers
             _userManager = userManager;
         }
 
-        // ─────────────────────────────────────────────
         // INDEX
-        // ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult Index()
         {
             var currentUserId = _userManager.GetUserId(User);
 
+            // ВИПРАВЛЕНО: додано "Trip.Status" — без цього StatusName завжди повертав null/"Planned"
             var userTrips = _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip,Role")
+                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Trip,Trip.Status,Role")
                 .Select(tp => new TripListViewModel
                 {
                     Id = tp.Trip.Id,
@@ -45,9 +44,7 @@ namespace TravelManager.UI.Controllers
             return View(userTrips);
         }
 
-        // ─────────────────────────────────────────────
-        // DETAILS — з картою, маршрутом, учасниками
-        // ─────────────────────────────────────────────
+        // DETAILS
         [HttpGet]
         public IActionResult Details(int id)
         {
@@ -56,7 +53,6 @@ namespace TravelManager.UI.Controllers
             var trip = _unitOfWork.Trip.Get(u => u.Id == id, includeProperties: "Status");
             if (trip == null) return NotFound();
 
-            // Перевірка доступу — тільки учасник може бачити
             var currentParticipant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == id && p.UserId == currentUserId, includeProperties: "Role");
             if (currentParticipant == null)
@@ -110,16 +106,11 @@ namespace TravelManager.UI.Controllers
             return View(model);
         }
 
-        // ─────────────────────────────────────────────
         // CREATE
-        // ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult Create()
         {
-            var model = new CreateTripViewModel
-            {
-                UserList = GetUserList()
-            };
+            var model = new CreateTripViewModel { UserList = GetUserList() };
             return View(model);
         }
 
@@ -157,25 +148,21 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             var organizerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer");
-
             if (currentUserId != null && organizerRole != null)
             {
-                var creatorParticipant = new TripParticipant
+                _unitOfWork.TripParticipant.Add(new TripParticipant
                 {
                     TripId = newTrip.Id,
                     UserId = currentUserId,
                     RoleId = organizerRole.Id
-                };
-                _unitOfWork.TripParticipant.Add(creatorParticipant);
+                });
                 await _unitOfWork.SaveAsync();
             }
 
             return RedirectToAction(nameof(Details), new { id = newTrip.Id });
         }
 
-        // ─────────────────────────────────────────────
         // EDIT
-        // ─────────────────────────────────────────────
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -243,6 +230,7 @@ namespace TravelManager.UI.Controllers
             tripFromDb.StartDate = model.StartDate;
             tripFromDb.EndDate = model.EndDate;
             tripFromDb.BaseCurrency = model.BaseCurrency;
+            // ВИПРАВЛЕНО: CreatorId НЕ оновлюємо з форми (захист від підміни через hidden input)
 
             _unitOfWork.Trip.Update(tripFromDb);
             await _unitOfWork.SaveAsync();
@@ -250,9 +238,7 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Details), new { id = tripFromDb.Id });
         }
 
-        // ─────────────────────────────────────────────
         // DELETE
-        // ─────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -276,9 +262,7 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ─────────────────────────────────────────────
         // INVITE PARTICIPANT
-        // ─────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteParticipant(int tripId, string email, int roleId)
@@ -308,7 +292,6 @@ namespace TravelManager.UI.Controllers
 
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
-
             if (existingParticipant != null)
             {
                 TempData["ErrorMessage"] = "Цей користувач вже є учасником поїздки.";
@@ -322,23 +305,19 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            var newParticipant = new TripParticipant
+            _unitOfWork.TripParticipant.Add(new TripParticipant
             {
                 TripId = tripId,
                 UserId = userToInvite.Id,
                 RoleId = roleId
-            };
-
-            _unitOfWork.TripParticipant.Add(newParticipant);
+            });
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = $"Користувача {userToInvite.UserName} успішно додано до поїздки!";
             return RedirectToAction("Details", new { id = tripId });
         }
 
-        // ─────────────────────────────────────────────
         // REMOVE PARTICIPANT
-        // ─────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveParticipant(int tripId, string userId)
@@ -355,7 +334,6 @@ namespace TravelManager.UI.Controllers
 
             var participant = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
-
             if (participant == null) return NotFound();
 
             if (participant.Role?.Name == "Organizer")
@@ -377,9 +355,7 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction("Details", new { id = tripId });
         }
 
-        // ─────────────────────────────────────────────
         // UPDATE PARTICIPANT ROLE
-        // ─────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateParticipantRole(int tripId, string userId, int roleId)
@@ -396,7 +372,6 @@ namespace TravelManager.UI.Controllers
 
             var participantToUpdate = _unitOfWork.TripParticipant
                 .Get(p => p.TripId == tripId && p.UserId == userId, includeProperties: "Role");
-
             if (participantToUpdate == null) return NotFound();
 
             if (participantToUpdate.Role?.Name == "Organizer" && roleId != participantToUpdate.RoleId)
@@ -412,9 +387,7 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction("Details", new { id = tripId });
         }
 
-        // ─────────────────────────────────────────────
         // HELPERS
-        // ─────────────────────────────────────────────
         private IEnumerable<SelectListItem> GetUserList()
         {
             return _userManager.Users.ToList().Select(u => new SelectListItem
@@ -429,7 +402,6 @@ namespace TravelManager.UI.Controllers
             var currentUserId = _userManager.GetUserId(User);
             var participant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
-
             return participant?.Role?.Name ?? "None";
         }
     }

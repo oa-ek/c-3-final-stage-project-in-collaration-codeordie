@@ -11,6 +11,7 @@ namespace TravelManager.UI.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+
         public TransitsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
@@ -50,7 +51,8 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int? tripId)
+        
+        public IActionResult Create(int? tripId, string? arrivalLocation, DateTime? arrivalDate)
         {
             var allowedTrips = GetAllowedTripsForUser();
 
@@ -65,19 +67,23 @@ namespace TravelManager.UI.Controllers
                 if (role == "Viewer" || role == "None")
                 {
                     TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
-                    return RedirectToAction("Index", "Trips"); 
+                    return RedirectToAction("Index", "Trips");
                 }
 
                 var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
                 if (selectedTrip != null) selectedTrip.Selected = true;
             }
 
+            // ДОДАНО: Автоматичне заповнення локації та дати, якщо вони передані
             var model = new TransitFormViewModel
             {
                 TripId = tripId ?? 0,
                 TripList = allowedTrips,
                 TransitTypeList = GetTransitTypeList(),
-                BookingStatusList = GetBookingStatusList()
+                BookingStatusList = GetBookingStatusList(),
+                ArrivalLocation = arrivalLocation ?? string.Empty,
+                ArrivalTime = arrivalDate ?? DateTime.Today.AddDays(1),
+                DepartureTime = arrivalDate?.AddHours(-6) ?? DateTime.Today // Орієнтовний час виїзду
             };
 
             return View(model);
@@ -93,6 +99,12 @@ namespace TravelManager.UI.Controllers
                 TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
                 return RedirectToAction("Index", "Trips");
             }
+
+            
+            ModelState.Remove("TripList");
+            ModelState.Remove("TransitTypeList");
+            ModelState.Remove("BookingStatusList");
+
             if (!ModelState.IsValid)
             {
                 model.TripList = GetAllowedTripsForUser();
@@ -117,6 +129,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Transit.Add(entity);
             await _unitOfWork.SaveAsync();
 
+            TempData["SuccessMessage"] = "Транзит успішно збережено!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -124,15 +137,13 @@ namespace TravelManager.UI.Controllers
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.Transit.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
                 TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
-                return RedirectToAction("Index", "Trips"); 
+                return RedirectToAction("Index", "Trips");
             }
             var model = new TransitFormViewModel
             {
@@ -165,6 +176,10 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            ModelState.Remove("TripList");
+            ModelState.Remove("TransitTypeList");
+            ModelState.Remove("BookingStatusList");
+
             if (!ModelState.IsValid)
             {
                 model.TripList = GetAllowedTripsForUser();
@@ -174,10 +189,7 @@ namespace TravelManager.UI.Controllers
             }
 
             var entity = _unitOfWork.Transit.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             entity.TripId = model.TripId;
             entity.TransitTypeId = model.TransitTypeId;
@@ -200,10 +212,8 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Transit.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
@@ -215,15 +225,6 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private IEnumerable<SelectListItem> GetTripList()
-        {
-            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
         }
 
         private IEnumerable<SelectListItem> GetTransitTypeList()
@@ -243,6 +244,7 @@ namespace TravelManager.UI.Controllers
                 Value = b.Id.ToString()
             });
         }
+
         private string GetUserRoleInTrip(int tripId)
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -264,6 +266,5 @@ namespace TravelManager.UI.Controllers
                     Value = tp.TripId.ToString()
                 }).ToList();
         }
-
     }
 }

@@ -7,11 +7,10 @@
     var isPast = DateTime.Today > Model.Trip.EndDate;
     var duration = (Model.Trip.EndDate - Model.Trip.StartDate).Days;
 
-    // ── Бюджет (Винесено сюди для безпеки компіляції) ──
+    // ── Бюджет (Залишено саме так, як у твоєму оригіналі) ──
     decimal totalBudget = 0;
     string baseCurr = Model.Trip.BaseCurrency ?? "UAH";
     decimal usdRate = 43.83m, eurRate = 50.88m, plnRate = 11.10m, gbpRate = 59.50m;
-
     if (Model.Expenses != null)
     {
         foreach (var exp in Model.Expenses)
@@ -42,7 +41,7 @@
         min-height: 100vh;
         padding-bottom: 5rem;
         /* Додано відступ зверху, щоб плашка не прилипала до верху вікна */
-        padding-top: 2rem; 
+        padding-top: 2rem;
     }
 
     @@keyframes fadeUp {
@@ -63,7 +62,8 @@
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 32px; /* Сильне заокруглення */
+        border-radius: 32px;
+        /* Сильне заокруглення */
         padding: 3rem;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
         position: relative;
@@ -72,7 +72,8 @@
     }
     
     .hero-dots {
-        position: absolute; inset: 0; opacity: 0.04;
+        position: absolute;
+        inset: 0; opacity: 0.04;
         background-image: radial-gradient(circle,#fff 1px,transparent 1px);
         background-size: 24px 24px;
         pointer-events: none;
@@ -85,7 +86,8 @@
 
     /* Кнопка "Назад" */
     .btn-back {
-        display: inline-flex; align-items: center; gap: 0.5rem;
+        display: inline-flex;
+        align-items: center; gap: 0.5rem;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.15);
         color: white;
@@ -112,10 +114,12 @@
 
     /* Інфо-бейджі (В процесі, Дати, Маршрут) */
     .info-pills-row {
-        display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
+        display: flex;
+        flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
     }
     .info-pill {
-        display: inline-flex; align-items: center; gap: 0.4rem;
+        display: inline-flex;
+        align-items: center; gap: 0.4rem;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 50px;
@@ -127,16 +131,19 @@
         background: rgba(16, 185, 129, 0.2);
         border-color: rgba(16, 185, 129, 0.4);
     }
-    .info-pill.past-status { background: rgba(148, 163, 184, 0.2); border-color: rgba(148, 163, 184, 0.4); }
+    .info-pill.past-status { background: rgba(148, 163, 184, 0.2);
+        border-color: rgba(148, 163, 184, 0.4); }
     .info-pill i { opacity: 0.8; }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
 
     /* Навігаційні кнопки меню */
     .nav-buttons-row {
-        display: flex; flex-wrap: wrap; gap: 0.8rem;
+        display: flex;
+        flex-wrap: wrap; gap: 0.8rem;
     }
     .nav-btn {
-        display: inline-flex; align-items: center; gap: 0.5rem;
+        display: inline-flex;
+        align-items: center; gap: 0.5rem;
         background: white;
         color: #0f172a;
         font-family: 'Montserrat', sans-serif;
@@ -191,11 +198,13 @@
     }
     .card-header-title {
         font-family: 'Montserrat', sans-serif;
-        font-size: 1.1rem; font-weight: 800; color: #0f172a;
+        font-size: 1.1rem; font-weight: 800;
+        color: #0f172a;
         display: flex; align-items: center; gap: 0.6rem;
     }
     .icon-box {
-        width: 36px; height: 36px; border-radius: 12px;
+        width: 36px;
+        height: 36px; border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
         color: white; font-size: 1.1rem;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -213,7 +222,8 @@
         padding: 1rem 1.8rem; text-align: left;
         font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
     }
-    .clean-table td { padding: 1.2rem 1.8rem; font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .clean-table td { padding: 1.2rem 1.8rem;
+        font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
     .clean-table tr:last-child td { border-bottom: none; }
 
     /* ── Темна Скляна Картка (Бюджет) ── */
@@ -235,13 +245,16 @@
     }
 
     /* Інші елементи */
-    #map { height: 350px; width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
+    #map { height: 350px;
+        width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
     
     .list-item-card {
-        border: 1px solid rgba(0,0,0,0.05); border-radius: 16px; padding: 1.2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 16px; padding: 1.2rem;
         background: rgba(255,255,255,0.6); margin-bottom: 0.8rem; transition: all .3s;
     }
-    .list-item-card:hover { background: white; border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px); }
+    .list-item-card:hover { background: white;
+        border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px); }
 </style>
 
 <div class="det-root">
@@ -517,8 +530,8 @@
         }
 
         async function buildFullRoute() {
-            let departureText = '@Html.Raw(Model.Trip.DepartureLocation)';
-            let returnText = '@Html.Raw(Model.Trip.ReturnLocation)';
+            let departureText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.DepartureLocation ?? ""));
+            let returnText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.ReturnLocation ?? ""));
 
             let startLatLng = await geocodeAddress(departureText);
             if (startLatLng) {
@@ -536,7 +549,6 @@
                     lng = d.Longitude
                 })
             ));
-
             for (let dest of destinations) {
                 let latlng = null;
                 if (dest.hasCoords) {
@@ -575,7 +587,6 @@
                     lat = a.Latitude, lng = a.Longitude
                 })
             ));
-
             for (let acc of accommodations) {
                 let latlng = null;
                 if (acc.hasCoords) {
