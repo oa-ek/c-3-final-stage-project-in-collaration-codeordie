@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -35,8 +33,21 @@ namespace TravelManager.UI.Controllers
             var destinations = _unitOfWork.TripDestination
                 .GetAll(d => myTripIds.Contains(d.TripId), includeProperties: "Trip");
 
+            // --- КЛЮЧОВА ЗМІНА ДЛЯ КАРТИ ---
+            // Завантажуємо транзити (квитки), щоб показати їх як дуги на карті
             if (tripId.HasValue)
+            {
                 destinations = destinations.Where(d => d.TripId == tripId.Value);
+                ViewBag.Transits = _unitOfWork.Transit
+                    .GetAll(t => t.TripId == tripId.Value, includeProperties: "TransitType")
+                    .ToList();
+            }
+            else
+            {
+                ViewBag.Transits = _unitOfWork.Transit
+                    .GetAll(t => myTripIds.Contains(t.TripId), includeProperties: "TransitType")
+                    .ToList();
+            }
 
             var viewModels = destinations.Select(d => new TripDestinationListViewModel
             {
@@ -47,7 +58,8 @@ namespace TravelManager.UI.Controllers
                 Latitude = d.Latitude,
                 Longitude = d.Longitude,
                 ArrivalDate = d.ArrivalDate,
-                DepartureDate = d.DepartureDate
+                DepartureDate = d.DepartureDate,
+                TripId = d.TripId
             }).OrderBy(d => d.ArrivalDate).ToList();
 
             ViewBag.CurrentTripId = tripId;
@@ -70,7 +82,7 @@ namespace TravelManager.UI.Controllers
                 var role = GetUserRoleInTrip(tripId.Value);
                 if (role == "Viewer" || role == "None")
                 {
-                    TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
+                    TempData["ErrorMessage"] = "У вас немає прав для додавання записів.";
                     return RedirectToAction("Index", "Trips");
                 }
 
@@ -96,14 +108,27 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
+                TempData["ErrorMessage"] = "У вас немає прав для додавання записів.";
                 return RedirectToAction("Index", "Trips");
             }
+
+            ModelState.Remove("TripList");
+            ModelState.Remove("Latitude");
+            ModelState.Remove("Longitude");
 
             if (!ModelState.IsValid)
             {
                 model.TripList = GetAllowedTripsForUser();
                 return View(model);
+            }
+
+            if (double.TryParse(Request.Form["Latitude"].ToString().Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat))
+            {
+                model.Latitude = lat;
+            }
+            if (double.TryParse(Request.Form["Longitude"].ToString().Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lng))
+            {
+                model.Longitude = lng;
             }
 
             var entity = new TripDestination
@@ -120,8 +145,28 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripDestination.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            TempData["SuccessMessage"] = $"Місто {model.CityName} успішно додано!";
-            return RedirectToAction(nameof(Index), new { tripId = model.TripId });
+            // --- КЛЮЧОВА ЗМІНА: АВТОЗАПОВНЕННЯ МИНУЛОЇ ТОЧКИ ---
+            var prevDest = _unitOfWork.TripDestination
+                .GetAll(d => d.TripId == model.TripId && d.ArrivalDate <= model.ArrivalDate && d.Id != entity.Id)
+                .OrderByDescending(d => d.ArrivalDate)
+                .FirstOrDefault();
+
+            string depLoc = prevDest?.CityName ?? "";
+            if (string.IsNullOrEmpty(depLoc))
+            {
+                var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
+                depLoc = trip?.DepartureLocation ?? "";
+            }
+
+            TempData["SuccessMessage"] = $"Місто {model.CityName} додано! Заплануйте транспорт з {depLoc}.";
+
+            return RedirectToAction("Create", "Transits", new
+            {
+                tripId = model.TripId,
+                arrivalLocation = model.CityName,
+                arrivalDate = model.ArrivalDate.ToString("yyyy-MM-dd"),
+                departureLocation = depLoc
+            });
         }
 
         [HttpGet]
@@ -157,12 +202,19 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TripDestinationFormViewModel model)
         {
-            var role = GetUserRoleInTrip(model.TripId);
+            var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
+            if (entity == null) return NotFound();
+
+            var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
                 TempData["ErrorMessage"] = "У вас немає прав для редагування.";
                 return RedirectToAction("Index", "Trips");
             }
+
+            ModelState.Remove("TripList");
+            ModelState.Remove("Latitude");
+            ModelState.Remove("Longitude");
 
             if (!ModelState.IsValid)
             {
@@ -170,8 +222,14 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
-            var entity = _unitOfWork.TripDestination.Get(u => u.Id == id);
-            if (entity == null) return NotFound();
+            if (double.TryParse(Request.Form["Latitude"].ToString().Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat))
+            {
+                model.Latitude = lat;
+            }
+            if (double.TryParse(Request.Form["Longitude"].ToString().Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lng))
+            {
+                model.Longitude = lng;
+            }
 
             entity.TripId = model.TripId;
             entity.CityName = model.CityName;

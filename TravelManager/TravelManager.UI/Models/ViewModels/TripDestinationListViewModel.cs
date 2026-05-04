@@ -4,6 +4,7 @@ namespace TravelManager.UI.Models.ViewModels
 {
     public class TripDestinationListViewModel
     {
+        public int TripId { get; set; }
         public int Id { get; set; }
         public string TripName { get; set; } = string.Empty;
         public string CityName { get; set; } = string.Empty;

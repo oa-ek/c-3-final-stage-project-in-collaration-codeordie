@@ -5,22 +5,26 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TravelManager.UI.Models.ViewModels
 {
-    public class CreateTripViewModel
+    public class CreateTripViewModel : IValidatableObject
     {
         public int Id { get; set; }
+
         [Required(ErrorMessage = "Введіть назву поїздки")]
-        [MaxLength(200, ErrorMessage = "Назва занадто довга")]
+        [MaxLength(200, ErrorMessage = "Назва не може перевищувати 200 символів")]
         [Display(Name = "Назва поїздки")]
         public string Title { get; set; }
 
+        [MaxLength(1000, ErrorMessage = "Опис занадто довгий")]
         [Display(Name = "Опис")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Вкажіть місце відправлення")]
-        [Display(Name = "Місце відправлення")]
+        [MaxLength(200, ErrorMessage = "Назва місця не може перевищувати 200 символів")]
+        [Display(Name = "Звідки")]
         public string DepartureLocation { get; set; }
 
-        [Display(Name = "Місце повернення")]
+        [MaxLength(200, ErrorMessage = "Назва місця не може перевищувати 200 символів")]
+        [Display(Name = "Куди (повернення)")]
         public string? ReturnLocation { get; set; }
 
         [Required(ErrorMessage = "Вкажіть дату початку")]
@@ -33,14 +37,30 @@ namespace TravelManager.UI.Models.ViewModels
         [DataType(DataType.Date)]
         public DateTime EndDate { get; set; } = DateTime.Today.AddDays(7);
 
-        [Required(ErrorMessage = "Оберіть базову валюту (напр. USD, UAH)")]
-        [Display(Name = "Базова валюта")]
+        [Required(ErrorMessage = "Оберіть базову валюту")]
+        [RegularExpression(@"^[A-Z]{3}$", ErrorMessage = "Некоректний формат валюти")]
+        [Display(Name = "Основна валюта")]
         public string BaseCurrency { get; set; } = "UAH";
 
-        [Required(ErrorMessage = "Оберіть організатора поїздки")]
-        [Display(Name = "Організатор поїздки")]
-        public string CreatorId { get; set; } = string.Empty;
-        public IEnumerable<SelectListItem>? UserList { get; set; }
-        public List<TripParticipantViewModel> Participants { get; set; } = new();
+        
+        public List<SelectListItem> CurrencyList { get; set; } = new()
+        {
+            new SelectListItem { Value = "UAH", Text = "₴ UAH (Гривня)" },
+            new SelectListItem { Value = "USD", Text = "$ USD (Долар)" },
+            new SelectListItem { Value = "EUR", Text = "€ EUR (Євро)" },
+            new SelectListItem { Value = "PLN", Text = "zł PLN (Злотий)" },
+            new SelectListItem { Value = "GBP", Text = "£ GBP (Фунт)" }
+        };
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (EndDate < StartDate)
+            {
+                yield return new ValidationResult(
+                    "Подорож не може закінчитися раніше, ніж почнеться.",
+                    new[] { nameof(EndDate) }
+                );
+            }
+        }
     }
 }
