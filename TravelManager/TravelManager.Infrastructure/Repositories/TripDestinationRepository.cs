@@ -18,4 +18,4 @@ namespace TravelManager.Infrastructure.Repositories
             _db.TripDestinations.Update(obj);
         }
     }
-}
+}   

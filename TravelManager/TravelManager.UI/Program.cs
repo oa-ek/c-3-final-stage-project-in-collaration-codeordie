@@ -2,10 +2,12 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure;
 using TravelManager.Infrastructure.Data;
 using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.Infrastructure.Repositories;
 using TravelManager.Infrastructure.Services;
 
@@ -14,6 +16,23 @@ var builder = WebApplication.CreateBuilder(args);
 // ВИПРАВЛЕНО: прибрано зайвий перший виклик AddControllersWithViews()
 builder.Services.AddControllersWithViews()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "TravelManager API",
+        Version = "v1",
+        Description = "Публічний Web API для управління поїздками у TravelManager"
+    });
+
+    // Підключити XML-коментарі (/// <summary>) — необов'язково але красиво
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -44,6 +63,33 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
+
+builder.Services.AddMemoryCache();
+
+builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.open-meteo.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler(); 
+
+builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =>
+{
+    client.BaseAddress = new Uri("https://restcountries.com/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler();
+
+builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
+{
+    client.BaseAddress = new Uri("https://bank.gov.ua/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler();
 
 var app = builder.Build();
 
@@ -52,6 +98,13 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TravelManager API v1");
+    c.RoutePrefix = "swagger"; // Swagger буде на /swagger
+});
 
 app.UseHttpsRedirection();
 app.UseRouting();
