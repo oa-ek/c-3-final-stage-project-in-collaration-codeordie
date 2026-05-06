@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -13,11 +14,16 @@ namespace TravelManager.UI.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly INominatimService _nominatimService;
 
-        public TripDestinationsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public TripDestinationsController(
+            IUnitOfWork unitOfWork,
+            UserManager<User> userManager,
+            INominatimService nominatimService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _nominatimService = nominatimService;
         }
 
         [HttpGet]
@@ -64,6 +70,28 @@ namespace TravelManager.UI.Controllers
 
             ViewBag.CurrentTripId = tripId;
             return View(viewModels);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Geocode(string city, string? country)
+        {
+            var query = string.IsNullOrWhiteSpace(country)
+                ? city
+                : $"{city}, {country}";
+
+            var result = await _nominatimService.GeocodeAsync(query);
+
+            if (result == null)
+                return Json(new { success = false });
+
+            return Json(new
+            {
+                success = true,
+                lat = result.Latitude,
+                lon = result.Longitude,
+                displayName = result.DisplayName,
+                country = result.Country
+            });
         }
 
         [HttpGet]

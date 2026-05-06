@@ -91,6 +91,12 @@ builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client
 })
 .AddStandardResilienceHandler();
 
+builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
+    client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0 (university project)");
+}).AddStandardResilienceHandler();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

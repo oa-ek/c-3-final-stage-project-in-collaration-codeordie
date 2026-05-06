@@ -250,27 +250,34 @@
             statusEl.style.border = `1px solid rgba(0,0,0,0.06)`;
         }
 
-        async function tryGeocode() {
+                async function tryGeocode() {
             const city    = cityInput.value.trim();
             const country = countryInput.value.trim();
             if (!city) return;
 
-            const query = country ? `${city}, ${country}` : city;
             showStatus('⏳ Визначаємо координати...', 'info');
 
             try {
-                const url  = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(query)}`;
-                const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const params = new URLSearchParams({ city });
+                if (country) params.append('country', country);
+
+                const res  = await fetch(`/TripDestinations/Geocode?${params}`);
                 const data = await res.json();
-                if (data && data.length > 0) {
-                    latInput.value = data[0].lat;
-                    lngInput.value = data[0].lon;
+
+                if (data.success) {
+                    latInput.value = data.lat;
+                    lngInput.value = data.lon;
+
+                    if (!country && data.country) {
+                        countryInput.value = data.country;
+                    }
+
                     showStatus('✅ Координати знайдено автоматично', 'ok');
                 } else {
                     showStatus('⚠️ Координати не знайдено — місто буде без маркера на карті', 'err');
                 }
             } catch (e) {
-                showStatus('⚠️ Помилка мережі при геокодуванні', 'err');
+                showStatus('⚠️ Помилка при визначенні координат', 'err');
             }
         }
 

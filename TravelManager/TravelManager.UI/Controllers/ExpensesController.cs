@@ -200,12 +200,31 @@ namespace TravelManager.UI.Controllers
                 }).ToList();
                 return View(model);
             }
+            var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
+            if (trip == null) return NotFound();
 
+            string tripBaseCurrency = trip.BaseCurrency; 
+
+            decimal expenseRate = 1.0m;
+            decimal tripBaseRate = 1.0m;
+
+            if (model.Currency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(model.Currency);
+                if (rateInfo != null) expenseRate = (decimal)rateInfo.RateToUah;
+            }
+
+            if (tripBaseCurrency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(tripBaseCurrency);
+                if (rateInfo != null) tripBaseRate = (decimal)rateInfo.RateToUah;
+            }
+
+            decimal convertedAmount = (model.TotalAmount * expenseRate) / tripBaseRate;
 
             decimal totalSplits = model.Splits?.Sum(s => s.OwedAmount) ?? 0;
             if (totalSplits == 0)
             {
-                // Автоматично записуємо на платника
                 if (model.Splits == null || !model.Splits.Any())
                 {
                     model.Splits = new List<ExpenseSplitItemModel>
@@ -236,13 +255,13 @@ namespace TravelManager.UI.Controllers
                 { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
                 return View(model);
             }
-
+            decimal conversionFactor = expenseRate / tripBaseRate;
             var expense = new Expense
             {
                 TripId = model.TripId,
                 Title = model.Description,
-                TotalAmount = model.TotalAmount,
-                Currency = model.Currency,
+                TotalAmount = convertedAmount,      
+                Currency = tripBaseCurrency,
                 Date = model.Date,
                 CategoryId = model.CategoryId,
                 PayerId = model.PayerId,
@@ -264,7 +283,7 @@ namespace TravelManager.UI.Controllers
                     {
                         ExpenseId = expense.Id,
                         DebtorId = split.UserId,
-                        OwedAmount = split.OwedAmount,
+                        OwedAmount = Math.Round(split.OwedAmount * conversionFactor, 2),
                         IsSettled = (split.UserId == model.PayerId)
                     };
                     _unitOfWork.ExpenseSplit.Add(expenseSplit);
@@ -293,9 +312,8 @@ namespace TravelManager.UI.Controllers
                 .GetAll(tp => tp.TripId == entity.TripId, includeProperties: "User")
                 .ToList();
 
-            var currencyList = await GetCurrencyListAsync(); // ← реальні курси
+            var currencyList = await GetCurrencyListAsync(); 
 
-            // Відмічаємо поточну валюту як вибрану
             foreach (var item in currencyList)
             {
                 if (item.Value == entity.Currency)
@@ -318,7 +336,7 @@ namespace TravelManager.UI.Controllers
                 TripActivityId = entity.TripActivityId,
                 TripList = GetAllowedTripsForUser(),
                 CategoryList = GetCategoryList(),
-                CurrencyList = currencyList, // ← реальні курси
+                CurrencyList = currencyList, 
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == entity.TripId)
                     .Select(t => new SelectListItem
                     {
@@ -389,15 +407,33 @@ namespace TravelManager.UI.Controllers
             }
 
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
-            if (entity == null)
+            if (entity == null) return NotFound();
+
+            var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
+            string tripBaseCurrency = trip?.BaseCurrency ?? "UAH";
+
+            decimal expenseRate = 1.0m;
+            decimal tripBaseRate = 1.0m;
+
+            if (model.Currency != "UAH")
             {
-                return NotFound();
+                var rateInfo = await _exchangeRateService.GetRateAsync(model.Currency);
+                if (rateInfo != null) expenseRate = (decimal)rateInfo.RateToUah;
+            }
+            if (tripBaseCurrency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(tripBaseCurrency);
+                if (rateInfo != null) tripBaseRate = (decimal)rateInfo.RateToUah;
             }
 
+            decimal conversionFactor = expenseRate / tripBaseRate;
+            decimal convertedTotal = model.TotalAmount * conversionFactor;
+
+            
             entity.TripId = model.TripId;
             entity.CategoryId = model.CategoryId;
-            entity.TotalAmount = model.TotalAmount;
-            entity.Currency = model.Currency;
+            entity.TotalAmount = convertedTotal; 
+            entity.Currency = tripBaseCurrency;
             entity.Title = model.Description;
             entity.Date = model.Date;
             entity.PayerId = model.PayerId;
@@ -408,12 +444,10 @@ namespace TravelManager.UI.Controllers
             entity.TripActivityId = model.TripActivityId;
 
             _unitOfWork.Expense.Update(entity);
-            var oldSplits = _unitOfWork.ExpenseSplit
-       .GetAll(s => s.ExpenseId == id)
-       .ToList();
+            
+            var oldSplits = _unitOfWork.ExpenseSplit.GetAll(s => s.ExpenseId == id).ToList();
             _unitOfWork.ExpenseSplit.RemoveRange(oldSplits);
 
-            // Записуємо нові
             if (model.Splits != null)
             {
                 foreach (var split in model.Splits)
@@ -424,7 +458,7 @@ namespace TravelManager.UI.Controllers
                         {
                             ExpenseId = id,
                             DebtorId = split.UserId,
-                            OwedAmount = split.OwedAmount,
+                            OwedAmount = Math.Round(split.OwedAmount * conversionFactor, 2), // Теж конвертуємо
                             IsSettled = (split.UserId == model.PayerId)
                         });
                     }

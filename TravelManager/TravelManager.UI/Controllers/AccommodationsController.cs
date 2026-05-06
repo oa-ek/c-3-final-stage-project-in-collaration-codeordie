@@ -1,26 +1,29 @@
-﻿// 📄 TravelManager/TravelManager.UI/Controllers/AccommodationsController.cs
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
 {
-    // ВИПРАВЛЕНО: додано [Authorize]
     [Authorize]
     public class AccommodationsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly INominatimService _nominatimService;
 
-        public AccommodationsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public AccommodationsController(
+            IUnitOfWork unitOfWork,
+            UserManager<User> userManager,
+            INominatimService nominatimService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _nominatimService = nominatimService;
         }
 
         [HttpGet]
@@ -98,6 +101,18 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
+            // Автоматично геокодуємо адресу через NominatimService
+            double? lat = null, lon = null;
+            if (!string.IsNullOrWhiteSpace(model.Address))
+            {
+                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
+                if (geo != null)
+                {
+                    lat = geo.Latitude;
+                    lon = geo.Longitude;
+                }
+            }
+
             var entity = new Accommodation
             {
                 Name = model.Name,
@@ -107,8 +122,8 @@ namespace TravelManager.UI.Controllers
                 BookingReference = model.BookingReference,
                 TripId = model.TripId,
                 BookingStatusId = 1,
-                // ВИПРАВЛЕНО: зберігаємо координати якщо є
-               
+                Latitude = lat,
+                Longitude = lon
             };
 
             _unitOfWork.Accommodation.Add(entity);
@@ -167,13 +182,23 @@ namespace TravelManager.UI.Controllers
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
             if (entity == null) return NotFound();
 
+            // Геокодуємо тільки якщо адреса змінилась
+            if (!string.IsNullOrWhiteSpace(model.Address) && model.Address != entity.Address)
+            {
+                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
+                if (geo != null)
+                {
+                    entity.Latitude = geo.Latitude;
+                    entity.Longitude = geo.Longitude;
+                }
+            }
+
             entity.Name = model.Name;
             entity.Address = model.Address;
             entity.CheckInTime = model.CheckInTime;
             entity.CheckOutTime = model.CheckOutTime;
             entity.BookingReference = model.BookingReference;
             entity.TripId = model.TripId;
-          
 
             _unitOfWork.Accommodation.Update(entity);
             await _unitOfWork.SaveAsync();
