@@ -118,6 +118,14 @@
 
         <form asp-action="Edit" method="post" class="relative z-10" id="expenseForm">
             <input type="hidden" asp-for="Id" />
+            <div id="hidden-splits-container">
+                @for (int i = 0; i < Model.Splits.Count; i++)
+                {
+                    <input type="hidden" asp-for="Splits[i].UserId" class="split-user-hidden" />
+                    <input type="hidden" asp-for="Splits[i].UserName" />
+                    <input type="hidden" asp-for="Splits[i].OwedAmount" class="split-amount-hidden" data-index="@i" />
+                }
+            </div>
 
             <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-8 text-sm font-bold text-center bg-rose-100/50 backdrop-blur-md py-4 rounded-2xl border border-rose-200/50 animate-pulse"></div>
 
@@ -231,6 +239,57 @@
 
             </div>
 
+            @if (Model.Splits.Any())
+            {
+                <div class="mt-10 pt-8 border-t border-slate-200/50 md:col-span-2">
+                    <div class="flex items-center justify-between mb-5 pl-1">
+                        <div class="flex items-center gap-2">
+                            <i class="bi bi-people-fill text-emerald-500 text-xl"></i>
+                            <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Поділ боргу</span>
+                        </div>
+                        <button type="button" id="splitEvenlyBtn"
+                                class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black text-xs uppercase tracking-widest transition-all hover:scale-105 border border-emerald-200/50 shadow-sm">
+                            <i class="bi bi-distribute-horizontal"></i> Розділити порівну
+                        </button>
+                    </div>
+
+                    <div class="space-y-3" id="splits-ui">
+                        @for (int i = 0; i < Model.Splits.Count; i++)
+                        {
+                            <div class="flex items-center gap-4 bg-white/50 border border-white/70 rounded-2xl px-5 py-3.5 hover:bg-white/80 transition-all"
+                                 data-split-index="@i">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                                    <i class="bi bi-person-fill text-emerald-400"></i>
+                                </div>
+                                <span class="flex-1 font-bold text-slate-700 text-sm">@Model.Splits[i].UserName</span>
+                                <div class="relative w-40 shrink-0">
+                                    <input type="number" step="0.01" min="0"
+                                           class="split-ui-amount w-full bg-white/70 border-2 border-white/90 rounded-xl py-2.5 pl-3 pr-10 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 transition-all text-right"
+                                           value="@Model.Splits[i].OwedAmount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)"
+                                           data-index="@i"
+                                           placeholder="0.00" />
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">UAH</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between px-5 py-3 bg-slate-50/80 border border-slate-200/60 rounded-2xl">
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-400">Розподілено</span>
+                        <div class="flex items-center gap-3">
+                            <span id="splitSumDisplay" class="text-lg font-black text-slate-800">0.00</span>
+                            <span class="text-xs font-bold text-slate-400">з</span>
+                            <span id="splitTotalDisplay" class="text-lg font-black text-emerald-600">0.00</span>
+                            <span id="splitStatusIcon" class="text-lg">⚪</span>
+                        </div>
+                    </div>
+                    <p id="splitError" class="text-xs text-rose-500 font-bold mt-2 pl-1 hidden">
+                        ⚠️ Сума часток має дорівнювати загальній сумі витрати
+                    </p>
+                </div>
+            }
+
+
             <div class="mt-14 flex flex-col sm:flex-row items-center justify-end gap-6 pt-8 border-t border-slate-200/50">
                 <a asp-action="Index" class="w-full sm:w-auto px-8 py-5 rounded-full font-black text-slate-400 hover:text-slate-700 bg-transparent hover:bg-white/50 transition-all text-sm uppercase tracking-widest text-center flex items-center justify-center gap-2">
                     Скасувати
@@ -331,5 +390,95 @@
                 });
             }
         });
+
+        const totalInput    = document.querySelector('input[name="TotalAmount"]');
+        const payerSelect   = document.querySelector('select[name="PayerId"]');
+        const splitEvenBtn  = document.getElementById('splitEvenlyBtn');
+        const splitSumEl    = document.getElementById('splitSumDisplay');
+        const splitTotalEl  = document.getElementById('splitTotalDisplay');
+        const splitStatusEl = document.getElementById('splitStatusIcon');
+        const splitErrorEl  = document.getElementById('splitError');
+
+        const uiAmounts  = () => document.querySelectorAll('.split-ui-amount');
+
+        function syncHiddenFields() {
+            uiAmounts().forEach(inp => {
+                const idx    = inp.dataset.index;
+                const hidden = document.querySelector(`.split-amount-hidden[data-index="${idx}"]`);
+                if (hidden) hidden.value = inp.value || '0';
+            });
+        }
+
+        function updateSummary() {
+            const total = parseFloat(totalInput?.value || 0);
+            let sum = 0;
+            uiAmounts().forEach(inp => sum += parseFloat(inp.value || 0));
+            sum = Math.round(sum * 100) / 100;
+            const rounded = Math.round(total * 100) / 100;
+
+            if (splitSumEl)   splitSumEl.textContent   = sum.toFixed(2);
+            if (splitTotalEl) splitTotalEl.textContent = rounded.toFixed(2);
+
+            const ok = Math.abs(sum - rounded) < 0.01;
+            if (splitStatusEl) splitStatusEl.textContent = sum === 0 ? '⚪' : ok ? '✅' : '❌';
+            if (splitErrorEl) splitErrorEl.classList.toggle('hidden', ok || sum === 0);
+
+            syncHiddenFields();
+        }
+
+        if (splitEvenBtn) {
+            splitEvenBtn.addEventListener('click', function () {
+                const total  = parseFloat(totalInput?.value || 0);
+                const inputs = uiAmounts();
+                if (!inputs.length || total <= 0) return;
+
+                const each = Math.floor((total / inputs.length) * 100) / 100;
+                const remainder = Math.round((total - each * inputs.length) * 100) / 100;
+
+                inputs.forEach((inp, i) => {
+                    inp.value = i === 0 ? (each + remainder).toFixed(2) : each.toFixed(2);
+                });
+                updateSummary();
+            });
+        }
+
+        if (totalInput) totalInput.addEventListener('input', updateSummary);
+        document.addEventListener('input', e => {
+            if (e.target.classList.contains('split-ui-amount')) updateSummary();
+        });
+
+        document.getElementById('expenseForm').addEventListener('submit', function (e) {
+            const total  = parseFloat(totalInput?.value || 0);
+            const inputs = uiAmounts();
+            if (!inputs.length) return;
+
+            let sum = 0;
+            inputs.forEach(inp => sum += parseFloat(inp.value || 0));
+            sum = Math.round(sum * 100) / 100;
+
+            if (sum === 0) {
+                const payerId = payerSelect?.value;
+                inputs.forEach(inp => {
+                    const idx    = inp.dataset.index;
+                    const hidden = document.querySelector(`.split-amount-hidden[data-index="${idx}"]`);
+                    const userId = document.querySelectorAll('.split-user-hidden')[idx]?.value;
+                    if (hidden) hidden.value = userId === payerId ? total.toFixed(2) : '0';
+                });
+                return;
+            }
+
+            if (Math.abs(sum - Math.round(total * 100) / 100) >= 0.01) {
+                e.preventDefault();
+                if (splitErrorEl) splitErrorEl.classList.remove('hidden');
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                return;
+            }
+
+            syncHiddenFields();
+        });
+
+        // Ініціалізація — важливо для Edit де є існуючі значення
+        updateSummary();
+
     </script>
 }

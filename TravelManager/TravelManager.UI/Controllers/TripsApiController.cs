@@ -61,6 +61,15 @@ namespace TravelManager.UI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Беремо першого існуючого юзера з БД як CreatorId
+            var firstUser = _unitOfWork.TripParticipant
+                .GetAll()
+                .Select(tp => tp.UserId)
+                .FirstOrDefault();
+
+            if (firstUser == null)
+                return BadRequest(new { message = "В системі немає жодного користувача." });
+
             var trip = new Trip
             {
                 Title = dto.Title,
@@ -72,7 +81,7 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = dto.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
-                CreatorId = "api-user" // для API без авторизації
+                CreatorId = firstUser
             };
 
             _unitOfWork.Trip.Add(trip);
