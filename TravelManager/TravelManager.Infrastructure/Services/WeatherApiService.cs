@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Globalization;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TravelManager.Application.DTOs.External;
 using TravelManager.Infrastructure.Interfaces.IServices;
-
 
 namespace TravelManager.Infrastructure.Services
 {
@@ -43,12 +38,20 @@ namespace TravelManager.Infrastructure.Services
 
             try
             {
+                // ВИПРАВЛЕННЯ: явно використовуємо InvariantCulture для форматування координат.
+                // Без цього на системі з uk-UA локаллю double 40.4168 перетворюється на "40,4168"
+                // і Open-Meteo API повертає помилку бо не розуміє кому як десятковий роздільник.
+                var latStr = lat.ToString("F4", CultureInfo.InvariantCulture);
+                var lonStr = lon.ToString("F4", CultureInfo.InvariantCulture);
+
                 var url = $"v1/forecast" +
-                          $"?latitude={lat}&longitude={lon}" +
+                          $"?latitude={latStr}&longitude={lonStr}" +
                           $"&current=temperature_2m,wind_speed_10m,relative_humidity_2m,weather_code,is_day" +
                           $"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum" +
                           $"&forecast_days=3" +
                           $"&timezone=auto";
+
+                _logger.LogInformation("Open-Meteo запит: {Url}", url);
 
                 var response = await _httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
@@ -57,7 +60,10 @@ namespace TravelManager.Infrastructure.Services
                 var dto = JsonSerializer.Deserialize<WeatherResponseDto>(json);
 
                 if (dto?.Current == null)
+                {
+                    _logger.LogWarning("Open-Meteo повернув порожню відповідь для {Lat},{Lon}", latStr, lonStr);
                     return null;
+                }
 
                 var result = new WeatherInfo
                 {
@@ -77,11 +83,11 @@ namespace TravelManager.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Open-Meteo недоступний для координат {Lat},{Lon}", lat, lon);
-                return null; // Fallback — повернути null, View покаже заглушку
+                return null;
             }
         }
 
-        private List<DailyForecast> BuildForecast(WeatherResponseDto dto)
+        private static List<DailyForecast> BuildForecast(WeatherResponseDto dto)
         {
             var result = new List<DailyForecast>();
             if (dto.Daily?.Time == null) return result;

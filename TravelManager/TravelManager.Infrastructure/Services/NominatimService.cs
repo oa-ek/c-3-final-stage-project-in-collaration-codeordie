@@ -23,7 +23,9 @@ namespace TravelManager.Infrastructure.Services
         }
 
         /// <summary>
-        /// Геокодування по назві міста/країни
+        /// Геокодування по назві міста/країни.
+        /// DisplayName повертається українською (для відображення),
+        /// Country — англійською (для REST Countries API).
         /// </summary>
         public async Task<GeocodingResult?> GeocodeAsync(string query)
         {
@@ -36,18 +38,37 @@ namespace TravelManager.Infrastructure.Services
             try
             {
                 var encoded = Uri.EscapeDataString(query);
-                var url = $"search?format=json&limit=1&accept-language=uk&q={encoded}&addressdetails=1";
 
-                var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+                // Запит 1: українська локалізація — для DisplayName та координат
+                var urlUk = $"search?format=json&limit=1&accept-language=uk&q={encoded}&addressdetails=1";
+                var responseUk = await _httpClient.GetAsync(urlUk);
+                responseUk.EnsureSuccessStatusCode();
 
-                var json = await response.Content.ReadAsStringAsync();
-                var results = JsonSerializer.Deserialize<List<NominatimResultDto>>(json);
-                var first = results?.FirstOrDefault();
+                var jsonUk = await responseUk.Content.ReadAsStringAsync();
+                var resultsUk = JsonSerializer.Deserialize<List<NominatimResultDto>>(jsonUk);
+                var firstUk = resultsUk?.FirstOrDefault();
 
-                if (first == null) return null;
+                if (firstUk == null) return null;
 
-                var result = MapToResult(first);
+                // Запит 2: англійська локалізація — тільки для назви країни (потрібна REST Countries API)
+                string? countryEn = null;
+                try
+                {
+                    var urlEn = $"search?format=json&limit=1&accept-language=en&q={encoded}&addressdetails=1";
+                    var responseEn = await _httpClient.GetAsync(urlEn);
+                    if (responseEn.IsSuccessStatusCode)
+                    {
+                        var jsonEn = await responseEn.Content.ReadAsStringAsync();
+                        var resultsEn = JsonSerializer.Deserialize<List<NominatimResultDto>>(jsonEn);
+                        countryEn = resultsEn?.FirstOrDefault()?.Address?.Country;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не вдалося отримати англійську назву країни для '{Query}'", query);
+                }
+
+                var result = MapToResult(firstUk, countryEn);
 
                 // Кешуємо на 7 днів — координати міст не змінюються
                 _cache.Set(cacheKey, result, TimeSpan.FromDays(7));
@@ -61,7 +82,8 @@ namespace TravelManager.Infrastructure.Services
         }
 
         /// <summary>
-        /// Геокодування по адресі (для готелів)
+        /// Геокодування по адресі (для готелів).
+        /// Country зберігається англійською для сумісності з REST Countries API.
         /// </summary>
         public async Task<GeocodingResult?> GeocodeAddressAsync(string address)
         {
@@ -74,18 +96,37 @@ namespace TravelManager.Infrastructure.Services
             try
             {
                 var encoded = Uri.EscapeDataString(address);
-                var url = $"search?format=json&limit=1&accept-language=uk&q={encoded}&addressdetails=1";
 
-                var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+                // Запит 1: українська локалізація — для DisplayName та координат
+                var urlUk = $"search?format=json&limit=1&accept-language=uk&q={encoded}&addressdetails=1";
+                var responseUk = await _httpClient.GetAsync(urlUk);
+                responseUk.EnsureSuccessStatusCode();
 
-                var json = await response.Content.ReadAsStringAsync();
-                var results = JsonSerializer.Deserialize<List<NominatimResultDto>>(json);
-                var first = results?.FirstOrDefault();
+                var jsonUk = await responseUk.Content.ReadAsStringAsync();
+                var resultsUk = JsonSerializer.Deserialize<List<NominatimResultDto>>(jsonUk);
+                var firstUk = resultsUk?.FirstOrDefault();
 
-                if (first == null) return null;
+                if (firstUk == null) return null;
 
-                var result = MapToResult(first);
+                // Запит 2: англійська локалізація — тільки для назви країни
+                string? countryEn = null;
+                try
+                {
+                    var urlEn = $"search?format=json&limit=1&accept-language=en&q={encoded}&addressdetails=1";
+                    var responseEn = await _httpClient.GetAsync(urlEn);
+                    if (responseEn.IsSuccessStatusCode)
+                    {
+                        var jsonEn = await responseEn.Content.ReadAsStringAsync();
+                        var resultsEn = JsonSerializer.Deserialize<List<NominatimResultDto>>(jsonEn);
+                        countryEn = resultsEn?.FirstOrDefault()?.Address?.Country;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не вдалося отримати англійську назву країни для адреси '{Address}'", address);
+                }
+
+                var result = MapToResult(firstUk, countryEn);
 
                 // Кешуємо на 24 години
                 _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
@@ -98,7 +139,11 @@ namespace TravelManager.Infrastructure.Services
             }
         }
 
-        private static GeocodingResult MapToResult(NominatimResultDto dto)
+        /// <summary>
+        /// countryOverride — англійська назва країни для REST Countries API.
+        /// Якщо не передана — береться з українського результату (як fallback).
+        /// </summary>
+        private static GeocodingResult MapToResult(NominatimResultDto dto, string? countryOverride = null)
         {
             double.TryParse(dto.Lat,
                 System.Globalization.NumberStyles.Any,
@@ -112,9 +157,9 @@ namespace TravelManager.Infrastructure.Services
                 Latitude = lat,
                 Longitude = lon,
                 DisplayName = dto.DisplayName,
-                Country = dto.Address?.Country
+                // Пріоритет: англійська назва (для API) → українська (fallback)
+                Country = countryOverride ?? dto.Address?.Country
             };
         }
     }
-
 }

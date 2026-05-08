@@ -13,7 +13,6 @@ using TravelManager.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ¬»ѕ–ј¬Ћ≈Ќќ: прибрано зайвий перший виклик AddControllersWithViews()
 builder.Services.AddControllersWithViews()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
@@ -24,10 +23,9 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "TravelManager API",
         Version = "v1",
-        Description = "ѕубл≥чний Web API дл€ управл≥нн€ поњздками у TravelManager"
+        Description = "Web API дл€ TravelManager"
     });
 
-    // ѕ≥дключити XML-коментар≥ (/// <summary>) Ч необов'€зково але красиво
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -67,35 +65,38 @@ builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
 
 builder.Services.AddMemoryCache();
 
+// ¬»ѕ–ј¬Ћ≈ЌЌя: прибрано .AddStandardResilienceHandler() Ч в≥н вмикаЇ circuit breaker,
+// €кий блокуЇ повторн≥ запити до зовн≥шн≥х API п≥сл€ першоњ невдач≥.
+// Timeout зб≥льшено до 15с, бо зовн≥шн≥ API (особливо Nominatim) можуть в≥дпов≥дати пов≥льно.
+
 builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
 {
     client.BaseAddress = new Uri("https://api.open-meteo.com/");
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(15);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
-})
-.AddStandardResilienceHandler(); 
+});
 
 builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =>
 {
     client.BaseAddress = new Uri("https://restcountries.com/");
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(15);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
-})
-.AddStandardResilienceHandler();
+});
 
 builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
 {
     client.BaseAddress = new Uri("https://bank.gov.ua/");
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(15);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
-})
-.AddStandardResilienceHandler();
+});
 
+// ¬»ѕ–ј¬Ћ≈ЌЌя: Nominatim робить два запити (uk + en) Ч timeout зб≥льшено до 20с,
+// щоб обидва запити встигли виконатись.
 builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0 (university project)");
-}).AddStandardResilienceHandler();
+});
 
 var app = builder.Build();
 
@@ -109,7 +110,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TravelManager API v1");
-    c.RoutePrefix = "swagger"; // Swagger буде на /swagger
+    c.RoutePrefix = "swagger";
 });
 
 app.UseHttpsRedirection();

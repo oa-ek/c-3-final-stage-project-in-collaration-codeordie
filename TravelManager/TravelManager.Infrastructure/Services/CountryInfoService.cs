@@ -1,11 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TravelManager.Application.DTOs.External;
 using TravelManager.Infrastructure.Interfaces.IServices;
 
@@ -39,10 +34,35 @@ namespace TravelManager.Infrastructure.Services
             try
             {
                 var encoded = Uri.EscapeDataString(countryName);
-                var response = await _httpClient.GetAsync(
-                    $"v3.1/name/{encoded}?fields=name,flags,currencies,languages,capital,population,region");
+                var fields = "fields=name,flags,currencies,languages,capital,population,region";
 
-                if (!response.IsSuccessStatusCode) return null;
+                // Спроба 1: /name/ — працює для англійських назв (наприклад "France", "Germany")
+                var response = await _httpClient.GetAsync($"v3.1/name/{encoded}?{fields}");
+
+                // Спроба 2: /translation/ — для перекладених назв (наприклад "Франція", "Германія")
+                // REST Countries API підтримує пошук по перекладах у цьому ендпоінті
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation(
+                        "REST Countries /name/ не знайшло '{Country}', пробуємо /translation/", countryName);
+                    response = await _httpClient.GetAsync($"v3.1/translation/{encoded}?{fields}");
+                }
+
+                // Спроба 3: /name/ з параметром fullText=false — частковий пошук (широкий fallback)
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation(
+                        "REST Countries /translation/ не знайшло '{Country}', пробуємо /name/ з fullText=false", countryName);
+                    response = await _httpClient.GetAsync($"v3.1/name/{encoded}?{fields}&fullText=false");
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning(
+                        "REST Countries не знайшло країну '{Country}' жодним способом. HTTP {Status}",
+                        countryName, response.StatusCode);
+                    return null;
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 var countries = JsonSerializer.Deserialize<List<CountryInfoDto>>(json);
@@ -62,8 +82,8 @@ namespace TravelManager.Infrastructure.Services
                     Region = dto.Region ?? string.Empty,
                     Population = dto.Population,
                     Languages = dto.Languages != null
-                        ? string.Join(", ", dto.Languages.Values)
-                        : string.Empty,
+                                        ? string.Join(", ", dto.Languages.Values)
+                                        : string.Empty,
                     CurrencyCode = firstCurrency?.Key ?? string.Empty,
                     CurrencyName = firstCurrency?.Value?.Name ?? string.Empty,
                     CurrencySymbol = firstCurrency?.Value?.Symbol ?? string.Empty,
