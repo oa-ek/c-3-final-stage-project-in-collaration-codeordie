@@ -101,20 +101,26 @@
 
         @* ── Сума + Валюта ── *@
         <div class="flex flex-col items-center justify-center mb-10 stagger-item" style="animation-delay: 0.2s;">
-            <div class="relative w-full max-w-sm">
-                <div class="flex items-center p-2 bg-white/70 backdrop-blur-xl border-4 border-white/90 rounded-[2.5rem] shadow-[0_15px_35px_rgba(0,0,0,0.05)] focus-within:border-emerald-300 focus-within:shadow-[0_20px_40px_rgba(16,185,129,0.15)] transition-all duration-300">
+            <div class="relative w-fit max-w-full mx-auto">
+
+                <div class="flex flex-nowrap items-center p-2 bg-white/70 backdrop-blur-xl border-4 border-white/90 rounded-[2.5rem] shadow-[0_15px_35px_rgba(0,0,0,0.05)] focus-within:border-emerald-300 focus-within:shadow-[0_20px_40px_rgba(16,185,129,0.15)] transition-all duration-300">
+
                     <div class="relative shrink-0">
                         <select asp-for="Currency" asp-items="Model.CurrencyList"
-                                class="appearance-none bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-sm py-4 pl-6 pr-10 rounded-[2rem] border-0 outline-none cursor-pointer transition-colors focus:ring-0 focus:bg-emerald-50 focus:text-emerald-700">
+                                class="appearance-none whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-sm py-4 pl-6 pr-10 rounded-[2rem] border-0 outline-none cursor-pointer transition-colors focus:ring-0 focus:bg-emerald-50 focus:text-emerald-700">
                         </select>
                         <i class="bi bi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold pointer-events-none"></i>
                     </div>
+
                     <input asp-for="TotalAmount" id="TotalAmountInput" type="number" step="0.01" placeholder="0.00"
-                           class="w-full bg-transparent border-0 text-right text-4xl md:text-5xl font-black text-slate-800 py-3 pr-4 pl-2 outline-none focus:ring-0 placeholder:text-slate-300" />
+                           style="min-width: 4ch; width: 5ch; field-sizing: content;"
+                           oninput="this.style.width = Math.max(5, this.value.length + 1.5) + 'ch';"
+                           class="bg-transparent border-0 text-right text-4xl md:text-5xl font-black text-slate-800 py-3 pr-4 pl-4 outline-none focus:ring-0 placeholder:text-slate-300 transition-all duration-75" />
                 </div>
-                <div class="flex justify-between w-full mt-2 px-4">
-                    <span asp-validation-for="Currency" class="text-xs text-rose-500 font-bold"></span>
-                    <span asp-validation-for="TotalAmount" class="text-xs text-rose-500 font-bold text-right"></span>
+
+                <div class="flex justify-between w-full mt-2 px-4 gap-4">
+                    <span asp-validation-for="Currency" class="text-xs text-rose-500 font-bold whitespace-nowrap"></span>
+                    <span asp-validation-for="TotalAmount" class="text-xs text-rose-500 font-bold text-right whitespace-nowrap"></span>
                 </div>
             </div>
         </div>
@@ -236,7 +242,7 @@
                                 <input type="number" step="0.01" min="0"
                                        class="split-ui-amount w-full bg-white/70 border-2 border-white/90 rounded-xl py-2 pl-3 pr-8 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 transition-all text-right"
                                        value="0" data-index="@i" placeholder="0.00" />
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">UAH</span>
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none"></span>
                             </div>
                         </div>
                     }

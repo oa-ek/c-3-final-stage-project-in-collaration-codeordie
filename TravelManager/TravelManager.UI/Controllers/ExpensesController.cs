@@ -383,8 +383,34 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ExpenseFormViewModel model)
         {
+
             ModelState.Remove("Splits");
 
+            for (int i = 0; i < model.Splits.Count; i++)
+            {
+                ModelState.Remove($"Splits[{i}].OwedAmount");
+                ModelState.Remove($"Splits[{i}].UserName");
+
+                var raw = Request.Form[$"Splits[{i}].OwedAmount"].ToString();
+                if (!string.IsNullOrEmpty(raw))
+                {
+                    raw = raw.Replace(",", ".");
+                    if (decimal.TryParse(raw,
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out decimal parsed))
+                    {
+                        model.Splits[i].OwedAmount = parsed;
+                    }
+                }
+            }
+            ModelState.Remove("PayerList");
+            ModelState.Remove("TripList");
+            ModelState.Remove("CategoryList");
+            ModelState.Remove("CurrencyList");
+            ModelState.Remove("TransitList");
+            ModelState.Remove("AccommodationList");
+            ModelState.Remove("ActivityList");
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
