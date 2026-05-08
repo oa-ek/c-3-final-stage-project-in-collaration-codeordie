@@ -1,31 +1,35 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
 {
+    [Authorize]
     public class AccommodationsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly INominatimService _nominatimService;
 
-        public AccommodationsController(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public AccommodationsController(
+            IUnitOfWork unitOfWork,
+            UserManager<User> userManager,
+            INominatimService nominatimService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _nominatimService = nominatimService;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
             var currentUserId = _userManager.GetUserId(User);
-            if (currentUserId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
 
             var myTripIds = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId)
@@ -63,15 +67,18 @@ namespace TravelManager.UI.Controllers
                 var role = GetUserRoleInTrip(tripId.Value);
                 if (role == "Viewer" || role == "None")
                 {
-                    TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
+                    TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
                     return RedirectToAction("Index", "Trips");
                 }
+
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
             }
 
             var model = new AccommodationFormViewModel
             {
-                TripId = tripId ?? 0, 
-                TripList = allowedTrips 
+                TripId = tripId ?? 0,
+                TripList = allowedTrips
             };
 
             return View(model);
@@ -84,14 +91,26 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
+                TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цю поїздку.";
                 return RedirectToAction("Index", "Trips");
             }
 
             if (!ModelState.IsValid)
             {
-                model.TripList = GetAllowedTripsForUser(); 
+                model.TripList = GetAllowedTripsForUser();
                 return View(model);
+            }
+
+            // Автоматично геокодуємо адресу через NominatimService
+            double? lat = null, lon = null;
+            if (!string.IsNullOrWhiteSpace(model.Address))
+            {
+                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
+                if (geo != null)
+                {
+                    lat = geo.Latitude;
+                    lon = geo.Longitude;
+                }
             }
 
             var entity = new Accommodation
@@ -102,35 +121,30 @@ namespace TravelManager.UI.Controllers
                 CheckOutTime = model.CheckOutTime,
                 BookingReference = model.BookingReference,
                 TripId = model.TripId,
-                BookingStatusId = 1
+                BookingStatusId = 1,
+                Latitude = lat,
+                Longitude = lon
             };
 
             _unitOfWork.Accommodation.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = $"Житло «{model.Name}» успішно додано!";
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
-                return RedirectToAction("Index", "Trips"); 
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
+                return RedirectToAction("Index", "Trips");
             }
-
-            var trips = _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
 
             var model = new AccommodationFormViewModel
             {
@@ -141,8 +155,10 @@ namespace TravelManager.UI.Controllers
                 CheckOutTime = entity.CheckOutTime,
                 BookingReference = entity.BookingReference,
                 TripId = entity.TripId,
+              
                 TripList = GetAllowedTripsForUser()
             };
+
             return View(model);
         }
 
@@ -153,9 +169,10 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
+                TempData["ErrorMessage"] = "У вас немає прав для редагування.";
                 return RedirectToAction("Index", "Trips");
             }
+
             if (!ModelState.IsValid)
             {
                 model.TripList = GetAllowedTripsForUser();
@@ -163,9 +180,17 @@ namespace TravelManager.UI.Controllers
             }
 
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
+            if (entity == null) return NotFound();
+
+            // Геокодуємо тільки якщо адреса змінилась
+            if (!string.IsNullOrWhiteSpace(model.Address) && model.Address != entity.Address)
             {
-                return NotFound();
+                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
+                if (geo != null)
+                {
+                    entity.Latitude = geo.Latitude;
+                    entity.Longitude = geo.Longitude;
+                }
             }
 
             entity.Name = model.Name;
@@ -178,7 +203,8 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Accommodation.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = $"Житло «{model.Name}» оновлено!";
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -186,22 +212,21 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
 
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть видаляти записи.";
+                TempData["ErrorMessage"] = "У вас немає прав для видалення.";
                 return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.Accommodation.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            TempData["SuccessMessage"] = "Житло видалено.";
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private string GetUserRoleInTrip(int tripId)
@@ -209,22 +234,20 @@ namespace TravelManager.UI.Controllers
             var currentUserId = _userManager.GetUserId(User);
             var participant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
-
             return participant?.Role?.Name ?? "None";
         }
 
         private IEnumerable<SelectListItem> GetAllowedTripsForUser()
         {
             var currentUserId = _userManager.GetUserId(User);
-
             return _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip,Role")
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer",
+                        includeProperties: "Trip,Role")
                 .Select(tp => new SelectListItem
                 {
                     Text = tp.Trip.Title,
                     Value = tp.TripId.ToString()
                 }).ToList();
         }
-
     }
 }

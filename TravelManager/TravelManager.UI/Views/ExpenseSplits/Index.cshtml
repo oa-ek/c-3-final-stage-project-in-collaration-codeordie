@@ -76,15 +76,28 @@
                 Спільні борги
             </h1>
         </div>
-
-        <a asp-action="Create" class="mt-8 md:mt-0 group relative inline-flex items-center justify-center px-8 py-4 font-black text-white transition-all duration-300 bg-slate-900 rounded-full shadow-xl hover:shadow-2xl hover:-translate-y-1 uppercase tracking-widest text-xs overflow-hidden">
-            <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
-            <span class="relative flex items-center gap-3">
-                Додати борг
-                <i class="bi bi-plus-lg text-lg group-hover:rotate-90 transition-transform duration-300"></i>
-            </span>
-        </a>
     </div>
+
+    @* Підсумок: хто скільки кому винен *@
+    @if (Model.Any(x => !x.IsSettled))
+    {
+        <div class="relative z-20 mb-8 bg-white/50 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-sm stagger-item" style="animation-delay: 0.15s;">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                <i class="bi bi-calculator text-amber-500"></i> Залишок боргів
+            </p>
+            <div class="flex flex-wrap gap-3">
+                @foreach (var debtor in Model.Where(x => !x.IsSettled).GroupBy(x => x.DebtorName))
+                {
+                    <div class="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2">
+                        <i class="bi bi-person-fill text-rose-400"></i>
+                        <span class="font-black text-slate-700 text-sm">@debtor.Key</span>
+                        <span class="text-xs font-bold text-slate-400">винен</span>
+                        <span class="font-black text-rose-600">@debtor.Sum(x => x.OwedAmount).ToString("N2") ₴</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     <div class="relative z-20 space-y-4">
         @if (!Model.Any())
@@ -108,7 +121,6 @@
                         <div class="w-14 h-14 shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full border-2 border-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                             <i class="bi bi-person-fill text-2xl text-slate-400"></i>
                         </div>
-
                         <div class="flex flex-col">
                             <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Боржник</span>
                             <span class="text-xl font-black text-slate-800 tracking-tight leading-none mb-2">@item.DebtorName</span>
@@ -149,12 +161,24 @@
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm hover:scale-105" title="Редагувати">
-                                <i class="bi bi-pencil-fill text-sm"></i>
-                            </a>
-                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="m-0" onsubmit="return confirm('Видалити цей борг?');">
+                            @* Кнопка Settle — тільки якщо не оплачено *@
+                            @if (!item.IsSettled)
+                            {
+                                <form asp-action="Settle" asp-route-id="@item.Id" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm hover:scale-105"
+                                            title="Позначити як оплачено">
+                                        <i class="bi bi-check2-circle text-sm"></i>
+                                    </button>
+                                </form>
+                            }
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="m-0"
+                                  onsubmit="return confirm('Видалити цей борг?');">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all shadow-sm hover:scale-105" title="Видалити">
+                                <button type="submit"
+                                        class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all shadow-sm hover:scale-105"
+                                        title="Видалити">
                                     <i class="bi bi-trash3-fill text-sm"></i>
                                 </button>
                             </form>

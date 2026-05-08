@@ -1,15 +1,527 @@
 ﻿@model TravelManager.UI.Models.ViewModels.Admin.DashboardViewModel
+
 @{
-    ViewData["Title"] = "Адмін Панель";
+    ViewData["Title"] = "Адмін-панель";
 }
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-    @@keyframes slideUpFade {
+    * {
+        box-sizing: border-box;
+    }
+
+    .profile-root {
+        font-family: 'DM Sans', sans-serif;
+        min-height: 100vh;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+    }
+
+        /* Живий фон */
+        .profile-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99,102,241,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 90% 80%, rgba(236,72,153,0.10) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg) brightness(1);
+        }
+
+        100% {
+            filter: hue-rotate(25deg) brightness(1.03);
+        }
+    }
+
+    /* Плаваючі blob-и */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.18;
+        z-index: -1;
+        animation: blobFloat linear infinite;
+        pointer-events: none;
+    }
+
+    .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: #6366f1;
+        top: -100px;
+        left: -100px;
+        animation-duration: 20s;
+    }
+
+    .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: #ec4899;
+        bottom: -80px;
+        right: -80px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+    }
+
+    .blob-3 {
+        width: 300px;
+        height: 300px;
+        background: #10b981;
+        top: 40%;
+        left: 60%;
+        animation-duration: 18s;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(40px,-30px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(-20px,40px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: revealUp 0.65s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .delay-1 {
+        animation-delay: 0.05s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.15s;
+    }
+
+    .delay-3 {
+        animation-delay: 0.25s;
+    }
+
+    .delay-4 {
+        animation-delay: 0.35s;
+    }
+
+    .delay-5 {
+        animation-delay: 0.45s;
+    }
+
+    /* Сайдбар */
+    .sidebar {
+        background: rgba(255,255,255,0.55);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2rem;
+        padding: 1.5rem 1rem;
+        box-shadow: 0 8px 40px rgba(99,102,241,0.08);
+        transition: box-shadow 0.3s ease;
+    }
+
+        .sidebar:hover {
+            box-shadow: 0 12px 50px rgba(99,102,241,0.13);
+        }
+
+    .sidebar-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        padding: 0 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .s-link {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.8rem 1rem;
+        border-radius: 1.2rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(.4,0,.2,1);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .s-link::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 1.2rem;
+        }
+
+        .s-link span, .s-link i {
+            position: relative;
+            z-index: 1;
+        }
+
+        .s-link:hover {
+            color: #4f46e5;
+            transform: translateX(5px);
+        }
+
+            .s-link:hover::before {
+                opacity: 0.08;
+            }
+
+        .s-link.active {
+            color: white;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+        }
+
+            .s-link.active::before {
+                opacity: 1;
+            }
+
+    /* Головна картка */
+    .main-card {
+        background: rgba(255,255,255,0.60);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2.5rem;
+        box-shadow: 0 8px 50px rgba(99,102,241,0.08);
+        overflow: hidden;
+        transition: box-shadow 0.4s ease;
+    }
+
+        .main-card:hover {
+            box-shadow: 0 16px 60px rgba(99,102,241,0.13);
+        }
+
+    .card-hero {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+        background-size: 200% 200%;
+        animation: heroGradient 6s ease infinite;
+        padding: 2.5rem 2.5rem 5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @@keyframes heroGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .card-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3rem;
+        background: rgba(255,255,255,0.60);
+        backdrop-filter: blur(30px);
+        border-radius: 2.5rem 2.5rem 0 0;
+    }
+
+    .hero-pattern {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.12) 1px, transparent 1px), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 1px, transparent 1px), radial-gradient(circle at 60% 80%, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 40px 40px, 35px 35px, 50px 50px;
+        animation: patternDrift 20s linear infinite;
+    }
+
+    @@keyframes patternDrift {
+        from {
+            background-position: 0 0, 0 0, 0 0;
+        }
+
+        to {
+            background-position: 40px 40px, -35px 35px, 50px -50px;
+        }
+    }
+
+    .hero-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: white;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.15);
+    }
+
+    .hero-sub {
+        color: rgba(255,255,255,0.78);
+        font-size: 0.85rem;
+        font-weight: 500;
+        position: relative;
+        z-index: 1;
+        margin-top: 0.25rem;
+    }
+
+    /* Аватар-іконка Адміна */
+    .avatar-wrap {
+        position: relative;
+        margin-top: -5.5rem;
+        margin-left: 2rem;
+        margin-bottom: 1.5rem;
+        display: inline-block;
+        z-index: 10;
+    }
+
+    .avatar-ring {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #ec4899, #10b981);
+        background-size: 200% 200%;
+        animation: avatarGradient 4s ease infinite, avatarPop 0.8s cubic-bezier(.34,1.56,.64,1) 0.4s both;
+        padding: 3px;
+        box-shadow: 0 8px 30px rgba(99,102,241,0.35);
+    }
+
+    @@keyframes avatarGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @@keyframes avatarPop {
+        from {
+            transform: scale(0.4) rotate(-15deg);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
+    }
+
+    .avatar-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #f1f5f9;
+        border: 4px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Поля форми та контент */
+    .form-body {
+        padding: 0 2rem 2.5rem;
+    }
+
+    .fields-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .field-wrap {
+        background: rgba(248,250,252,0.9);
+        border: 1.5px solid rgba(226,232,240,0.8);
+        border-radius: 1.2rem;
+        padding: 0.9rem 1.1rem;
+        transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .field-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.3rem;
+        display: block;
+    }
+
+    /* Статистика */
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        font-family: 'Syne', sans-serif;
+        background: linear-gradient(135deg, #6366f1, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* === НОВЕ: Макет Дашборду (Сайд-бай-Сайд) === */
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 1.7fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    @@media (max-width: 850px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Секція графіку */
+    .chart-box {
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(226,232,240,0.9);
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+
+    /* Секція розсилки */
+    .broadcast-box {
+        background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(248,250,252,0.95));
+        border: 1.5px solid rgba(236,72,153,0.15);
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 25px rgba(236,72,153,0.06);
+    }
+
+    .bc-input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        padding: 0.6rem 0;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+        outline: none;
+        transition: border-color 0.3s;
+        margin-bottom: 1rem;
+    }
+
+        .bc-input:focus {
+            border-bottom-color: #ec4899;
+        }
+
+        .bc-input::placeholder {
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+    /* Кнопка зберегти */
+    .save-btn {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background-size: 200% 200%;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 0.9rem 2.5rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+        position: relative;
+        overflow: hidden;
+        animation: btnGradient 4s ease infinite;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @@keyframes btnGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .save-btn:hover {
+        transform: translateY(-4px) scale(1.04);
+        box-shadow: 0 10px 35px rgba(99,102,241,0.55);
+        color: white;
+    }
+
+    .save-btn:active {
+        transform: scale(0.96);
+        box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+    }
+
+    .success-toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.07));
+        border: 1px solid rgba(16,185,129,0.25);
+        border-radius: 1rem;
+        padding: 0.9rem 1.2rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        color: #065f46;
+        font-size: 0.875rem;
+        animation: toastIn 0.6s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .error-toast {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.07));
+        border-color: rgba(239,68,68,0.25);
+        color: #991b1b;
+    }
+
+    @@keyframes toastIn {
         from {
             opacity: 0;
-            transform: translateY(30px) scale(0.98);
+            transform: translateY(-12px) scale(0.95);
         }
 
         to {
@@ -18,168 +530,148 @@
         }
     }
 
-    .animate-slide-up {
-        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    .toast-icon {
+        font-size: 1.2rem;
+        color: #10b981;
+        animation: checkPop 0.5s cubic-bezier(.34,1.56,.64,1) 0.2s both;
     }
 
-    .stagger-1 {
-        animation-delay: 0.1s;
-        opacity: 0;
+    @@keyframes checkPop {
+        from {
+            transform: scale(0) rotate(-30deg);
+        }
+
+        to {
+            transform: scale(1) rotate(0deg);
+        }
     }
 
-    .stagger-2 {
-        animation-delay: 0.2s;
-        opacity: 0;
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -0.03em;
     }
 
-    .stagger-3 {
-        animation-delay: 0.3s;
-        opacity: 0;
-    }
+        .page-title span {
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            background-size: 200% 200%;
+            animation: heroGradient 5s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 </style>
 
-<div class="relative w-full min-h-screen py-10 z-10 overflow-hidden">
-    <div class="absolute top-0 left-0 w-[40rem] h-[40rem] bg-blue-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none -translate-x-1/2 -translate-y-1/4"></div>
-    <div class="absolute bottom-0 right-0 w-[40rem] h-[40rem] bg-indigo-400/10 rounded-full blur-[120px] animate-pulse pointer-events-none translate-x-1/3 translate-y-1/4" style="animation-delay: 2s;"></div>
+<div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
 
-    <div class="max-w-7xl mx-auto px-4 z-20 relative">
+<div class="profile-root">
+    <div style="max-width: 1100px; margin: 0 auto;">
 
-        <div class="flex items-center gap-4 mb-8 animate-slide-up">
-            <div class="w-14 h-14 bg-gradient-to-br from-indigo-100 to-white rounded-2xl border border-indigo-100 flex items-center justify-center shadow-sm">
-                <i class="bi bi-speedometer2 text-3xl text-indigo-600 drop-shadow-sm"></i>
-            </div>
-            <div>
-                <h2 class="text-4xl font-black text-slate-800 tracking-tight m-0">Панель Адміністратора</h2>
-                <p class="text-slate-500 font-medium m-0 mt-1">Огляд та керування системою</p>
-            </div>
+        <div class="reveal delay-1" style="margin-bottom: 2.5rem;">
+            <h1 class="page-title">Адмін <span>панель</span></h1>
+            <p style="color:#64748b; font-weight:500; margin-top:0.5rem;">Центр керування системою та користувачами</p>
         </div>
 
-        <!-- Верхній ряд: Картки статистики -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div style="display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap;">
 
-            <!-- Користувачів -->
-            <div class="animate-slide-up stagger-1 group bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_35px_-10px_rgba(59,130,246,0.15)] transition-all duration-500 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between">
-                <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-400/10 rounded-full blur-xl group-hover:bg-blue-400/20 transition-colors"></div>
-                <div>
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div class="w-12 h-12 bg-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 border border-blue-200/50">
-                            <i class="bi bi-people-fill text-xl"></i>
-                        </div>
-                        <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Клієнти</span>
-                    </div>
-                    <h5 class="text-slate-500 text-sm font-bold mb-1 uppercase tracking-wide">Користувачів</h5>
-                    <h1 class="text-5xl font-black text-slate-800 tracking-tighter m-0">@Model.TotalUsers</h1>
-                </div>
-                <div class="mt-6 pt-4 border-t border-slate-200/50">
-                    <a asp-action="UserList" class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors group/link">
-                        Керувати користувачами <i class="bi bi-arrow-right ml-2 group-hover/link:translate-x-1 transition-transform"></i>
-                    </a>
-                </div>
+            <div class="sidebar reveal delay-2" style="width:200px; flex-shrink:0;">
+                <p class="sidebar-label">Навігація</p>
+                <a asp-action="AdminDashboard" class="s-link active"><i class="bi bi-speedometer2"></i><span>Дашборд</span></a>
+                <a asp-action="UserList" class="s-link"><i class="bi bi-people-fill"></i><span>Користувачі</span></a>
             </div>
 
-            <!-- Адміністраторів -->
-            <div class="animate-slide-up stagger-2 group bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_35px_-10px_rgba(244,63,94,0.15)] transition-all duration-500 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between">
-                <div class="absolute -right-6 -top-6 w-24 h-24 bg-rose-400/10 rounded-full blur-xl group-hover:bg-rose-400/20 transition-colors"></div>
-                <div>
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div class="w-12 h-12 bg-rose-100/50 rounded-xl flex items-center justify-center text-rose-600 border border-rose-200/50">
-                            <i class="bi bi-shield-lock-fill text-xl"></i>
-                        </div>
-                        <span class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Персонал</span>
-                    </div>
-                    <h5 class="text-slate-500 text-sm font-bold mb-1 uppercase tracking-wide">Адміністраторів</h5>
-                    <h1 class="text-5xl font-black text-slate-800 tracking-tighter m-0">@Model.TotalAdmins</h1>
+            <div class="main-card reveal delay-3" style="flex:1; min-width:300px;">
+                <div class="card-hero">
+                    <div class="hero-pattern"></div>
+                    <div class="hero-title">Огляд системи</div>
+                    <div class="hero-sub">Статистика та інструменти комунікації</div>
                 </div>
-            </div>
 
-            <!-- Всього поїздок -->
-            <div class="animate-slide-up stagger-3 group bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_35px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between">
-                <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-400/10 rounded-full blur-xl group-hover:bg-emerald-400/20 transition-colors"></div>
-                <div>
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div class="w-12 h-12 bg-emerald-100/50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-200/50">
-                            <i class="bi bi-airplane-fill text-xl"></i>
+                <div class="avatar-wrap">
+                    <div class="avatar-ring">
+                        <div class="avatar-inner">
+                            <i class="bi bi-shield-lock-fill" style="font-size:3.5rem;color:#6366f1;"></i>
                         </div>
-                        <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Активність</span>
-                    </div>
-                    <h5 class="text-slate-500 text-sm font-bold mb-1 uppercase tracking-wide">Всього поїздок</h5>
-                    <h1 class="text-5xl font-black text-slate-800 tracking-tighter m-0">@Model.TotalTrips</h1>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Нижній ряд: Графіки та Форма -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up stagger-3">
-
-            <!-- Лінійний графік -->
-            <div class="lg:col-span-2">
-                <div class="bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] p-6 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] h-full">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-indigo-100/50 rounded-lg flex items-center justify-center text-indigo-600 border border-indigo-200/50">
-                            <i class="bi bi-graph-up text-lg"></i>
-                        </div>
-                        <h3 class="text-xl font-black text-slate-800 m-0">Динаміка реєстрацій</h3>
-                    </div>
-                    <div class="relative w-full h-[300px]">
-                        <canvas id="registrationsChart"></canvas>
                     </div>
                 </div>
-            </div>
 
-            <!-- Панель масової розсилки -->
-            <div>
-                <div class="bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] p-6 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] h-full flex flex-col">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-amber-100/50 rounded-lg flex items-center justify-center text-amber-600 border border-amber-200/50">
-                            <i class="bi bi-envelope-paper-fill text-lg"></i>
+                <div class="form-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="success-toast">
+                            <i class="bi bi-check-circle-fill toast-icon"></i>
+                            @TempData["SuccessMessage"]
                         </div>
-                        <h3 class="text-xl font-black text-slate-800 m-0">Масова розсилка</h3>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="success-toast error-toast">
+                            <i class="bi bi-exclamation-circle-fill toast-icon" style="color: #ef4444;"></i>
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <div class="fields-grid reveal delay-3" style="margin-bottom: 1rem;">
+                        <div class="field-wrap">
+                            <span class="field-label">Всього користувачів</span>
+                            <div class="stat-value">@Model.TotalUsers</div>
+                        </div>
+                        <div class="field-wrap">
+                            <span class="field-label">Адміністраторів</span>
+                            <div class="stat-value">@Model.TotalAdmins</div>
+                        </div>
+                        <div class="field-wrap">
+                            <span class="field-label">Створено подорожей</span>
+                            <div class="stat-value">@Model.TotalTrips</div>
+                        </div>
                     </div>
 
-                    <form asp-action="BroadcastEmail" method="post" class="flex flex-col flex-grow">
+                    <div class="dashboard-layout reveal delay-4">
 
-                        @if (TempData["SuccessMessage"] != null)
-                        {
-                            <div class="text-emerald-600 mb-4 p-3 bg-emerald-50/80 backdrop-blur-sm rounded-xl text-sm font-medium border border-emerald-100">
-                                <i class="bi bi-check-circle-fill me-1"></i> @TempData["SuccessMessage"]
+                        <div class="chart-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                <div>
+                                    <h4 class="field-label" style="font-size:0.75rem; color:#6366f1; margin:0;">
+                                        <i class="bi bi-graph-up-arrow me-1"></i> Динаміка реєстрацій
+                                    </h4>
+                                </div>
                             </div>
-                        }
-                        @if (TempData["ErrorMessage"] != null)
-                        {
-                            <div class="text-rose-500 mb-4 p-3 bg-rose-50/80 backdrop-blur-sm rounded-xl text-sm font-medium border border-rose-100">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i> @TempData["ErrorMessage"]
+                            <div style="position: relative; height: 320px; width: 100%;">
+                                <canvas id="registrationsChart"></canvas>
                             </div>
-                        }
-
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-700 mb-2 pl-1 uppercase tracking-wider">Кому відправити:</label>
-                            <select name="targetGroup" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 block px-3 py-2.5 transition-all outline-none shadow-sm cursor-pointer">
-                                <option value="All">Всім користувачам (@Model.TotalUsers)</option>
-                                <option value="Users">Тільки звичайним користувачам (@Model.NormalUsersCount)</option>
-                                <option value="Admins">Тільки адміністраторам (@Model.TotalAdmins)</option>
-                            </select>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-700 mb-2 pl-1 uppercase tracking-wider">Тема листа:</label>
-                            <input type="text" name="subject" class="w-full bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 block px-3 py-2.5 transition-all outline-none shadow-sm placeholder:text-slate-400" placeholder="Наприклад: Оновлення сайту" required />
+                        <div class="broadcast-box">
+                            <h4 class="field-label" style="font-size:0.75rem; color:#ec4899; margin-bottom:1.5rem;">
+                                <i class="bi bi-envelope-paper-heart-fill me-1"></i> Масова розсилка
+                            </h4>
+
+                            <form asp-action="BroadcastEmail" method="post" style="display:flex; flex-direction:column; height: 100%;">
+                                <div style="flex:1;">
+                                    <label class="field-label" style="font-size:0.55rem; margin-bottom:0;">Кому відправляємо?</label>
+                                    <select name="targetGroup" class="bc-input" style="cursor:pointer;">
+                                        <option value="All">Всім користувачам</option>
+                                        <option value="Users">Тільки користувачам</option>
+                                        <option value="Admins">Тільки адміністраторам</option>
+                                    </select>
+
+                                    <label class="field-label" style="font-size:0.55rem; margin-bottom:0;">Тема листа</label>
+                                    <input type="text" name="subject" required class="bc-input" placeholder="Наприклад: Оновлення системи..." />
+
+                                    <label class="field-label" style="font-size:0.55rem; margin-bottom:0;">Текст повідомлення</label>
+                                    <textarea name="message" required rows="4" class="bc-input" placeholder="Напишіть ваше повідомлення..." style="resize:none;"></textarea>
+                                </div>
+
+                                <button type="submit" class="save-btn" style="width: 100%; padding: 0.8rem; margin-top:0.5rem; background: linear-gradient(135deg, #ec4899, #f43f5e);">
+                                    Відправити <i class="bi bi-send-fill ms-2"></i>
+                                </button>
+                            </form>
                         </div>
 
-                        <div class="mb-6 flex-grow">
-                            <label class="block text-xs font-bold text-slate-700 mb-2 pl-1 uppercase tracking-wider">Текст повідомлення:</label>
-                            <textarea name="message" class="w-full h-[120px] bg-white/70 border border-slate-200 text-slate-800 text-sm rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 block px-3 py-2.5 transition-all outline-none shadow-sm placeholder:text-slate-400 resize-none" placeholder="Напишіть ваше повідомлення тут..." required></textarea>
-                        </div>
-
-                        <div class="mt-auto">
-                            <button type="submit" class="w-full group relative inline-flex items-center justify-center px-6 py-3.5 font-black text-white transition-all duration-500 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-[0_10px_20px_-10px_rgba(245,158,11,0.5)] hover:shadow-[0_15px_25px_-10px_rgba(245,158,11,0.6)] hover:-translate-y-0.5 uppercase tracking-widest text-xs overflow-hidden" onclick="return confirm('Ви впевнені, що хочете розпочати масову розсилку?');">
-                                <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
-                                <span class="relative flex items-center gap-2">
-                                    <i class="bi bi-send-fill"></i> Відправити листи
-                                </span>
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,61 +679,64 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
-        const monthsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationMonths));
-        const countsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationsCount));
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('registrationsChart').getContext('2d');
 
-        const ctxLine = document.getElementById('registrationsChart').getContext('2d');
+            const months = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationMonths));
+            const counts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RegistrationsCount));
 
-        let gradient = ctxLine.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)'); 
-        gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
 
-        new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: monthsData,
-                datasets: [{
-                    label: 'Нових користувачів',
-                    data: countsData,
-                    borderColor: '#4f46e5', 
-                    backgroundColor: gradient,
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#4f46e5',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { size: 13, family: "'Inter', sans-serif" },
-                        bodyFont: { size: 14, weight: 'bold', family: "'Inter', sans-serif" },
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false
-                    }
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Нові користувачі',
+                        data: counts,
+                        borderColor: '#6366f1',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#6366f1',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: { display: false, drawBorder: false },
-                        ticks: { font: { family: "'Inter', sans-serif", size: 12 }, color: '#64748b' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { size: 13, family: "'DM Sans', sans-serif" },
+                            bodyFont: { size: 14, weight: 'bold', family: "'DM Sans', sans-serif" },
+                            padding: 12, cornerRadius: 8, displayColors: false
+                        }
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(226, 232, 240, 0.5)', borderDash: [5, 5], drawBorder: false },
-                        ticks: { stepSize: 1, font: { family: "'Inter', sans-serif", size: 12 }, color: '#64748b' }
-                    }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(99,102,241,0.05)', drawBorder: false },
+                            ticks: { font: { family: "'DM Sans', sans-serif", size: 11, weight: 'bold' }, color: '#94a3b8', stepSize: 1 }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { family: "'DM Sans', sans-serif", size: 11, weight: 'bold' }, color: '#94a3b8' }
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
                 }
-            }
+            });
         });
     </script>
 }

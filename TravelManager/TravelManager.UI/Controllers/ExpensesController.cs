@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -13,11 +14,16 @@ namespace TravelManager.UI.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly IExchangeRateService _exchangeRateService;
 
-        public ExpensesController(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public ExpensesController(
+            IUnitOfWork unitOfWork,
+            UserManager<User> userManager,
+            IExchangeRateService exchangeRateService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _exchangeRateService = exchangeRateService;
         }
 
         // --- ДОПОМІЖНІ МЕТОДИ ДЛЯ РОЛЕЙ ---
@@ -52,9 +58,11 @@ namespace TravelManager.UI.Controllers
             var currentUserId = _userManager.GetUserId(User);
             if (currentUserId == null) return RedirectToAction("Login", "Account");
 
-            var myParticipants = _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Role").ToList();
-            var myTripIds = myParticipants.Select(tp => tp.TripId).ToList();
+            var myTripIds = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId)
+                .Select(tp => tp.TripId)
+                .ToList();
+
 
             var expenses = _unitOfWork.Expense
                 .GetAll(e => myTripIds.Contains(e.TripId), includeProperties: "Trip,Category");
@@ -79,7 +87,31 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int? tripId)
+        public IActionResult GetTripParticipants(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId);
+
+            if (participant == null)
+                return Forbid();
+
+            var participants = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.TripId == tripId, includeProperties: "User")
+                .Select(p => new
+                {
+                    userId = p.UserId,
+                    userName = p.User.UserName ?? p.User.Email ?? p.UserId
+                })
+                .ToList();
+
+            return Json(participants);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Create(int? tripId)
         {
             var allowedTrips = GetAllowedTripsForUser();
 
@@ -95,8 +127,14 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(activeTripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Глядачі не можуть додавати витрати в цю поїздку.";
-                return RedirectToAction("Index", "Trips");
+                var role = GetUserRoleInTrip(tripId.Value);
+                if (role == "Viewer" || role == "None")
+                {
+                    TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
+                    return RedirectToAction("Index", "Trips");
+                }
+                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
+                if (selectedTrip != null) selectedTrip.Selected = true;
             }
 
             var participants = _unitOfWork.TripParticipant
@@ -109,14 +147,17 @@ namespace TravelManager.UI.Controllers
                 TripList = GetAllowedTripsForUser(activeTripId), // Передаємо ID, щоб він виділився у формі
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
-                CurrencyList = GetCurrencyList(),
-                TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == activeTripId)
-                    .Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() }),
-                AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == activeTripId)
+                CurrencyList = await GetCurrencyListAsync(), // ← реальні курси
+                TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == tripId)
+                    .Select(t => new SelectListItem
+                    {
+                        Text = $"{t.DepartureLocation} - {t.ArrivalLocation}",
+                        Value = t.Id.ToString()
+                    }),
+                AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == tripId)
                     .Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() }),
                 ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == activeTripId)
                     .Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() }),
-
                 PayerList = participants.Select(p => new SelectListItem
                 {
                     Text = p.User.UserName ?? p.User.Email,
@@ -133,51 +174,6 @@ namespace TravelManager.UI.Controllers
             return View(model);
         }
 
-        // НОВИЙ МЕТОД: Змінює поїздку, АЛЕ ЗБЕРІГАЄ ВВЕДЕНІ ДАНІ у формі
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult ReloadForm(ExpenseFormViewModel model)
-        {
-            ModelState.Clear(); // Очищаємо помилки, бо ми просто оновлюємо списки під нову поїздку
-
-            var role = GetUserRoleInTrip(model.TripId);
-            if (role == "Viewer" || role == "None")
-            {
-                TempData["ErrorMessage"] = "Відмовлено в доступі. Глядачі не можуть створювати витрати.";
-                return RedirectToAction("Index", "Trips");
-            }
-
-            var participants = _unitOfWork.TripParticipant
-                .GetAll(tp => tp.TripId == model.TripId, includeProperties: "User")
-                .ToList();
-
-            model.TripList = GetAllowedTripsForUser(model.TripId);
-            model.CategoryList = GetCategoryList();
-            model.CurrencyList = GetCurrencyList();
-
-            model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId)
-                .Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
-            model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId)
-                .Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
-            model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId)
-                .Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
-
-            model.PayerList = participants.Select(p => new SelectListItem
-            {
-                Text = p.User.UserName ?? p.User.Email,
-                Value = p.UserId
-            });
-
-            // Оновлюємо список боргів під нових учасників (скидаємо суми в 0)
-            model.Splits = participants.Select(p => new ExpenseSplitItemModel
-            {
-                UserId = p.UserId,
-                UserName = p.User.UserName ?? p.User.Email,
-                OwedAmount = 0
-            }).ToList();
-
-            return View("Create", model);
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -189,48 +185,116 @@ namespace TravelManager.UI.Controllers
                 TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати витрати в цю поїздку.";
                 return RedirectToAction("Index", "Trips");
             }
+            for (int i = 0; i < model.Splits.Count; i++)
+            {
+                ModelState.Remove($"Splits[{i}].OwedAmount");
+
+                var raw = Request.Form[$"Splits[{i}].OwedAmount"].ToString();
+                if (!string.IsNullOrEmpty(raw))
+                {
+                    raw = raw.Replace(",", ".");
+                    if (decimal.TryParse(raw,
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out decimal parsed))
+                    {
+                        model.Splits[i].OwedAmount = parsed;
+                    }
+                }
+            }
+            ModelState.Remove("Splits");
+            ModelState.Remove("Splits[0].UserName");
+            ModelState.Remove("Splits[1].UserName");
+            ModelState.Remove("Splits[2].UserName");
+            ModelState.Remove("Splits[3].UserName");
+            ModelState.Remove("PayerList");
+            ModelState.Remove("TripList");
+            ModelState.Remove("CategoryList");
+            ModelState.Remove("CurrencyList");
+            ModelState.Remove("TransitList");
+            ModelState.Remove("AccommodationList");
+            ModelState.Remove("ActivityList");
 
             if (!ModelState.IsValid)
             {
-                var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
-                model.TripList = GetAllowedTripsForUser(model.TripId);
+
+                model.TripList = GetAllowedTripsForUser();
                 model.CategoryList = GetCategoryList();
-                model.CurrencyList = GetCurrencyList();
-                model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
-
-                model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
-                model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
-                model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
-
+                model.CurrencyList = await GetCurrencyListAsync();
+                var pts = _unitOfWork.TripParticipant
+                    .GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
+                model.PayerList = pts.Select(p => new SelectListItem
+                { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
+                model.Splits = pts.Select(p => new ExpenseSplitItemModel
+                {
+                    UserId = p.UserId,
+                    UserName = p.User.UserName ?? p.User.Email,
+                    OwedAmount = 0
+                }).ToList();
                 return View(model);
             }
+            var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
+            if (trip == null) return NotFound();
 
-            if (model.Splits == null) model.Splits = new List<ExpenseSplitItemModel>();
+            string tripBaseCurrency = trip.BaseCurrency; 
 
-            decimal totalSplits = model.Splits.Sum(s => s.OwedAmount);
-            if (totalSplits != model.TotalAmount)
+            decimal expenseRate = 1.0m;
+            decimal tripBaseRate = 1.0m;
+
+            if (model.Currency != "UAH")
             {
-                TempData["ErrorMessage"] = $"Помилка: Сума часток ({totalSplits}) не збігається із загальною сумою ({model.TotalAmount})!";
-
-                var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
-                model.TripList = GetAllowedTripsForUser(model.TripId);
-                model.CategoryList = GetCategoryList();
-                model.CurrencyList = GetCurrencyList();
-                model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
-
-                model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
-                model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
-                model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
-
-                return View(model);
+                var rateInfo = await _exchangeRateService.GetRateAsync(model.Currency);
+                if (rateInfo != null) expenseRate = (decimal)rateInfo.RateToUah;
             }
 
+            if (tripBaseCurrency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(tripBaseCurrency);
+                if (rateInfo != null) tripBaseRate = (decimal)rateInfo.RateToUah;
+            }
+
+            decimal convertedAmount = (model.TotalAmount * expenseRate) / tripBaseRate;
+
+            decimal totalSplits = model.Splits?.Sum(s => s.OwedAmount) ?? 0;
+            if (totalSplits == 0)
+            {
+                if (model.Splits == null || !model.Splits.Any())
+                {
+                    model.Splits = new List<ExpenseSplitItemModel>
+        {
+            new ExpenseSplitItemModel
+            {
+                UserId = model.PayerId,
+                UserName = model.PayerId,
+                OwedAmount = model.TotalAmount
+            }
+        };
+                }
+                else
+                {
+                    foreach (var s in model.Splits)
+                        s.OwedAmount = s.UserId == model.PayerId ? model.TotalAmount : 0;
+                }
+            }
+            else if (Math.Abs(totalSplits - model.TotalAmount) >= 0.01m)
+            {
+                TempData["ErrorMessage"] = $"Сума часток ({totalSplits}) ≠ загальній сумі ({model.TotalAmount})";
+                model.TripList = GetAllowedTripsForUser();
+                model.CategoryList = GetCategoryList();
+                model.CurrencyList = await GetCurrencyListAsync();
+                var pts = _unitOfWork.TripParticipant
+                    .GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
+                model.PayerList = pts.Select(p => new SelectListItem
+                { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
+                return View(model);
+            }
+            decimal conversionFactor = expenseRate / tripBaseRate;
             var expense = new Expense
             {
                 TripId = model.TripId,
                 Title = model.Description,
-                TotalAmount = model.TotalAmount,
-                Currency = model.Currency,
+                TotalAmount = convertedAmount,      
+                Currency = tripBaseCurrency,
                 Date = model.Date,
                 CategoryId = model.CategoryId,
                 PayerId = model.PayerId,
@@ -252,7 +316,7 @@ namespace TravelManager.UI.Controllers
                     {
                         ExpenseId = expense.Id,
                         DebtorId = split.UserId,
-                        OwedAmount = split.OwedAmount,
+                        OwedAmount = Math.Round(split.OwedAmount * conversionFactor, 2),
                         IsSettled = (split.UserId == model.PayerId)
                     };
                     _unitOfWork.ExpenseSplit.Add(expenseSplit);
@@ -265,7 +329,7 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
             if (entity == null) return NotFound();
@@ -281,6 +345,14 @@ namespace TravelManager.UI.Controllers
                 .GetAll(tp => tp.TripId == entity.TripId, includeProperties: "User")
                 .ToList();
 
+            var currencyList = await GetCurrencyListAsync(); 
+
+            foreach (var item in currencyList)
+            {
+                if (item.Value == entity.Currency)
+                    item.Selected = true;
+            }
+
             var model = new ExpenseFormViewModel
             {
                 Id = entity.Id,
@@ -292,28 +364,50 @@ namespace TravelManager.UI.Controllers
                 Date = entity.Date,
                 PayerId = entity.PayerId,
                 ReceiptImageUrl = entity.ReceiptImageUrl,
-
                 TransitId = entity.TransitId,
                 AccommodationId = entity.AccommodationId,
                 TripActivityId = entity.TripActivityId,
-
-                TripList = GetAllowedTripsForUser(entity.TripId), // Передаємо ID
+                TripList = GetAllowedTripsForUser(),
                 CategoryList = GetCategoryList(),
-                CurrencyList = GetCurrencyList(),
-
+                CurrencyList = currencyList, 
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == entity.TripId)
-                    .Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() }),
+                    .Select(t => new SelectListItem
+                    {
+                        Text = $"{t.DepartureLocation} - {t.ArrivalLocation}",
+                        Value = t.Id.ToString()
+                    }),
                 AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == entity.TripId)
                     .Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() }),
                 ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == entity.TripId)
                     .Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() }),
-
                 PayerList = participants.Select(p => new SelectListItem
                 {
                     Text = p.User.UserName ?? p.User.Email,
                     Value = p.UserId
                 })
             };
+            var existingSplits = _unitOfWork.ExpenseSplit
+       .GetAll(s => s.ExpenseId == id, includeProperties: "Debtor")
+       .ToList();
+
+            if (existingSplits.Any())
+            {
+                model.Splits = existingSplits.Select(s => new ExpenseSplitItemModel
+                {
+                    UserId = s.DebtorId,
+                    UserName = s.Debtor?.UserName ?? s.DebtorId,
+                    OwedAmount = s.OwedAmount
+                }).ToList();
+            }
+            else
+            {
+                model.Splits = participants.Select(p => new ExpenseSplitItemModel
+                {
+                    UserId = p.UserId,
+                    UserName = p.User.UserName ?? p.User.Email,
+                    OwedAmount = 0
+                }).ToList();
+            }
 
             return View(model);
         }
@@ -322,8 +416,34 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ExpenseFormViewModel model)
         {
+
             ModelState.Remove("Splits");
 
+            for (int i = 0; i < model.Splits.Count; i++)
+            {
+                ModelState.Remove($"Splits[{i}].OwedAmount");
+                ModelState.Remove($"Splits[{i}].UserName");
+
+                var raw = Request.Form[$"Splits[{i}].OwedAmount"].ToString();
+                if (!string.IsNullOrEmpty(raw))
+                {
+                    raw = raw.Replace(",", ".");
+                    if (decimal.TryParse(raw,
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out decimal parsed))
+                    {
+                        model.Splits[i].OwedAmount = parsed;
+                    }
+                }
+            }
+            ModelState.Remove("PayerList");
+            ModelState.Remove("TripList");
+            ModelState.Remove("CategoryList");
+            ModelState.Remove("CurrencyList");
+            ModelState.Remove("TransitList");
+            ModelState.Remove("AccommodationList");
+            ModelState.Remove("ActivityList");
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
@@ -336,7 +456,7 @@ namespace TravelManager.UI.Controllers
                 var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
                 model.TripList = GetAllowedTripsForUser(model.TripId);
                 model.CategoryList = GetCategoryList();
-                model.CurrencyList = GetCurrencyList();
+                model.CurrencyList = await GetCurrencyListAsync();
                 model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
 
                 model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
@@ -349,10 +469,31 @@ namespace TravelManager.UI.Controllers
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
             if (entity == null) return NotFound();
 
+            var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
+            string tripBaseCurrency = trip?.BaseCurrency ?? "UAH";
+
+            decimal expenseRate = 1.0m;
+            decimal tripBaseRate = 1.0m;
+
+            if (model.Currency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(model.Currency);
+                if (rateInfo != null) expenseRate = (decimal)rateInfo.RateToUah;
+            }
+            if (tripBaseCurrency != "UAH")
+            {
+                var rateInfo = await _exchangeRateService.GetRateAsync(tripBaseCurrency);
+                if (rateInfo != null) tripBaseRate = (decimal)rateInfo.RateToUah;
+            }
+
+            decimal conversionFactor = expenseRate / tripBaseRate;
+            decimal convertedTotal = model.TotalAmount * conversionFactor;
+
+            
             entity.TripId = model.TripId;
             entity.CategoryId = model.CategoryId;
-            entity.TotalAmount = model.TotalAmount;
-            entity.Currency = model.Currency;
+            entity.TotalAmount = convertedTotal; 
+            entity.Currency = tripBaseCurrency;
             entity.Title = model.Description;
             entity.Date = model.Date;
             entity.PayerId = model.PayerId;
@@ -362,6 +503,26 @@ namespace TravelManager.UI.Controllers
             entity.TripActivityId = model.TripActivityId;
 
             _unitOfWork.Expense.Update(entity);
+            
+            var oldSplits = _unitOfWork.ExpenseSplit.GetAll(s => s.ExpenseId == id).ToList();
+            _unitOfWork.ExpenseSplit.RemoveRange(oldSplits);
+
+            if (model.Splits != null)
+            {
+                foreach (var split in model.Splits)
+                {
+                    if (split.OwedAmount > 0)
+                    {
+                        _unitOfWork.ExpenseSplit.Add(new ExpenseSplit
+                        {
+                            ExpenseId = id,
+                            DebtorId = split.UserId,
+                            OwedAmount = Math.Round(split.OwedAmount * conversionFactor, 2), // Теж конвертуємо
+                            IsSettled = (split.UserId == model.PayerId)
+                        });
+                    }
+                }
+            }
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
@@ -400,16 +561,27 @@ namespace TravelManager.UI.Controllers
             };
         }
 
-        private IEnumerable<SelectListItem> GetCurrencyList()
+        private async Task<IEnumerable<SelectListItem>> GetCurrencyListAsync()
         {
-            return new List<SelectListItem>
+            var baseCodes = new[] { "USD", "EUR", "PLN", "GBP" };
+
+            var rates = await _exchangeRateService.GetRatesAsync(baseCodes);
+
+            var items = new List<SelectListItem>
+    {
+        new SelectListItem { Text = "UAH — Гривня", Value = "UAH" }
+    };
+
+            foreach (var rate in rates)
             {
-                new SelectListItem { Text = "UAH (Гривня)", Value = "UAH" },
-                new SelectListItem { Text = "USD (Долар США)", Value = "USD" },
-                new SelectListItem { Text = "EUR (Євро)", Value = "EUR" },
-                new SelectListItem { Text = "PLN (Злотий)", Value = "PLN" },
-                new SelectListItem { Text = "GBP (Фунт)", Value = "GBP" }
-            };
+                items.Add(new SelectListItem
+                {
+                    Text = $"{rate.CurrencyCode} — 1 {rate.CurrencyCode} = {rate.RateToUah:N2} UAH",
+                    Value = rate.CurrencyCode
+                });
+            }
+
+            return items;
         }
     }
 }

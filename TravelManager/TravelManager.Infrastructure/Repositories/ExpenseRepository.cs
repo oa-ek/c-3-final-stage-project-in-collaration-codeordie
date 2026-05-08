@@ -11,8 +11,11 @@ namespace TravelManager.Infrastructure.Repositories
 {
     public class ExpenseRepository : Repository<Expense>, IExpenseRepository
     {
+        private readonly ApplicationDbContext _db;
+
         public ExpenseRepository(ApplicationDbContext ctx) : base(ctx)
         {
+            _db = ctx;
         }
 
         public void Update(Expense entity)
@@ -27,6 +30,11 @@ namespace TravelManager.Infrastructure.Repositories
                 expenseFromDb.Date = entity.Date;
                 expenseFromDb.CategoryId = entity.CategoryId;
                 expenseFromDb.ReceiptImageUrl = entity.ReceiptImageUrl;
+                expenseFromDb.PayerId = entity.PayerId;        
+                expenseFromDb.TripId = entity.TripId;          
+                expenseFromDb.TransitId = entity.TransitId;  
+                expenseFromDb.AccommodationId = entity.AccommodationId; 
+                expenseFromDb.TripActivityId = entity.TripActivityId;
             }
         }
     }

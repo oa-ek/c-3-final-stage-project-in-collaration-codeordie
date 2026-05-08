@@ -29,6 +29,7 @@ namespace TravelManager.Infrastructure.Repositories
                 tripFromDb.StartDate = entity.StartDate;
                 tripFromDb.EndDate = entity.EndDate;
                 tripFromDb.StatusId = entity.StatusId;
+                tripFromDb.BaseCurrency = entity.BaseCurrency;
             }
         }
     }
