@@ -67,6 +67,10 @@ namespace TravelManager.UI.Controllers
             var expenses = _unitOfWork.Expense
                 .GetAll(e => myTripIds.Contains(e.TripId), includeProperties: "Trip,Category");
 
+            var myParticipants = _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Role")
+                .ToList();
+
             var viewModels = expenses.Select(e =>
             {
                 return new ExpenseListViewModel
@@ -127,12 +131,12 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(activeTripId);
             if (role == "Viewer" || role == "None")
             {
-                var role = GetUserRoleInTrip(tripId.Value);
-                if (role == "Viewer" || role == "None")
-                {
-                    TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
-                    return RedirectToAction("Index", "Trips");
-                }
+                TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            if (tripId.HasValue)
+            {
                 var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
                 if (selectedTrip != null) selectedTrip.Selected = true;
             }
@@ -236,7 +240,7 @@ namespace TravelManager.UI.Controllers
             var trip = _unitOfWork.Trip.Get(t => t.Id == model.TripId);
             if (trip == null) return NotFound();
 
-            string tripBaseCurrency = trip.BaseCurrency; 
+            string tripBaseCurrency = trip.BaseCurrency;
 
             decimal expenseRate = 1.0m;
             decimal tripBaseRate = 1.0m;
@@ -293,7 +297,7 @@ namespace TravelManager.UI.Controllers
             {
                 TripId = model.TripId,
                 Title = model.Description,
-                TotalAmount = convertedAmount,      
+                TotalAmount = convertedAmount,
                 Currency = tripBaseCurrency,
                 Date = model.Date,
                 CategoryId = model.CategoryId,
@@ -345,7 +349,7 @@ namespace TravelManager.UI.Controllers
                 .GetAll(tp => tp.TripId == entity.TripId, includeProperties: "User")
                 .ToList();
 
-            var currencyList = await GetCurrencyListAsync(); 
+            var currencyList = await GetCurrencyListAsync();
 
             foreach (var item in currencyList)
             {
@@ -369,7 +373,7 @@ namespace TravelManager.UI.Controllers
                 TripActivityId = entity.TripActivityId,
                 TripList = GetAllowedTripsForUser(),
                 CategoryList = GetCategoryList(),
-                CurrencyList = currencyList, 
+                CurrencyList = currencyList,
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == entity.TripId)
                     .Select(t => new SelectListItem
                     {
@@ -489,10 +493,10 @@ namespace TravelManager.UI.Controllers
             decimal conversionFactor = expenseRate / tripBaseRate;
             decimal convertedTotal = model.TotalAmount * conversionFactor;
 
-            
+
             entity.TripId = model.TripId;
             entity.CategoryId = model.CategoryId;
-            entity.TotalAmount = convertedTotal; 
+            entity.TotalAmount = convertedTotal;
             entity.Currency = tripBaseCurrency;
             entity.Title = model.Description;
             entity.Date = model.Date;
@@ -503,7 +507,7 @@ namespace TravelManager.UI.Controllers
             entity.TripActivityId = model.TripActivityId;
 
             _unitOfWork.Expense.Update(entity);
-            
+
             var oldSplits = _unitOfWork.ExpenseSplit.GetAll(s => s.ExpenseId == id).ToList();
             _unitOfWork.ExpenseSplit.RemoveRange(oldSplits);
 

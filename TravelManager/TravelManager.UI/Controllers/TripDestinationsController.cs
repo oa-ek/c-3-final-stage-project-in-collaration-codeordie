@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Interfaces.IServices;
+using TravelManager.Application.DTOs.External;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -15,15 +16,18 @@ namespace TravelManager.UI.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
         private readonly INominatimService _nominatimService;
+        private readonly IDestinationInfoService _destinationInfoService;
 
         public TripDestinationsController(
             IUnitOfWork unitOfWork,
             UserManager<User> userManager,
-            INominatimService nominatimService)
+            INominatimService nominatimService,
+            IDestinationInfoService destinationInfoService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _nominatimService = nominatimService;
+            _destinationInfoService = destinationInfoService;
         }
 
         [HttpGet]
@@ -294,6 +298,28 @@ namespace TravelManager.UI.Controllers
 
             TempData["SuccessMessage"] = "Місто видалено з маршруту.";
             return RedirectToAction(nameof(Index), new { tripId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Info(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var destination = _unitOfWork.TripDestination.Get(d => d.Id == id);
+            if (destination == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == destination.TripId && tp.UserId == currentUserId);
+            if (participant == null)
+            {
+                TempData["ErrorMessage"] = "У вас немає доступу до цієї поїздки.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var model = await _destinationInfoService.GetDestinationInfoAsync(id);
+            if (model == null) return NotFound();
+
+            return View(model);
         }
 
         private string GetUserRoleInTrip(int tripId)

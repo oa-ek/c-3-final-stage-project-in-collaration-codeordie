@@ -198,9 +198,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="padding:1rem 1.5rem; display:flex; justify-content:space-between; font-weight:700; color:#64748b; font-size:0.85rem;">
-                            <span>📅 @item.ArrivalDate.ToString("dd.MM")</span>
-                            <span>🏁 @item.DepartureDate.ToString("dd.MM")</span>
+                        <div style="padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center; font-weight:700; color:#64748b; font-size:0.85rem;">
+                            <div style="display:flex; gap:1rem;">
+                                <span>📅 @item.ArrivalDate.ToString("dd.MM")</span>
+                                <span>🏁 @item.DepartureDate.ToString("dd.MM")</span>
+                            </div>
+                            <a asp-controller="TripDestinations" asp-action="Info" asp-route-id="@item.Id"
+                               style="display:inline-flex; align-items:center; gap:0.35rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:white; border-radius:0.75rem; padding:0.45rem 1rem; font-size:0.78rem; font-weight:800; text-decoration:none; transition:all 0.25s; box-shadow:0 2px 10px rgba(99,102,241,0.35);"
+                               onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(99,102,241,0.5)'"
+                               onmouseout="this.style.transform='';this.style.boxShadow='0 2px 10px rgba(99,102,241,0.35)'">
+                                <i class="bi bi-globe2"></i> Детальніше
+                            </a>
                         </div>
                     </div>
                     previousCity = item.CityName;
