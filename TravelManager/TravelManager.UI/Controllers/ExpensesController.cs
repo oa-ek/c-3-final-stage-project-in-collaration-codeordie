@@ -26,14 +26,37 @@ namespace TravelManager.UI.Controllers
             _exchangeRateService = exchangeRateService;
         }
 
+        // --- ДОПОМІЖНІ МЕТОДИ ДЛЯ РОЛЕЙ ---
+        private string GetUserRoleInTrip(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
+
+            return participant?.Role?.Name ?? "None";
+        }
+
+        // ВИПРАВЛЕНО: Додано activeTripId, щоб коректно зберігати вибір у випадаючому списку
+        private IEnumerable<SelectListItem> GetAllowedTripsForUser(int activeTripId = 0)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            return _unitOfWork.TripParticipant
+                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip")
+                .Select(tp => tp.Trip)
+                .Distinct() // Уникаємо дублікатів поїздок
+                .Select(t => new SelectListItem
+                {
+                    Text = t.Title,
+                    Value = t.Id.ToString(),
+                    Selected = t.Id == activeTripId // Завжди позначаємо поточну поїздку
+                }).ToList();
+        }
+
         [HttpGet]
         public IActionResult Index()
         {
             var currentUserId = _userManager.GetUserId(User);
-            if (currentUserId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            if (currentUserId == null) return RedirectToAction("Login", "Account");
 
             var myTripIds = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId)
@@ -41,18 +64,24 @@ namespace TravelManager.UI.Controllers
                 .ToList();
 
 
-            var expenses = _unitOfWork.Expense.GetAll(a => myTripIds.Contains(a.TripId), includeProperties: "Trip, Category");
+            var expenses = _unitOfWork.Expense
+                .GetAll(e => myTripIds.Contains(e.TripId), includeProperties: "Trip,Category");
 
-            var viewModels = expenses.Select(e => new ExpenseListViewModel
+            var viewModels = expenses.Select(e =>
             {
-                Id = e.Id,
-                Description = e.Title,
-                Amount = e.TotalAmount,
-                Currency = e.Currency,
-                Date = e.Date,
-                CategoryName = e.Category?.Name ?? "Невідомо",
-                TripTitle = e.Trip?.Title ?? "Невідомо"
+                return new ExpenseListViewModel
+                {
+                    Id = e.Id,
+                    Description = e.Title,
+                    Amount = e.TotalAmount,
+                    Currency = e.Currency,
+                    Date = e.Date,
+                    CategoryName = e.Category?.Name ?? "Невідомо",
+                    TripTitle = e.Trip?.Title ?? "Невідомо"
+                };
             }).ToList();
+
+            ViewBag.CurrentUserRole = myParticipants.Any(p => p.Role?.Name == "Organizer" || p.Role?.Name == "Participant") ? "Participant" : "Viewer";
 
             return View(viewModels);
         }
@@ -88,11 +117,15 @@ namespace TravelManager.UI.Controllers
 
             if (!allowedTrips.Any())
             {
-                TempData["ErrorMessage"] = "У вас немає поїздок, де ви можете додавати записи.";
+                TempData["ErrorMessage"] = "У вас немає поїздок, де ви можете додавати витрати.";
                 return RedirectToAction("Index", "Trips");
             }
 
-            if (tripId.HasValue)
+            // Визначаємо активну поїздку
+            int activeTripId = (tripId.HasValue && tripId.Value > 0) ? tripId.Value : int.Parse(allowedTrips.First().Value);
+
+            var role = GetUserRoleInTrip(activeTripId);
+            if (role == "Viewer" || role == "None")
             {
                 var role = GetUserRoleInTrip(tripId.Value);
                 if (role == "Viewer" || role == "None")
@@ -105,13 +138,13 @@ namespace TravelManager.UI.Controllers
             }
 
             var participants = _unitOfWork.TripParticipant
-                .GetAll(tp => tp.TripId == tripId, includeProperties: "User")
+                .GetAll(tp => tp.TripId == activeTripId, includeProperties: "User")
                 .ToList();
 
             var model = new ExpenseFormViewModel
             {
-                TripId = tripId ?? 0,
-                TripList = allowedTrips,
+                TripId = activeTripId,
+                TripList = GetAllowedTripsForUser(activeTripId), // Передаємо ID, щоб він виділився у формі
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
                 CurrencyList = await GetCurrencyListAsync(), // ← реальні курси
@@ -123,7 +156,7 @@ namespace TravelManager.UI.Controllers
                     }),
                 AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == tripId)
                     .Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() }),
-                ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == tripId)
+                ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == activeTripId)
                     .Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() }),
                 PayerList = participants.Select(p => new SelectListItem
                 {
@@ -149,7 +182,7 @@ namespace TravelManager.UI.Controllers
             var role = GetUserRoleInTrip(model.TripId);
             if (role == "Viewer" || role == "None")
             {
-                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати записи в цю поїздку.";
+                TempData["ErrorMessage"] = "Відмовлено в доступі. Ви не можете додавати витрати в цю поїздку.";
                 return RedirectToAction("Index", "Trips");
             }
             for (int i = 0; i < model.Splits.Count; i++)
@@ -417,10 +450,11 @@ namespace TravelManager.UI.Controllers
                 TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
                 return RedirectToAction("Index", "Trips");
             }
+
             if (!ModelState.IsValid)
             {
                 var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
-                model.TripList = GetAllowedTripsForUser();
+                model.TripList = GetAllowedTripsForUser(model.TripId);
                 model.CategoryList = GetCategoryList();
                 model.CurrencyList = await GetCurrencyListAsync();
                 model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
@@ -464,7 +498,6 @@ namespace TravelManager.UI.Controllers
             entity.Date = model.Date;
             entity.PayerId = model.PayerId;
             entity.ReceiptImageUrl = model.ReceiptImageUrl;
-
             entity.TransitId = model.TransitId;
             entity.AccommodationId = model.AccommodationId;
             entity.TripActivityId = model.TripActivityId;
@@ -500,10 +533,8 @@ namespace TravelManager.UI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var entity = _unitOfWork.Expense.Get(u => u.Id == id);
-            if (entity == null)
-            {
-                return NotFound();
-            }
+            if (entity == null) return NotFound();
+
             var role = GetUserRoleInTrip(entity.TripId);
             if (role == "Viewer" || role == "None")
             {
@@ -515,15 +546,6 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private IEnumerable<SelectListItem> GetTripList()
-        {
-            return _unitOfWork.Trip.GetAll().Select(t => new SelectListItem
-            {
-                Text = t.Title,
-                Value = t.Id.ToString()
-            });
         }
 
         private IEnumerable<SelectListItem> GetCategoryList()
@@ -561,28 +583,5 @@ namespace TravelManager.UI.Controllers
 
             return items;
         }
-
-        private string GetUserRoleInTrip(int tripId)
-        {
-            var currentUserId = _userManager.GetUserId(User);
-            var participant = _unitOfWork.TripParticipant
-                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId, includeProperties: "Role");
-
-            return participant?.Role?.Name ?? "None";
-        }
-
-        private IEnumerable<SelectListItem> GetAllowedTripsForUser()
-        {
-            var currentUserId = _userManager.GetUserId(User);
-
-            return _unitOfWork.TripParticipant
-                .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip,Role")
-                .Select(tp => new SelectListItem
-                {
-                    Text = tp.Trip.Title,
-                    Value = tp.TripId.ToString()
-                }).ToList();
-        }
-
     }
 }
