@@ -207,7 +207,109 @@ EF Core — Code First. Реляційна база даних, що склад�
 
 ---
 
-## Опис графічного інтерфейсу
 
-На даному етапі не передбачено користувацького інтерфейсу. Є лише однотипні форми
-для перевірки CRUD до більшості сутностей.
+# Робота з API
+
+## Сценарій інтеграції
+
+**Назва:** деталі подорожі
+**Проблема користувача:** користувач додає місто до маршруту поїздки, але не має швидкого доступу до актуальної інформації — яка погода на місці, яка валюта країни, який курс обміну, де знаходиться готель на карті.  
+**Рішення:** сторінка `/TripDestinations/Info/{id}` агрегує локальні дані з БД та три зовнішніх API в єдину туристичну картку міста. Також при додаванні міста або готелю координати визначаються автоматично через Nominatim.
+
+### Потік даних
+
+```
+BД (Accommodation.Address або TripDestination.CityName)
+        ↓
+Nominatim API → Latitude, Longitude (геокодування адреси/міста)
+        ↓
+БД (збереження координат) → Відображення на карті
+```
+
+```
+БД (TripDestination.CityName, Country, Latitude, Longitude)
+        ↓
+Open-Meteo API      → Поточна погода + 3-денний прогноз (за координатами)
+REST Countries API  → Прапор, мови, столиця, населення, валюта (за назвою країни)
+НБУ API             → Курс EUR, USD та валюти країни до UAH
+        ↓
+Відображення на сторінці деталей
+```
+
+---
+
+## Використані зовнішні API
+
+| API | Документація | API Key | Endpoint | Отримані дані | Кешування |
+|-----|-------------|---------|----------|---------------|-----------|
+| **Open-Meteo** | https://open-meteo.com/en/docs | Не потрібен | `/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,wind_speed_10m,relative_humidity_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&forecast_days=3&timezone=auto` | температура, вологість, швидкість вітру, код погоди, 3-денний прогноз | **10 хвилин** |
+| **REST Countries** | https://restcountries.com | Не потрібен | `/v3.1/name/{name}?fields=name,flags,currencies,languages,capital,population,region` | назва країни, прапор (PNG/SVG), мови, столиця, населення, валюта (код + символ) | **24 години** |
+| **НБУ (Національний банк України)** | https://bank.gov.ua/en/open-data/api-dev | Не потрібен | `/NBUStatService/v1/statdirectory/exchange?json` | курс валют до UAH (EUR, USD + валюта країни призначення) | **до кінця дня** |
+| **Nominatim (OpenStreetMap)** | https://nominatim.org/release-docs/latest/api/Overview/ | Не потрібен | `/search?format=json&limit=1&q={query}&addressdetails=1` | широта (latitude), довгота (longitude), повна назва місця, країна | **7 днів** |
+
+> Всі чотири API безкоштовні та не потребують реєстрації або API ключів.
+---
+
+## Fallback-стратегії
+
+Кожен сервіс обгорнутий у `try/catch` і повертає `null` або порожній список при помилці. `DestinationInfoService` запускає всі три API **паралельно** через `Task.WhenAll` — збій одного не зупиняє інших.
+
+| API недоступний | Поведінка застосунку |
+|----------------|---------------------|
+| Open-Meteo | `WeatherAvailable = false` → View показує блок "Погода тимчасово недоступна" |
+| REST Countries | `CountryAvailable = false` → View показує блок "Інфо про країну недоступне" |
+| НБУ | `ExchangeRatesAvailable = false` → View показує блок "Курси валют недоступні" |
+| Nominatim | `null` → координати не зберігаються, місто буде без маркера на карті |
+
+---
+
+## Власний Web API (API Provider)
+
+| | |
+|--|--|
+| **Controller** | `TripsApiController` |
+| **Маршрут** | `/api/trips` |
+| **Сутність** | `Trip` — головна сутність проєкту |
+| **Swagger UI** | `/swagger` |
+| **Авторизація** | Не потрібна (публічний API) |
+
+### Endpoints
+
+| Метод | URL | Опис | Відповідь |
+|-------|-----|------|-----------|
+| `GET` | `/api/trips` | Список всіх поїздок | `200 OK` + `TripApiDto[]` |
+| `GET` | `/api/trips/{id}` | Поїздка за ID | `200 OK` або `404 Not Found` |
+| `POST` | `/api/trips` | Створити поїздку | `201 Created` або `400 Bad Request` |
+| `PUT` | `/api/trips/{id}` | Оновити поїздку | `200 OK` або `404 Not Found` |
+| `DELETE` | `/api/trips/{id}` | Видалити поїздку | `204 No Content` або `404 Not Found` |
+
+### Приклад відповіді GET /api/trips
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Подорож до Польщі",
+    "description": "Варшава",
+    "departureLocation": "Київ",
+    "returnLocation": "Київ",
+    "startDate": "2026-06-01T00:00:00",
+    "endDate": "2026-06-10T00:00:00",
+    "baseCurrency": "PLN",
+    "status": "Planned",
+    "createdAt": "2026-05-01T12:00:00"
+  }
+]
+```
+
+---
+
+## Як запустити
+
+1. Клонувати репозиторій
+2. Скопіювати шаблон: `appsettings.Development.json.example` → `appsettings.Development.json`
+3. Налаштувати рядок підключення до БД в `appsettings.json`
+4. Виконати міграції: `dotnet ef database update`
+5. Запустити: `dotnet run` або F5 у Visual Studio
+6. Swagger доступний за адресою: `https://localhost:{port}/swagger`
+7. Туристична картка: `https://localhost:{port}/TripDestinations/Info/{id}`
