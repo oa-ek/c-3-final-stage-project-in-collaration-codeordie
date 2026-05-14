@@ -286,20 +286,15 @@ REST Countries API  → Прапор, мови, столиця, населенн
 ### Приклад відповіді GET /api/trips
 
 ```json
-[
-  {
-    "id": 1,
-    "title": "Подорож до Польщі",
-    "description": "Варшава",
-    "departureLocation": "Київ",
-    "returnLocation": "Київ",
-    "startDate": "2026-06-01T00:00:00",
-    "endDate": "2026-06-10T00:00:00",
-    "baseCurrency": "PLN",
-    "status": "Planned",
-    "createdAt": "2026-05-01T12:00:00"
-  }
-]
+{
+  "title": "Подорож до Польщі",
+  "description": "Варшава",
+  "departureLocation": "Київ",
+  "returnLocation": "Київ",
+  "startDate": "2026-06-01T00:00:00Z",
+  "endDate": "2026-06-10T00:00:00Z",
+  "baseCurrency": "PLN"
+}
 ```
 
 ---
