@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Interfaces.IServices; // Додано для IExchangeRateService
+using TravelManager.Infrastructure.Services;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -14,16 +15,17 @@ namespace TravelManager.UI.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
-        private readonly IExchangeRateService _exchangeService; // Додано сервіс валют
+        private readonly IExchangeRateService _exchangeService;
+        private readonly IEmailService _emailService;
 
-        public TripsController(IUnitOfWork unitOfWork, UserManager<User> userManager, IExchangeRateService exchangeService)
+        public TripsController(IUnitOfWork unitOfWork, UserManager<User> userManager, IExchangeRateService exchangeService, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
-            _exchangeService = exchangeService; // Ініціалізація сервісу валют
+            _exchangeService = exchangeService;
+            _emailService = emailService;
         }
 
-        // ДОПОМІЖНИЙ МЕТОД: Формує список SelectListItem для валют на рівні UI
         private async Task<List<SelectListItem>> GetCurrencyDropdownListAsync()
         {
             var rawCurrencies = await _exchangeService.GetAllCurrenciesAsync();
@@ -42,7 +44,6 @@ namespace TravelManager.UI.Controllers
             return dropdownList;
         }
 
-        // --- ДОПОМІЖНИЙ МЕТОД ДЛЯ ПЕРЕВІРКИ РОЛІ ---
         private string GetUserRoleInTrip(int tripId)
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -305,14 +306,19 @@ namespace TravelManager.UI.Controllers
             return View(model);
         }
 
+        // Цей метод вставляється у твій TripsController.cs замість старого InviteParticipant
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InviteParticipant(int tripId, string email, int roleId)
         {
-            var role = GetUserRoleInTrip(tripId);
-            if (role != "Organizer")
+            var currentUserId = _userManager.GetUserId(User);
+            var currentParticipant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == tripId && p.UserId == currentUserId, includeProperties: "Role");
+
+            if (currentParticipant?.Role?.Name != "Organizer")
             {
-                TempData["ErrorMessage"] = "Тільки Організатор може запрошувати учасників.";
+                TempData["ErrorMessage"] = "У вас немає прав для запрошення учасників.";
                 return RedirectToAction("Details", new { id = tripId });
             }
 
@@ -322,13 +328,65 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
+            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
+            if (trip == null) return NotFound();
+
+            // ЗАХИСТ: Якщо роль не передалась з форми (дорівнює 0), беремо стандартну роль
+            if (roleId == 0)
+            {
+                var defaultRole = _unitOfWork.TripRole.Get(r => r.Name == "Participant" || r.Name == "Member")
+                                  ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
+                if (defaultRole != null)
+                {
+                    roleId = defaultRole.Id;
+                }
+            }
+
             var userToInvite = await _userManager.FindByEmailAsync(email);
+
+            // =========================================================================
+            // СЦЕНАРІЙ А: Користувача НЕМАЄ в системі (Надсилаємо РЕФЕРАЛЬНЕ ЗАПРОШЕННЯ)
+            // =========================================================================
             if (userToInvite == null)
             {
-                TempData["ErrorMessage"] = "Користувача з таким Email не знайдено в системі.";
+                var registerUrl = Url.Action("Register", "Account",
+                    new { tripId = tripId, email = email, roleId = roleId },
+                    protocol: HttpContext.Request.Scheme);
+
+                string inviteSubject = $"Запрошення до подорожі \"{trip.Title}\"!";
+
+                string inviteBody =
+                    "<div style='font-family: Arial, sans-serif; padding: 25px; background-color: #f8fafc; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0;'>" +
+                        "<h2 style='color: #4f46e5; margin-top: 0;'>Привіт! 👋</h2>" +
+                        "<p style='font-size: 16px; color: #334155; line-height: 1.6;'>" +
+                            $"Вас запрошують приєднатися до спільного планування подорожі <strong>\"{trip.Title}\"</strong> у додатку <strong>TravelManager</strong>!" +
+                        "</p>" +
+                        "<p style='font-size: 14px; color: #64748b;'>" +
+                            "Будь ласка, створіть акаунт за посиланням нижче, щоб автоматично долучитися до планів подорожі:" +
+                        "</p>" +
+                        "<div style='margin: 25px 0; text-align: center;'>" +
+                            $"<a href='{registerUrl}' style='display: inline-block; padding: 14px 28px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);'>Зареєструватися та Приєднатися</a>" +
+                        "</div>" +
+                        "<hr style='border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;'>" +
+                        "<small style='color: #94a3b8;'>З повагою, команда розробників TravelManager.</small>" +
+                    "</div>";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(email, inviteSubject, inviteBody);
+                    TempData["SuccessMessage"] = $"Користувача немає в системі. Надіслано посилання на реєстрацію на пошту {email}!";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Помилка відправки листа: {ex.Message}";
+                }
+
                 return RedirectToAction("Details", new { id = tripId });
             }
 
+            // =========================================================================
+            // СЦЕНАРІЙ Б: Користувач ВЖЕ зареєстрований
+            // =========================================================================
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
 
@@ -345,13 +403,49 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            _unitOfWork.TripParticipant.Add(new TripParticipant
+            try
             {
-                TripId = tripId,
-                UserId = userToInvite.Id,
-                RoleId = roleId
-            });
-            await _unitOfWork.SaveAsync();
+                // Додаємо в базу
+                _unitOfWork.TripParticipant.Add(new TripParticipant
+                {
+                    TripId = tripId,
+                    UserId = userToInvite.Id,
+                    RoleId = roleId
+                });
+                await _unitOfWork.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Помилка при збереженні в БД: {ex.Message}";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            // Відправляємо сповіщення зареєстрованому користувачу на пошту
+            string notificationSubject = $"Вас додано до подорожі \"{trip.Title}\"!";
+            var tripDetailsUrl = Url.Action("Details", "Trips", new { id = tripId }, protocol: HttpContext.Request.Scheme);
+
+            string notificationBody =
+                "<div style='font-family: Arial, sans-serif; padding: 25px; background-color: #f0fdf4; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #bbf7d0;'>" +
+                    $"<h2 style='color: #16a34a; margin-top: 0;'>Вітаємо, {userToInvite.UserName}! 🎉</h2>" +
+                    "<p style='font-size: 16px; color: #1e293b; line-height: 1.6;'>" +
+                        $"Вас успішно додано як учасника до подорожі <strong>\"{trip.Title}\"</strong>!" +
+                    "</p>" +
+                    "<p style='font-size: 14px; color: #475569;'>" +
+                        "Ви вже можете переглянути детальний маршрут, завантажувати чеки та чеклісти речей у своєму особистому кабінеті." +
+                    "</p>" +
+                    "<div style='margin: 25px 0; text-align: center;'>" +
+                        $"<a href='{tripDetailsUrl}' style='display: inline-block; padding: 14px 28px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 15px;'>Переглянути поїздку</a>" +
+                    "</div>" +
+                "</div>";
+
+            try
+            {
+                await _emailService.SendEmailAsync(userToInvite.Email, notificationSubject, notificationBody);
+            }
+            catch
+            {
+                // Ігноруємо помилку пошти, якщо збереження в БД пройшло успішно
+            }
 
             TempData["SuccessMessage"] = $"Користувача {userToInvite.UserName} успішно додано до поїздки!";
             return RedirectToAction("Details", new { id = tripId });

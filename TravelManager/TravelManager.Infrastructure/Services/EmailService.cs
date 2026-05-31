@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Net;
 using System.Net.Mail;
+using System.Threading.Tasks;
 using TravelManager.Infrastructure.Interfaces;
 
 namespace TravelManager.Infrastructure.Services
@@ -16,30 +18,77 @@ namespace TravelManager.Infrastructure.Services
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            var host = _configuration["EmailSettings:Host"];
-            var port = int.Parse(_configuration["EmailSettings:Port"]!);
-            var enableSSL = bool.Parse(_configuration["EmailSettings:EnableSSL"]!);
-            var senderEmail = _configuration["EmailSettings:SenderEmail"];
-            var senderName = _configuration["EmailSettings:SenderName"];
-            var password = _configuration["EmailSettings:Password"];
-
-            var client = new SmtpClient(host, port)
+            try
             {
-                Credentials = new NetworkCredential(senderEmail, password),
-                EnableSsl = enableSSL
-            };
+                // Намагаємося прочитати як "Host", так і "SmtpServer"
+                var host = _configuration["EmailSettings:Host"];
+                if (string.IsNullOrEmpty(host))
+                {
+                    host = _configuration["EmailSettings:SmtpServer"];
+                }
 
-            var mailMessage = new MailMessage
+                if (string.IsNullOrEmpty(host))
+                {
+                    throw new ArgumentNullException(nameof(host), "SMTP Host/Server не знайдено в appsettings.json. Додайте EmailSettings:Host або EmailSettings:SmtpServer");
+                }
+
+                var portString = _configuration["EmailSettings:Port"];
+                int port = 587; // Значення за замовчуванням
+                if (!string.IsNullOrEmpty(portString))
+                {
+                    int.TryParse(portString, out port);
+                }
+
+                // Читаємо як EnableSSL, так і EnableSsl
+                var sslString = _configuration["EmailSettings:EnableSSL"];
+                if (string.IsNullOrEmpty(sslString))
+                {
+                    sslString = _configuration["EmailSettings:EnableSsl"];
+                }
+
+                bool enableSSL = true; // За замовчуванням увімкнено
+                if (!string.IsNullOrEmpty(sslString))
+                {
+                    bool.TryParse(sslString, out enableSSL);
+                }
+
+                var senderEmail = _configuration["EmailSettings:SenderEmail"];
+                if (string.IsNullOrEmpty(senderEmail))
+                {
+                    throw new ArgumentNullException(nameof(senderEmail), "Email відправника не знайдено в appsettings.json. Додайте EmailSettings:SenderEmail");
+                }
+
+                var senderName = _configuration["EmailSettings:SenderName"] ?? "TravelManager Admin";
+
+                var password = _configuration["EmailSettings:Password"];
+                if (string.IsNullOrEmpty(password))
+                {
+                    throw new ArgumentNullException(nameof(password), "Пароль не знайдено в appsettings.json. Додайте EmailSettings:Password");
+                }
+
+                using (var client = new SmtpClient(host, port))
+                {
+                    client.Credentials = new NetworkCredential(senderEmail, password);
+                    client.EnableSsl = enableSSL;
+
+                    var mailMessage = new MailMessage
+                    {
+                        From = new MailAddress(senderEmail, senderName),
+                        Subject = subject,
+                        Body = htmlMessage,
+                        IsBodyHtml = true
+                    };
+
+                    mailMessage.To.Add(email);
+
+                    await client.SendMailAsync(mailMessage);
+                }
+            }
+            catch (Exception ex)
             {
-                From = new MailAddress(senderEmail!, senderName),
-                Subject = subject,
-                Body = htmlMessage,
-                IsBodyHtml = true
-            };
-
-            mailMessage.To.Add(email);
-
-            await client.SendMailAsync(mailMessage);
+                // Логуємо або просто прокидаємо помилку далі, щоб побачити її у контролері
+                throw new InvalidOperationException($"Помилка при відправці листа на {email}: {ex.Message}", ex);
+            }
         }
     }
 }
