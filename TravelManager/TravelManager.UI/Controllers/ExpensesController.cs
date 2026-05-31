@@ -26,6 +26,24 @@ namespace TravelManager.UI.Controllers
             _exchangeRateService = exchangeRateService;
         }
 
+        private async Task<List<SelectListItem>> GetCurrencyDropdownListAsync()
+        {
+            var rawCurrencies = await _exchangeRateService.GetAllCurrenciesAsync();
+
+            var dropdownList = new List<SelectListItem>
+            {
+                new SelectListItem { Text = "UAH (Українська гривня)", Value = "UAH" }
+            };
+
+            dropdownList.AddRange(rawCurrencies.Select(r => new SelectListItem
+            {
+                Text = $"{r.CurrencyCode} ({r.CurrencyName})",
+                Value = r.CurrencyCode
+            }));
+
+            return dropdownList;
+        }
+
         // --- ДОПОМІЖНІ МЕТОДИ ДЛЯ РОЛЕЙ ---
         private string GetUserRoleInTrip(int tripId)
         {
@@ -151,7 +169,7 @@ namespace TravelManager.UI.Controllers
                 TripList = GetAllowedTripsForUser(activeTripId), // Передаємо ID, щоб він виділився у формі
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
-                CurrencyList = await GetCurrencyListAsync(), // ← реальні курси
+                CurrencyList = await GetCurrencyDropdownListAsync(), // ← реальні курси
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == tripId)
                     .Select(t => new SelectListItem
                     {
@@ -224,7 +242,7 @@ namespace TravelManager.UI.Controllers
 
                 model.TripList = GetAllowedTripsForUser();
                 model.CategoryList = GetCategoryList();
-                model.CurrencyList = await GetCurrencyListAsync();
+                model.CurrencyList = await GetCurrencyDropdownListAsync();
                 var pts = _unitOfWork.TripParticipant
                     .GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
                 model.PayerList = pts.Select(p => new SelectListItem
@@ -285,7 +303,7 @@ namespace TravelManager.UI.Controllers
                 TempData["ErrorMessage"] = $"Сума часток ({totalSplits}) ≠ загальній сумі ({model.TotalAmount})";
                 model.TripList = GetAllowedTripsForUser();
                 model.CategoryList = GetCategoryList();
-                model.CurrencyList = await GetCurrencyListAsync();
+                model.CurrencyList = await GetCurrencyDropdownListAsync();
                 var pts = _unitOfWork.TripParticipant
                     .GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
                 model.PayerList = pts.Select(p => new SelectListItem
@@ -349,7 +367,7 @@ namespace TravelManager.UI.Controllers
                 .GetAll(tp => tp.TripId == entity.TripId, includeProperties: "User")
                 .ToList();
 
-            var currencyList = await GetCurrencyListAsync();
+            var currencyList = await GetCurrencyDropdownListAsync();
 
             foreach (var item in currencyList)
             {
@@ -460,7 +478,7 @@ namespace TravelManager.UI.Controllers
                 var participants = _unitOfWork.TripParticipant.GetAll(tp => tp.TripId == model.TripId, includeProperties: "User").ToList();
                 model.TripList = GetAllowedTripsForUser(model.TripId);
                 model.CategoryList = GetCategoryList();
-                model.CurrencyList = await GetCurrencyListAsync();
+                model.CurrencyList = await GetCurrencyDropdownListAsync();
                 model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
 
                 model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
@@ -563,29 +581,6 @@ namespace TravelManager.UI.Controllers
                 new SelectListItem { Text = "Shopping", Value = "5" },
                 new SelectListItem { Text = "Other", Value = "6" }
             };
-        }
-
-        private async Task<IEnumerable<SelectListItem>> GetCurrencyListAsync()
-        {
-            var baseCodes = new[] { "USD", "EUR", "PLN", "GBP" };
-
-            var rates = await _exchangeRateService.GetRatesAsync(baseCodes);
-
-            var items = new List<SelectListItem>
-    {
-        new SelectListItem { Text = "UAH — Гривня", Value = "UAH" }
-    };
-
-            foreach (var rate in rates)
-            {
-                items.Add(new SelectListItem
-                {
-                    Text = $"{rate.CurrencyCode} — 1 {rate.CurrencyCode} = {rate.RateToUah:N2} UAH",
-                    Value = rate.CurrencyCode
-                });
-            }
-
-            return items;
         }
     }
 }

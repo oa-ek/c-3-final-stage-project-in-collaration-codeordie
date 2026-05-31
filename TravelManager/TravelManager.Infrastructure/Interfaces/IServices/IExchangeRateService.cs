@@ -11,5 +11,7 @@ namespace TravelManager.Infrastructure.Interfaces.IServices
     {
         Task<List<ExchangeRateInfo>> GetRatesAsync(IEnumerable<string> currencyCodes);
         Task<ExchangeRateInfo?> GetRateAsync(string currencyCode);
+        Task<List<ExchangeRateInfo>> GetAllCurrenciesAsync();
+
     }
 }
