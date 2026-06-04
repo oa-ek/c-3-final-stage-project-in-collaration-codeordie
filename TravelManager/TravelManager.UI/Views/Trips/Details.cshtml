@@ -40,7 +40,6 @@
         background: #eef4f9;
         min-height: 100vh;
         padding-bottom: 5rem;
-        /* Додано відступ зверху, щоб плашка не прилипала до верху вікна */
         padding-top: 2rem;
     }
 
@@ -54,7 +53,6 @@
         50%      { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
     }
 
-    /* ════ ОСЬ ВІН: СКЛЯНИЙ СИНІЙ ЗАОКРУГЛЕНИЙ КВАДРАТ (HERO) ════ */
     .hero-glass-card {
         max-width: 1200px;
         margin: 0 auto 2rem auto;
@@ -63,7 +61,6 @@
         -webkit-backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 32px;
-        /* Сильне заокруглення */
         padding: 3rem;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
         position: relative;
@@ -84,7 +81,6 @@
         z-index: 2;
     }
 
-    /* Кнопка "Назад" */
     .btn-back {
         display: inline-flex;
         align-items: center; gap: 0.5rem;
@@ -101,7 +97,6 @@
     }
     .btn-back:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(-3px); color: white; }
 
-    /* Головний заголовок */
     .trip-main-title {
         font-family: 'Montserrat', sans-serif;
         font-size: clamp(3rem, 6vw, 4.5rem);
@@ -112,7 +107,6 @@
         margin-bottom: 1.5rem;
     }
 
-    /* Інфо-бейджі (В процесі, Дати, Маршрут) */
     .info-pills-row {
         display: flex;
         flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
@@ -136,7 +130,6 @@
     .info-pill i { opacity: 0.8; }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
 
-    /* Навігаційні кнопки меню */
     .nav-buttons-row {
         display: flex;
         flex-wrap: wrap; gap: 0.8rem;
@@ -163,7 +156,6 @@
     .nav-btn.ghost { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; box-shadow: none; }
     .nav-btn.ghost:hover { background: rgba(255,255,255,0.2); color: white; }
 
-    /* ════ BODY СЕКЦІЯ (Картки внизу) ════ */
     .content-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -177,7 +169,6 @@
     }
     @@media(max-width:900px) { .content-container { grid-template-columns: 1fr; } }
 
-    /* ── Світла Скляна Картка (Маршрут, тощо) ── */
     .light-glass-card {
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(24px);
@@ -216,7 +207,6 @@
     }
     .btn-add-small:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #0f172a; }
 
-    /* Таблиця */
     .clean-table { width: 100%; border-collapse: collapse; }
     .clean-table th {
         padding: 1rem 1.8rem; text-align: left;
@@ -226,7 +216,6 @@
         font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
     .clean-table tr:last-child td { border-bottom: none; }
 
-    /* ── Темна Скляна Картка (Бюджет) ── */
     .dark-glass-card {
         background: rgba(30, 30, 30, 0.85);
         backdrop-filter: blur(24px);
@@ -244,7 +233,6 @@
         line-height: 1; margin: 1rem 0 0.5rem; letter-spacing: -0.02em;
     }
 
-    /* Інші елементи */
     #map { height: 350px;
         width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
     
@@ -263,7 +251,6 @@
         <div class="hero-dots"></div>
         <div class="hero-content">
 
-            @* TempData повідомлення *@
             @if (TempData["SuccessMessage"] != null)
             {
                 <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); border-radius:16px; color:#d1fae5; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
@@ -446,7 +433,14 @@
                         <div class="icon-box" style="background: #14b8a6;"><i class="bi bi-building"></i></div>
                         Житло
                     </div>
-                    <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
+                    
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <a asp-controller="Accommodations" asp-action="SearchExternal" asp-route-tripId="@Model.Trip.Id" class="btn-add-small" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: white; border: none; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
+                            <i class="bi bi-globe" style="margin-right:3px;"></i> Онлайн
+                        </a>
+                        <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
+                    </div>
+
                 </div>
                 <div style="padding:1.5rem;">
                     @if (!Model.Accommodations.Any())

@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +23,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "TravelManager API",
         Version = "v1",
-        Description = "Web API ��� TravelManager"
+        Description = "Web API для TravelManager"
     });
 
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -65,16 +65,15 @@ builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
 
 builder.Services.AddMemoryCache();
 
-
 builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
 {
     client.BaseAddress = new Uri("https://api.open-meteo.com/");
-    client.Timeout = TimeSpan.FromSeconds(20); 
+    client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
 .AddStandardResilienceHandler(options => {
-    options.Retry.MaxRetryAttempts = 3; 
-    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential; 
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
 builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =>
@@ -97,16 +96,19 @@ builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client
     options.Retry.MaxRetryAttempts = 2;
 });
 
-
 builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
-    client.Timeout = TimeSpan.FromSeconds(25); 
+    client.Timeout = TimeSpan.FromSeconds(25);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0 (university project)");
 })
 .AddStandardResilienceHandler(options => {
     options.Retry.MaxRetryAttempts = 3;
-    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(40); 
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(40);
 });
+
+// ✅ ВИПРАВЛЕНО: реєстрація перенесена ДО builder.Build()
+builder.Services.AddHttpClient<IHotelSearchService, RapidApiHotelService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -114,11 +116,13 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-builder.Services.AddHttpClient<IHotelSearchService, RapidApiHotelService>();
+
+// ✅ ВИПРАВЛЕНО: залишено лише один виклик SeedAdminAsync
 using (var scope = app.Services.CreateScope())
 {
     await DbInitializer.SeedAdminAsync(scope.ServiceProvider);
 }
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -138,11 +142,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
-builder.Services.AddHttpClient<IHotelSearchService, RapidApiHotelService>();
-using (var scope = app.Services.CreateScope())
-{
-    await DbInitializer.SeedAdminAsync(scope.ServiceProvider);
-}
 
 app.Run();

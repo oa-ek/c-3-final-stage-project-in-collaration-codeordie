@@ -208,46 +208,34 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SearchExternal(int tripId)
+        public async Task<IActionResult> SearchExternal(int? tripId)
         {
-            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
+            // 1. Перевіряємо, чи передали нам ID поїздки
+            if (!tripId.HasValue || tripId.Value == 0)
+            {
+                TempData["ErrorMessage"] = "Щоб знайти житло онлайн, будь ласка, спочатку перейдіть до конкретної поїздки та натисніть кнопку там.";
+                return RedirectToAction("Index", "Trips");
+            }
+
+            // 2. Шукаємо поїздку в базі
+            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId.Value);
             if (trip == null) return NotFound();
 
-            var destinations = _unitOfWork.TripDestination.GetAll(d => d.TripId == tripId).ToList();
-
-            // ТУТ БУЛА ПОМИЛКА: Змінено .City на .CityName
+            // 3. Беремо місто
+            var destinations = _unitOfWork.TripDestination.GetAll(d => d.TripId == tripId.Value).ToList();
             var mainCity = destinations.FirstOrDefault()?.CityName ?? "Kyiv";
 
+            // 4. Форматуємо дати
             var checkIn = trip.StartDate.ToString("yyyy-MM-dd");
             var checkOut = trip.EndDate.ToString("yyyy-MM-dd");
 
+            // 5. Шукаємо через API
             var hotels = await _hotelSearchService.SearchHotelsAsync(mainCity, checkIn, checkOut);
 
-            ViewBag.TripId = tripId;
+            ViewBag.TripId = tripId.Value;
             ViewBag.City = mainCity;
 
             return View(hotels);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SaveExternal(int tripId, string name, string address, decimal price, string externalLink)
-        {
-            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
-
-            var accommodation = new Accommodation
-            {
-                TripId = tripId,
-                Name = name,
-                Address = $"{address} | {price} UAH | Link: {externalLink}",
-                CheckInTime = trip?.StartDate ?? DateTime.UtcNow,
-                CheckOutTime = trip?.EndDate ?? DateTime.UtcNow.AddDays(1)
-            };
-
-            _unitOfWork.Accommodation.Add(accommodation);
-            await _unitOfWork.SaveAsync();
-
-            return RedirectToAction("Index", new { tripId = tripId });
         }
 
         private string GetUserRoleInTrip(int tripId)
