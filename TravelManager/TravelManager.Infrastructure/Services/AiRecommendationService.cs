@@ -16,9 +16,7 @@ namespace TravelManager.Infrastructure.Services
         private readonly ILogger<AiRecommendationService> _logger;
         private readonly IConfiguration _configuration;
 
-
-    private static readonly TimeSpan CacheDuration =
-        TimeSpan.FromHours(6);
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(6);
 
         public AiRecommendationService(
             HttpClient httpClient,
@@ -37,170 +35,118 @@ namespace TravelManager.Infrastructure.Services
             string? country,
             string language = "uk")
         {
-            var cacheKey =
-                $"ai_rec:{cityName.ToLower()}:{country?.ToLower()}";
-
-            if (_cache.TryGetValue(cacheKey,
-                out AiRecommendationResult? cached))
-            {
+            var cacheKey = $"ai_rec:{cityName.ToLower()}:{country?.ToLower()}";
+            if (_cache.TryGetValue(cacheKey, out AiRecommendationResult? cached))
                 return cached;
-            }
 
             try
             {
-                var locationStr =
-                    string.IsNullOrWhiteSpace(country)
-                        ? cityName
-                        : $"{cityName}, {country}";
+                var locationStr = string.IsNullOrWhiteSpace(country)
+                    ? cityName
+                    : $"{cityName}, {country}";
 
-                var prompt = $@"
-Ти досвідчений тревел-гід.
+                var apiKey = _configuration["Gemini:ApiKey"];
+                _logger.LogInformation("=== GEMINI START === City: {City}, ApiKey starts with: {KeyStart}",
+                    cityName, apiKey?.Substring(0, Math.Min(10, apiKey?.Length ?? 0)));
 
-Надай рекомендації для міста {locationStr}.
+                var prompt = $@"Ти досвідчений тревел-гід. Надай рекомендації для туриста, який відвідує {locationStr}.
 
-Відповідай ТІЛЬКИ валідним JSON.
-
-Формат:
-
+Відповідай ВИКЛЮЧНО валідним JSON без жодного markdown. Лише JSON:
 {{
   ""attractions"": [
-    {{
-      ""name"": """",
-      ""description"": """",
-      ""category"": """",
-      ""priceRange"": """",
-      ""emoji"": """",
-      ""bestTime"": """"
-    }}
+    {{""name"":""назва"",""description"":""опис"",""category"":""тип"",""priceRange"":""Free"",""emoji"":""🏛"",""bestTime"":""будь-коли""}}
   ],
   ""restaurants"": [
-    {{
-      ""name"": """",
-      ""description"": """",
-      ""category"": """",
-      ""priceRange"": """",
-      ""emoji"": """",
-      ""bestTime"": """"
-    }}
+    {{""name"":""назва"",""description"":""опис"",""category"":""тип"",""priceRange"":""$$"",""emoji"":""🍽"",""bestTime"":""обід""}}
   ],
   ""tips"": [
-    {{
-      ""title"": """",
-      ""body"": """",
-      ""emoji"": """"
-    }}
+    {{""title"":""порада"",""body"":""деталі"",""emoji"":""💡""}}
   ]
 }}
-
-Вимоги:
-- attractions рівно 5
-- restaurants рівно 4
-- tips рівно 4
-- українська мова
-- жодного markdown
-- лише JSON
-";
-
+attractions рівно 5, restaurants рівно 4, tips рівно 4, мова: українська, ТІЛЬКИ JSON.";
 
                 var requestBody = new
-            {
-                contents = new[]
                 {
-                    new
+                    contents = new[]
                     {
-                        parts = new[]
-                        {
-                            new
-                            {
-                                text = prompt
-                            }
-                        }
+                        new { parts = new[] { new { text = prompt } } }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = 0.7,
+                        maxOutputTokens = 3000,
+                        responseMimeType = "application/json"
                     }
-                },
-                generationConfig = new
+                };
+
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var url = $"v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
+                _logger.LogInformation("=== GEMINI REQUEST URL: {Url}", url.Replace(apiKey ?? "", "***KEY***"));
+
+                var response = await _httpClient.PostAsync(url, content);
+
+                _logger.LogInformation("=== GEMINI HTTP STATUS: {Status}", response.StatusCode);
+
+                var responseJson = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation("=== GEMINI RAW RESPONSE (first 500): {Response}",
+                    responseJson.Length > 500 ? responseJson.Substring(0, 500) : responseJson);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    temperature = 0.7,
-                    maxOutputTokens = 2000
+                    _logger.LogError("=== GEMINI ERROR RESPONSE: {Response}", responseJson);
+                    return null;
                 }
-            };
 
-                var json =
-                    JsonSerializer.Serialize(requestBody);
+                using var doc = JsonDocument.Parse(responseJson);
 
-                var content =
-                    new StringContent(
-                        json,
-                        Encoding.UTF8,
-                        "application/json");
+                var textContent = doc.RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString() ?? "";
 
-                var apiKey =
-                    _configuration["Gemini:ApiKey"];
+                _logger.LogInformation("=== GEMINI TEXT CONTENT (first 300): {Text}",
+                    textContent.Length > 300 ? textContent.Substring(0, 300) : textContent);
 
-                var response =
-                    await _httpClient.PostAsync(
-                        $"v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}",
-                        content);
+                var cleanJson = textContent.Trim();
+                if (cleanJson.StartsWith("```"))
+                {
+                    cleanJson = cleanJson.Replace("```json", "").Replace("```", "").Trim();
+                }
 
-                response.EnsureSuccessStatusCode();
-
-                var responseJson =
-                    await response.Content.ReadAsStringAsync();
-
-                using var doc =
-                    JsonDocument.Parse(responseJson);
-
-                var textContent =
-                    doc.RootElement
-                        .GetProperty("candidates")[0]
-                        .GetProperty("content")
-                        .GetProperty("parts")[0]
-                        .GetProperty("text")
-                        .GetString() ?? "";
-
-                using var resultDoc =
-                    JsonDocument.Parse(textContent.Trim());
-
+                using var resultDoc = JsonDocument.Parse(cleanJson);
                 var root = resultDoc.RootElement;
 
-                var result =
-                    new AiRecommendationResult
-                    {
-                        CityName = cityName,
-                        Attractions =
-                            ParsePlaces(root, "attractions"),
-                        Restaurants =
-                            ParsePlaces(root, "restaurants"),
-                        PracticalTips =
-                            ParseTips(root)
-                    };
+                var result = new AiRecommendationResult
+                {
+                    CityName = cityName,
+                    Attractions = ParsePlaces(root, "attractions"),
+                    Restaurants = ParsePlaces(root, "restaurants"),
+                    PracticalTips = ParseTips(root)
+                };
 
-                _cache.Set(
-                    cacheKey,
-                    result,
-                    CacheDuration);
+                _logger.LogInformation("=== GEMINI SUCCESS === Attractions: {A}, Restaurants: {R}, Tips: {T}",
+                    result.Attractions.Count, result.Restaurants.Count, result.PracticalTips.Count);
 
+                _cache.Set(cacheKey, result, CacheDuration);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(
-                    ex,
-                    "Gemini recommendation failed for {City}",
-                    cityName);
-
+                _logger.LogError(ex, "=== GEMINI EXCEPTION === Type: {Type}, Message: {Message}",
+                    ex.GetType().Name, ex.Message);
                 return null;
             }
         }
 
-        private static List<AiPlaceCard> ParsePlaces(
-            JsonElement root,
-            string arrayName)
+        private static List<AiPlaceCard> ParsePlaces(JsonElement root, string arrayName)
         {
             var list = new List<AiPlaceCard>();
-
-            if (!root.TryGetProperty(arrayName, out var arr))
-                return list;
-
+            if (!root.TryGetProperty(arrayName, out var arr)) return list;
             foreach (var item in arr.EnumerateArray())
             {
                 list.Add(new AiPlaceCard
@@ -213,18 +159,13 @@ namespace TravelManager.Infrastructure.Services
                     BestTime = GetString(item, "bestTime")
                 });
             }
-
             return list;
         }
 
-        private static List<AiTip> ParseTips(
-            JsonElement root)
+        private static List<AiTip> ParseTips(JsonElement root)
         {
             var list = new List<AiTip>();
-
-            if (!root.TryGetProperty("tips", out var arr))
-                return list;
-
+            if (!root.TryGetProperty("tips", out var arr)) return list;
             foreach (var item in arr.EnumerateArray())
             {
                 list.Add(new AiTip
@@ -234,20 +175,10 @@ namespace TravelManager.Infrastructure.Services
                     Emoji = GetString(item, "emoji", "💡")
                 });
             }
-
             return list;
         }
 
-        private static string GetString(
-            JsonElement el,
-            string prop,
-            string fallback = "")
-        {
-            return el.TryGetProperty(prop, out var v)
-                ? v.GetString() ?? fallback
-                : fallback;
-        }
-  
-
-  }
+        private static string GetString(JsonElement el, string prop, string fallback = "") =>
+            el.TryGetProperty(prop, out var v) ? v.GetString() ?? fallback : fallback;
+    }
 }

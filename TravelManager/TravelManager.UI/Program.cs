@@ -82,12 +82,15 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IAiRecommendationService, AiRecommendationService>(client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
-    client.Timeout = TimeSpan.FromSeconds(45);
+    client.Timeout = TimeSpan.FromSeconds(90);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
 .AddStandardResilienceHandler(options =>
 {
-    options.Retry.MaxRetryAttempts = 2;
+    options.Retry.MaxRetryAttempts = 1;
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(85);
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(40);
+    options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(90); // має бути > AttemptTimeout * 2
 });
 
 builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
