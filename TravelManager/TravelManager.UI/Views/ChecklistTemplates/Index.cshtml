@@ -1,0 +1,86 @@
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TemplateListViewModel>
+
+@{
+    ViewData["Title"] = "Шаблони чеклістів";
+    var systemTemplates = Model.Where(t => t.IsSystem).ToList();
+    var myTemplates = Model.Where(t => !t.IsSystem).ToList();
+}
+
+<div class="relative w-full max-w-5xl mx-auto min-h-[85vh] py-10 z-10 px-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div>
+            <h1 class="text-4xl font-black tracking-tight text-slate-800 mb-2">
+                📋 Шаблони речей
+            </h1>
+            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                Швидке наповнення списків для ваших подорожей
+            </p>
+        </div>
+    </div>
+
+    <div class="mb-12">
+        <h2 class="text-xl font-black text-slate-700 mb-6 flex items-center gap-2">
+            <i class="bi bi-cpu text-cyan-600"></i> Базові системні шаблони
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @foreach (var item in systemTemplates)
+            {
+                <div class="bg-white/80 backdrop-blur-md border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600 text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                            <i class="bi @(string.IsNullOrEmpty(item.IconClass) ? "bi-card-checklist" : item.IconClass)"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-slate-800 mb-1 group-hover:text-cyan-600 transition-colors">@item.Title</h3>
+                            <p class="text-slate-500 text-sm font-medium">@item.Description</p>
+                            <span class="inline-block mt-3 bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                                @item.ItemsCount елементів
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div>
+        <h2 class="text-xl font-black text-slate-700 mb-6 flex items-center gap-2">
+            <i class="bi bi-person-badge text-indigo-600"></i> Мої власні шаблони
+        </h2>
+        @if (!myTemplates.Any())
+        {
+            <div class="bg-white/60 backdrop-blur-md border border-dashed border-slate-200 rounded-3xl p-10 text-center">
+                <i class="bi bi-folder-plus text-4xl text-slate-300 mb-3 block"></i>
+                <p class="text-slate-500 font-bold">У вас поки немає власних шаблонів.</p>
+                <p class="text-xs text-slate-400 mt-1">Тут з'являться копії, які ви створите для редагування.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach (var item in myTemplates)
+                {
+                    <div class="bg-white/80 backdrop-blur-md border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="bi @(string.IsNullOrEmpty(item.IconClass) ? "bi-card-checklist" : item.IconClass)"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-black text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">@item.Title</h3>
+                                <p class="text-slate-500 text-sm font-medium">@item.Description</p>
+                                <span class="inline-block mt-3 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                                    @item.ItemsCount елементів
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-100/50">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="px-4 py-2 rounded-xl font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition-all text-xs uppercase tracking-widest flex items-center gap-1">
+                                <i class="bi bi-pencil-fill"></i> Редагувати
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

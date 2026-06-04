@@ -29,6 +29,8 @@ namespace TravelManager.Infrastructure.Repositories
         public IRepository<ExpenseCategory> ExpenseCategory { get; private set; }
         public IRepository<TripParticipant> TripParticipant { get; private set; }
         public IRepository<TripRole> TripRole { get; private set; }
+        public IChecklistTemplateRepository ChecklistTemplate { get; private set; }
+
 
         public UnitOfWork(ApplicationDbContext ctx)
         {
@@ -49,6 +51,8 @@ namespace TravelManager.Infrastructure.Repositories
             ExpenseCategory = new Repository<ExpenseCategory>(_ctx);
             TripParticipant = new Repository<TripParticipant>(_ctx);
             TripRole = new Repository<TripRole>(_ctx);
+            ChecklistTemplate = new ChecklistTemplateRepository(_ctx);
+
         }
 
         public void Save()

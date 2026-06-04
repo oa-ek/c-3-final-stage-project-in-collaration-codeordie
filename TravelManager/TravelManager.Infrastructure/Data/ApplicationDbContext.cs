@@ -32,7 +32,8 @@ namespace TravelManager.Infrastructure.Data
         public DbSet<Expense> Expenses => Set<Expense>();
         public DbSet<ExpenseSplit> ExpenseSplits => Set<ExpenseSplit>();
         public DbSet<TripDocument> TripDocuments => Set<TripDocument>();
-
+        public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
+        public DbSet<ChecklistTemplateItem> ChecklistTemplateItems => Set<ChecklistTemplateItem>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -71,7 +72,6 @@ namespace TravelManager.Infrastructure.Data
             modelBuilder.Entity<TripDocument>().HasOne(d => d.Transit).WithMany().HasForeignKey(d => d.TransitId).OnDelete(DeleteBehavior.ClientSetNull);
             modelBuilder.Entity<TripDocument>().HasOne(d => d.Accommodation).WithMany().HasForeignKey(d => d.AccommodationId).OnDelete(DeleteBehavior.ClientSetNull);
             modelBuilder.Entity<TripDocument>().HasOne(d => d.TripActivity).WithMany().HasForeignKey(d => d.TripActivityId).OnDelete(DeleteBehavior.ClientSetNull);
-
             modelBuilder.Seed();
         }
     }
