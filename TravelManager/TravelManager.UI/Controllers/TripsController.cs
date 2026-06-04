@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
-using TravelManager.Infrastructure.Interfaces.IServices; // Додано для IExchangeRateService
+using TravelManager.Infrastructure.Interfaces.IServices;
 using TravelManager.Infrastructure.Services;
 using TravelManager.UI.Models.ViewModels;
+using static TravelManager.UI.Models.ViewModels.TripDetailsViewModel;
 
 namespace TravelManager.UI.Controllers
 {
@@ -79,16 +80,15 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create() // Зроблено Async
+        public async Task<IActionResult> Create()
         {
             var model = new CreateTripViewModel
             {
-                // Поля UserList немає в моделі, тому список користувачів (якщо потрібен) передаємо через ViewBag
                 BaseCurrency = "UAH"
             };
 
-            ViewBag.UserList = GetUserList(); // Передаємо список користувачів через ViewBag, якщо форма його очікує
-            ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо динамічний список валют
+            ViewBag.UserList = GetUserList();
+            ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
             return View(model);
         }
 
@@ -96,13 +96,12 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTripViewModel model)
         {
-            // Видалено неіснуючі в моделі поля з ModelState.Remove
             ModelState.Remove("BaseCurrencyList");
 
             if (!ModelState.IsValid)
             {
                 ViewBag.UserList = GetUserList();
-                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо знову при помилці валідації
+                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
                 return View(model);
             }
 
@@ -120,7 +119,7 @@ namespace TravelManager.UI.Controllers
                 ReturnLocation = model.ReturnLocation,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                BaseCurrency = model.BaseCurrency, // Зберігаємо обрану з повного списку валюту
+                BaseCurrency = model.BaseCurrency,
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
                 CreatorId = currentUserId
@@ -129,7 +128,6 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
 
-            // Автоматично додаємо творця як Organizer
             var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer")
                             ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
 
@@ -149,7 +147,7 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id) // Зроблено Async
+        public async Task<IActionResult> Edit(int id)
         {
             var role = GetUserRoleInTrip(id);
             if (role != "Organizer")
@@ -173,7 +171,6 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = trip.BaseCurrency
             };
 
-            // Передаємо динамічний список валют та позначаємо вибрану
             var currencies = await GetCurrencyDropdownListAsync();
             foreach (var item in currencies)
             {
@@ -203,7 +200,7 @@ namespace TravelManager.UI.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.UserList = GetUserList();
-                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо знову при помилці валідації
+                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
                 return View(model);
             }
 
@@ -303,10 +300,108 @@ namespace TravelManager.UI.Controllers
                 }).ToList()
             };
 
+            var timeline = new List<TimelineEvent>();
+
+            if (model.Destinations != null)
+            {
+                timeline.AddRange(model.Destinations.Select(d => new TimelineEvent
+                {
+                    EventDate = d.ArrivalDate,
+                    EventType = "Destination",
+                    Title = $"Прибуття в {d.CityName}",
+                    Subtitle = d.Country,
+                    IconClass = "bi-geo-alt-fill",
+                    IconColor = "#3b82f6"
+                }));
+            }
+
+            if (model.Transits != null)
+            {
+                timeline.AddRange(model.Transits.Select(t => new TimelineEvent
+                {
+                    EventDate = t.DepartureTime,
+                    EventType = "Transit",
+                    Title = $"Транспорт: {t.DepartureLocation} → {t.ArrivalLocation}",
+                    Subtitle = $"{t.TransitType?.Name ?? "Рейс"} (Квиток: {t.BookingReference ?? "-"})",
+                    IconClass = "bi-airplane-fill",
+                    IconColor = "#8b5cf6"
+                }));
+            }
+
+            if (model.Accommodations != null)
+            {
+                timeline.AddRange(model.Accommodations.Select(a => new TimelineEvent
+                {
+                    EventDate = a.CheckInTime,
+                    EventType = "Accommodation",
+                    Title = $"Заселення: {a.Name}",
+                    Subtitle = a.Address,
+                    IconClass = "bi-building",
+                    IconColor = "#14b8a6"
+                }));
+            }
+
+            model.Timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            double totalDistance = 0;
+            var destsWithCoords = model.Destinations
+                .Where(d => d.Latitude.HasValue && d.Longitude.HasValue)
+                .OrderBy(d => d.ArrivalDate)
+                .ToList();
+
+            for (int i = 0; i < destsWithCoords.Count - 1; i++)
+            {
+                totalDistance += CalculateHaversineDistance(
+                    destsWithCoords[i].Latitude.Value, destsWithCoords[i].Longitude.Value,
+                    destsWithCoords[i + 1].Latitude.Value, destsWithCoords[i + 1].Longitude.Value);
+            }
+
+            ViewBag.TotalDistance = Math.Round(totalDistance);
+
             return View(model);
         }
 
-        // Цей метод вставляється у твій TripsController.cs замість старого InviteParticipant
+        [HttpGet]
+        public IActionResult DownloadCalendar(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var participant = _unitOfWork.TripParticipant
+                .Get(p => p.TripId == id && p.UserId == currentUserId);
+
+            if (participant == null)
+            {
+                TempData["ErrorMessage"] = "У вас немає доступу до цієї поїздки.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+            if (trip == null) return NotFound();
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("BEGIN:VCALENDAR");
+            sb.AppendLine("VERSION:2.0");
+            sb.AppendLine("PRODID:-//TravelManager//UA");
+            sb.AppendLine("BEGIN:VEVENT");
+            sb.AppendLine($"UID:{Guid.NewGuid()}");
+            sb.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
+            sb.AppendLine($"DTSTART;VALUE=DATE:{trip.StartDate:yyyyMMdd}");
+            sb.AppendLine($"DTEND;VALUE=DATE:{trip.EndDate.AddDays(1):yyyyMMdd}");
+            sb.AppendLine($"SUMMARY:Подорож: {trip.Title}");
+
+            var desc = string.IsNullOrEmpty(trip.Description) ? "" : trip.Description.Replace("\n", "\\n");
+            sb.AppendLine($"DESCRIPTION:{desc}");
+
+            var loc = $"{trip.DepartureLocation} - {trip.ReturnLocation}";
+            sb.AppendLine($"LOCATION:{loc}");
+
+            sb.AppendLine("END:VEVENT");
+            sb.AppendLine("END:VCALENDAR");
+
+            byte[] calendarBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+
+            return File(calendarBytes, "text/calendar", $"Trip_{trip.Title.Replace(" ", "_")}.ics");
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -331,7 +426,6 @@ namespace TravelManager.UI.Controllers
             var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
             if (trip == null) return NotFound();
 
-            // ЗАХИСТ: Якщо роль не передалась з форми (дорівнює 0), беремо стандартну роль
             if (roleId == 0)
             {
                 var defaultRole = _unitOfWork.TripRole.Get(r => r.Name == "Participant" || r.Name == "Member")
@@ -344,9 +438,6 @@ namespace TravelManager.UI.Controllers
 
             var userToInvite = await _userManager.FindByEmailAsync(email);
 
-            // =========================================================================
-            // СЦЕНАРІЙ А: Користувача НЕМАЄ в системі (Надсилаємо РЕФЕРАЛЬНЕ ЗАПРОШЕННЯ)
-            // =========================================================================
             if (userToInvite == null)
             {
                 var registerUrl = Url.Action("Register", "Account",
@@ -384,9 +475,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            // =========================================================================
-            // СЦЕНАРІЙ Б: Користувач ВЖЕ зареєстрований
-            // =========================================================================
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
 
@@ -405,7 +493,6 @@ namespace TravelManager.UI.Controllers
 
             try
             {
-                // Додаємо в базу
                 _unitOfWork.TripParticipant.Add(new TripParticipant
                 {
                     TripId = tripId,
@@ -420,7 +507,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            // Відправляємо сповіщення зареєстрованому користувачу на пошту
             string notificationSubject = $"Вас додано до подорожі \"{trip.Title}\"!";
             var tripDetailsUrl = Url.Action("Details", "Trips", new { id = tripId }, protocol: HttpContext.Request.Scheme);
 
@@ -444,7 +530,6 @@ namespace TravelManager.UI.Controllers
             }
             catch
             {
-                // Ігноруємо помилку пошти, якщо збереження в БД пройшло успішно
             }
 
             TempData["SuccessMessage"] = $"Користувача {userToInvite.UserName} успішно додано до поїздки!";
@@ -473,7 +558,7 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            if (participant.UserId == currentUserId()) // Виклик методу для отримання поточного користувача
+            if (participant.UserId == currentUserId())
             {
                 TempData["ErrorMessage"] = "Ви не можете видалити самого себе з поїздки.";
                 return RedirectToAction("Details", new { id = tripId });
@@ -527,6 +612,152 @@ namespace TravelManager.UI.Controllers
         private string currentUserId()
         {
             return _userManager.GetUserId(User) ?? string.Empty;
+        }
+
+        private double CalculateHaversineDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            var R = 6371d;
+            var dLat = (lat2 - lat1) * Math.PI / 180.0;
+            var dLon = (lon2 - lon1) * Math.PI / 180.0;
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        [HttpGet]
+        public IActionResult ExportToCsv(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+
+            if (trip == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant.Get(p => p.TripId == id && p.UserId == currentUserId);
+            if (participant == null) return Unauthorized();
+
+            var dests = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).ToList();
+            var transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList();
+            var accs = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList();
+
+            var timeline = new List<TimelineEvent>();
+            timeline.AddRange(dests.Select(d => new TimelineEvent { EventDate = d.ArrivalDate, EventType = "Місто", Title = d.CityName, Subtitle = d.Country }));
+            timeline.AddRange(transits.Select(t => new TimelineEvent { EventDate = t.DepartureTime, EventType = "Транспорт", Title = $"{t.DepartureLocation} → {t.ArrivalLocation}", Subtitle = t.TransitType?.Name }));
+            timeline.AddRange(accs.Select(a => new TimelineEvent { EventDate = a.CheckInTime, EventType = "Житло", Title = a.Name, Subtitle = a.Address }));
+
+            timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("Дата;Тип події;Назва;Деталі");
+
+            foreach (var item in timeline)
+            {
+                var date = item.EventDate.ToString("dd.MM.yyyy HH:mm");
+                var type = item.EventType;
+                var title = item.Title?.Replace(";", ",");
+                var sub = item.Subtitle?.Replace(";", ",");
+
+                sb.AppendLine($"{date};{type};{title};{sub}");
+            }
+
+            byte[] bom = new byte[] { 0xEF, 0xBB, 0xBF };
+            byte[] csvBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            byte[] finalBytes = bom.Concat(csvBytes).ToArray();
+
+            return File(finalBytes, "text/csv", $"Trip_{trip.Title.Replace(" ", "_")}_Plan.csv");
+        }
+        [HttpGet]
+        public IActionResult ExportToWord(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+
+            if (trip == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant.Get(p => p.TripId == id && p.UserId == currentUserId);
+            if (participant == null) return Unauthorized();
+
+            var dests = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).ToList();
+            var transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList();
+            var accs = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList();
+            var expenses = _unitOfWork.Expense.GetAll(e => e.TripId == id).ToList();
+
+            var timeline = new List<TimelineEvent>();
+            timeline.AddRange(dests.Select(d => new TimelineEvent { EventDate = d.ArrivalDate, EventType = "Місто", Title = d.CityName, Subtitle = d.Country }));
+            timeline.AddRange(transits.Select(t => new TimelineEvent { EventDate = t.DepartureTime, EventType = "Транспорт", Title = $"{t.DepartureLocation} → {t.ArrivalLocation}", Subtitle = t.TransitType?.Name }));
+            timeline.AddRange(accs.Select(a => new TimelineEvent { EventDate = a.CheckInTime, EventType = "Житло", Title = a.Name, Subtitle = a.Address }));
+
+            timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>");
+            sb.AppendLine("<head><meta charset='utf-8'><style>");
+            sb.AppendLine("body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; }");
+            sb.AppendLine("h1 { color: #4f46e5; text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }");
+            sb.AppendLine("h2 { color: #10b981; margin-top: 30px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }");
+            sb.AppendLine("table { width: 100%; border-collapse: collapse; margin-top: 10px; }");
+            sb.AppendLine("th, td { border: 1px solid #d1d5db; padding: 10px; text-align: left; }");
+            sb.AppendLine("th { background-color: #f3f4f6; color: #374151; font-weight: bold; }");
+            sb.AppendLine("</style></head><body>");
+
+            sb.AppendLine($"<h1>План подорожі: {trip.Title}</h1>");
+            sb.AppendLine($"<p><strong>Маршрут:</strong> {trip.DepartureLocation} &rarr; {trip.ReturnLocation}</p>");
+            sb.AppendLine($"<p><strong>Дати:</strong> {trip.StartDate:dd.MM.yyyy} &mdash; {trip.EndDate:dd.MM.yyyy}</p>");
+
+            if (!string.IsNullOrEmpty(trip.Description))
+            {
+                sb.AppendLine($"<p><strong>Опис:</strong> {trip.Description.Replace("\n", "<br>")}</p>");
+            }
+
+            sb.AppendLine("<h2>Загальна хронологія подій</h2>");
+            sb.AppendLine("<table><tr><th>Дата і час</th><th>Тип</th><th>Подія</th><th>Деталі</th></tr>");
+            foreach (var item in timeline)
+            {
+                sb.AppendLine($"<tr><td>{item.EventDate:dd.MM.yyyy HH:mm}</td><td>{item.EventType}</td><td><strong>{item.Title}</strong></td><td>{item.Subtitle}</td></tr>");
+            }
+            sb.AppendLine("</table>");
+
+            if (accs.Any())
+            {
+                sb.AppendLine("<h2>Заброньоване житло</h2>");
+                sb.AppendLine("<table><tr><th>Назва</th><th>Адреса</th><th>Заїзд</th><th>Виїзд</th></tr>");
+                foreach (var a in accs)
+                {
+                    sb.AppendLine($"<tr><td><strong>{a.Name}</strong></td><td>{a.Address}</td><td>{a.CheckInTime:dd.MM.yyyy HH:mm}</td><td>{a.CheckOutTime:dd.MM.yyyy HH:mm}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            if (transits.Any())
+            {
+                sb.AppendLine("<h2>Транспортні квитки</h2>");
+                sb.AppendLine("<table><tr><th>Маршрут</th><th>Тип</th><th>Відправлення</th><th>Прибуття</th><th>Квиток (Номер)</th></tr>");
+                foreach (var t in transits)
+                {
+                    sb.AppendLine($"<tr><td><strong>{t.DepartureLocation} &rarr; {t.ArrivalLocation}</strong></td><td>{t.TransitType?.Name}</td><td>{t.DepartureTime:dd.MM.yyyy HH:mm}</td><td>{t.ArrivalTime:dd.MM.yyyy HH:mm}</td><td>{t.BookingReference}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            if (expenses.Any())
+            {
+                sb.AppendLine("<h2>Зафіксовані витрати</h2>");
+                sb.AppendLine("<table><tr><th>Назва</th><th>Сума</th><th>Валюта</th><th>Дата</th></tr>");
+                foreach (var e in expenses)
+                {
+                   // sb.AppendLine($"<tr><td>{e.Description}</td><td>{e.TotalAmount:N2}</td><td>{e.Currency}</td><td>{e.Date:dd.MM.yyyy}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            sb.AppendLine("<br><hr><p style='text-align:center; color:#9ca3af; font-size: 12px;'>Згенеровано автоматично через TravelManager</p>");
+            sb.AppendLine("</body></html>");
+
+            byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(fileBytes, "application/vnd.ms-word", $"TravelManager_План_{trip.Title.Replace(" ", "_")}.doc");
         }
     }
 }

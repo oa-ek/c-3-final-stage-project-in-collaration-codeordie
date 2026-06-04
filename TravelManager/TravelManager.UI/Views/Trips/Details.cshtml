@@ -7,7 +7,6 @@
     var isPast = DateTime.Today > Model.Trip.EndDate;
     var duration = (Model.Trip.EndDate - Model.Trip.StartDate).Days;
 
-    // ── Бюджет (Залишено саме так, як у твоєму оригіналі) ──
     decimal totalBudget = 0;
     string baseCurr = Model.Trip.BaseCurrency ?? "UAH";
     decimal usdRate = 43.83m, eurRate = 50.88m, plnRate = 11.10m, gbpRate = 59.50m;
@@ -26,6 +25,20 @@
             totalBudget += amt;
         }
     }
+
+    var checkIn = Model.Trip.StartDate.ToString("yyyy-MM-dd");
+    var checkOut = Model.Trip.EndDate.ToString("yyyy-MM-dd");
+    var city = Model.Destinations.FirstOrDefault()?.CityName ?? "";
+    var bookingUrl = $"https://www.booking.com/searchresults.html?ss={Uri.EscapeDataString(city)}&checkin={checkIn}&checkout={checkOut}";
+    // ── Генерація посилання для Google Календаря ──
+    var gcTitle = Uri.EscapeDataString("Подорож: " + (Model.Trip.Title ?? ""));
+    var gcDetails = Uri.EscapeDataString(Model.Trip.Description ?? "Запланована подорож у TravelManager");
+    var gcLocation = Uri.EscapeDataString($"{Model.Trip.DepartureLocation} - {Model.Trip.ReturnLocation}");
+   
+    var gcStartDate = Model.Trip.StartDate.ToString("yyyyMMdd");
+    var gcEndDate = Model.Trip.EndDate.AddDays(1).ToString("yyyyMMdd");
+    
+    var googleCalendarUrl = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={gcTitle}&dates={gcStartDate}/{gcEndDate}&details={gcDetails}&location={gcLocation}";
 }
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -40,7 +53,6 @@
         background: #eef4f9;
         min-height: 100vh;
         padding-bottom: 5rem;
-        /* Додано відступ зверху, щоб плашка не прилипала до верху вікна */
         padding-top: 2rem;
     }
 
@@ -54,7 +66,6 @@
         50%      { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
     }
 
-    /* ════ ОСЬ ВІН: СКЛЯНИЙ СИНІЙ ЗАОКРУГЛЕНИЙ КВАДРАТ (HERO) ════ */
     .hero-glass-card {
         max-width: 1200px;
         margin: 0 auto 2rem auto;
@@ -63,12 +74,12 @@
         -webkit-backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 32px;
-        /* Сильне заокруглення */
         padding: 3rem;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
         position: relative;
         overflow: hidden;
         animation: fadeUp .5s ease both;
+        transform-style: preserve-3d;
     }
     
     .hero-dots {
@@ -82,9 +93,9 @@
     .hero-content {
         position: relative;
         z-index: 2;
+        transform: translateZ(30px);
     }
 
-    /* Кнопка "Назад" */
     .btn-back {
         display: inline-flex;
         align-items: center; gap: 0.5rem;
@@ -101,7 +112,6 @@
     }
     .btn-back:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(-3px); color: white; }
 
-    /* Головний заголовок */
     .trip-main-title {
         font-family: 'Montserrat', sans-serif;
         font-size: clamp(3rem, 6vw, 4.5rem);
@@ -112,7 +122,6 @@
         margin-bottom: 1.5rem;
     }
 
-    /* Інфо-бейджі (В процесі, Дати, Маршрут) */
     .info-pills-row {
         display: flex;
         flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
@@ -136,7 +145,6 @@
     .info-pill i { opacity: 0.8; }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
 
-    /* Навігаційні кнопки меню */
     .nav-buttons-row {
         display: flex;
         flex-wrap: wrap; gap: 0.8rem;
@@ -163,7 +171,6 @@
     .nav-btn.ghost { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; box-shadow: none; }
     .nav-btn.ghost:hover { background: rgba(255,255,255,0.2); color: white; }
 
-    /* ════ BODY СЕКЦІЯ (Картки внизу) ════ */
     .content-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -177,7 +184,6 @@
     }
     @@media(max-width:900px) { .content-container { grid-template-columns: 1fr; } }
 
-    /* ── Світла Скляна Картка (Маршрут, тощо) ── */
     .light-glass-card {
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(24px);
@@ -188,6 +194,7 @@
         overflow: hidden;
         margin-bottom: 1.5rem;
         animation: fadeUp .6s ease both;
+        transform-style: preserve-3d;
     }
     .light-glass-card:hover { box-shadow: 0 16px 45px rgba(0, 0, 0, 0.08); }
 
@@ -195,6 +202,7 @@
         padding: 1.5rem 1.8rem;
         border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         display: flex; justify-content: space-between; align-items: center;
+        transform: translateZ(20px);
     }
     .card-header-title {
         font-family: 'Montserrat', sans-serif;
@@ -216,8 +224,7 @@
     }
     .btn-add-small:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #0f172a; }
 
-    /* Таблиця */
-    .clean-table { width: 100%; border-collapse: collapse; }
+    .clean-table { width: 100%; border-collapse: collapse; transform: translateZ(20px); }
     .clean-table th {
         padding: 1rem 1.8rem; text-align: left;
         font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
@@ -226,7 +233,6 @@
         font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
     .clean-table tr:last-child td { border-bottom: none; }
 
-    /* ── Темна Скляна Картка (Бюджет) ── */
     .dark-glass-card {
         background: rgba(30, 30, 30, 0.85);
         backdrop-filter: blur(24px);
@@ -238,13 +244,14 @@
         margin-bottom: 1.5rem;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
         animation: fadeUp .6s ease both;
+        transform-style: preserve-3d;
     }
     .budget-amount {
         font-family: 'Montserrat', sans-serif; font-size: 2.8rem; font-weight: 900;
         line-height: 1; margin: 1rem 0 0.5rem; letter-spacing: -0.02em;
+        transform: translateZ(30px);
     }
 
-    /* Інші елементи */
     #map { height: 350px;
         width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
     
@@ -252,18 +259,31 @@
         border: 1px solid rgba(0,0,0,0.05);
         border-radius: 16px; padding: 1.2rem;
         background: rgba(255,255,255,0.6); margin-bottom: 0.8rem; transition: all .3s;
+        transform: translateZ(20px);
     }
     .list-item-card:hover { background: white;
-        border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px); }
+        border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px) translateZ(20px); }
+
+    /* ── СТИЛІ ДЛЯ СТРІЧКИ ЧАСУ (TIMELINE) ── */
+    .timeline-container { position: relative; padding-left: 1.8rem; margin-top: 1rem; }
+    .timeline-container::before { 
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; 
+        background: rgba(0,0,0,0.06); border-radius: 2px; 
+    }
+    .timeline-item { position: relative; margin-bottom: 1.5rem; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot {
+        position: absolute; left: -2.15rem; top: 0.2rem; width: 14px; height: 14px;
+        border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
 </style>
 
 <div class="det-root">
 
-    <div class="hero-glass-card">
+    <div class="hero-glass-card" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.05">
         <div class="hero-dots"></div>
         <div class="hero-content">
 
-            @* TempData повідомлення *@
             @if (TempData["SuccessMessage"] != null)
             {
                 <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); border-radius:16px; color:#d1fae5; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
@@ -303,11 +323,27 @@
                 {
                     <span class="info-pill"><i class="bi bi-geo-alt"></i> @Model.Trip.DepartureLocation → @Model.Trip.ReturnLocation</span>
                 }
+                @if (ViewBag.TotalDistance > 0)
+{
+    <span class="info-pill" title="Розраховано за формулою Гаверсина">
+        <i class="bi bi-rulers"></i> @ViewBag.TotalDistance км
+    </span>
+}
                 <span class="info-pill"><i class="bi bi-currency-exchange"></i> @Model.Trip.BaseCurrency</span>
             </div>
 
             <div class="nav-buttons-row">
                 <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn active"><i class="bi bi-cash-coin"></i> Витрата</a>
+                <a asp-action="DownloadCalendar" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-calendar-plus"></i> В календар</a>
+                <a asp-action="ExportToCsv" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
+    <i class="bi bi-file-earmark-excel" style="color: #10b981;"></i> В Excel
+    <a asp-action="ExportToWord" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
+    <i class="bi bi-file-earmark-word-fill" style="color: #2563eb;"></i> У Word
+</a>
+</a>
+<a href="@googleCalendarUrl" target="_blank" class="nav-btn ghost">
+    <i class="bi bi-google"></i> Google Календар
+</a>
                 <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-building"></i> Житло</a>
                 <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-airplane"></i> Транзит</a>
                 <a asp-controller="TripActivities" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-lightning"></i> Активність</a>
@@ -322,7 +358,7 @@
     <div class="content-container">
 
         <div>
-            <div class="light-glass-card" style="animation-delay: 0.1s;">
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.1s;">
                 <div class="card-header">
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #3b82f6;"><i class="bi bi-geo-alt-fill"></i></div>
@@ -332,7 +368,7 @@
                 </div>
                 @if (!Model.Destinations.Any())
                 {
-                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem;">Міста ще не додані.</div>
+                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Міста ще не додані.</div>
                 }
                 else
                 {
@@ -372,7 +408,49 @@
                 <div id="map"></div>
             </div>
 
-            <div class="light-glass-card" style="animation-delay: 0.3s;">
+            @* ── ХРОНОЛОГІЯ ПОДОРОЖІ (АЛГОРИТМ LINQ) ── *@
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.25s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #ec4899;"><i class="bi bi-clock-history"></i></div>
+                        Хронологія
+                    </div>
+                </div>
+                <div style="padding:1.5rem; transform: translateZ(20px);">
+                    @if (Model.Timeline == null || !Model.Timeline.Any())
+                    {
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Додайте квитки, міста або житло, щоб побачити маршрут.</div>
+                    }
+                    else
+                    {
+                        <div class="timeline-container">
+                            @foreach (var item in Model.Timeline)
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-dot" style="background-color: @item.IconColor;"></div>
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                        <div>
+                                            <div style="font-family:'Montserrat'; font-weight:800; color:#111827; font-size:1rem;">
+                                                @item.Title
+                                            </div>
+                                            <div style="font-size:.85rem; color:#64748b; margin-top:.2rem;">
+                                                @item.Subtitle
+                                            </div>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <span style="font-size:.75rem; font-weight:800; color:@item.IconColor; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); padding:.3rem .6rem; border-radius:50px;">
+                                                <i class="bi @item.IconClass me-1"></i> @item.EventDate.ToString("dd MMM HH:mm")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.3s;">
                 <div class="card-header">
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #8b5cf6;"><i class="bi bi-airplane-fill"></i></div>
@@ -382,11 +460,11 @@
                 </div>
                 @if (!Model.Transits.Any())
                 {
-                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem;">Квитки відсутні.</div>
+                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Квитки відсутні.</div>
                 }
                 else
                 {
-                    <div style="padding: 0.5rem 0;">
+                    <div style="padding: 0.5rem 0; transform: translateZ(20px);">
                         @foreach (var t in Model.Transits)
                         {
                             <div style="display:flex; align-items:center; gap:1rem; padding:1.2rem 1.8rem; border-bottom:1px solid rgba(0,0,0,0.04);">
@@ -413,14 +491,14 @@
             
             @if (!string.IsNullOrEmpty(Model.Trip.Description))
             {
-                <div class="light-glass-card" style="animation-delay: 0.4s;">
+                <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.4s;">
                     <div class="card-header">
                         <div class="card-header-title">
                             <div class="icon-box" style="background: #10b981;"><i class="bi bi-card-text"></i></div>
                             Опис
                         </div>
                     </div>
-                    <div style="padding:1.8rem; color:#475569; line-height:1.6;">
+                    <div style="padding:1.8rem; color:#475569; line-height:1.6; transform: translateZ(20px);">
                         @Model.Trip.Description
                     </div>
                 </div>
@@ -428,8 +506,8 @@
         </div>
 
         <div>
-            <div class="dark-glass-card" style="animation-delay: 0.1s;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="dark-glass-card" data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15" style="animation-delay: 0.1s;">
+                <div style="display:flex; justify-content:space-between; align-items:center; transform: translateZ(20px);">
                     <div style="font-size:0.75rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.6);">Загальний бюджет</div>
                     <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id"
                        style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:0.4rem 1rem; color:white; text-decoration:none; font-size:0.75rem; font-weight:700; transition:all 0.2s;">
@@ -437,21 +515,26 @@
                     </a>
                 </div>
                 <div class="budget-amount">@totalBudget.ToString("N0") @baseCurr</div>
-                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5);">@Model.Expenses.Count() витрат · з конвертацією</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5); transform: translateZ(20px);">@Model.Expenses.Count() витрат · з конвертацією</div>
             </div>
 
-            <div class="light-glass-card" style="animation-delay: 0.2s;">
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.2s;">
                 <div class="card-header">
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #14b8a6;"><i class="bi bi-building"></i></div>
                         Житло
                     </div>
-                    <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <a href="@bookingUrl" target="_blank" class="btn-add-small" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: white; border: none; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
+                            <i class="bi bi-globe" style="margin-right:3px;"></i> Booking
+                        </a>
+                        <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
+                    </div>
                 </div>
                 <div style="padding:1.5rem;">
                     @if (!Model.Accommodations.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Житло ще не додано.</div>
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Житло ще не додано.</div>
                     }
                     else
                     {
@@ -470,7 +553,7 @@
                 </div>
             </div>
 
-            <div class="light-glass-card" style="animation-delay: 0.3s;">
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.3s;">
                 <div class="card-header">
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #64748b;"><i class="bi bi-check2-square"></i></div>
@@ -481,7 +564,7 @@
                 <div style="padding:1.5rem;">
                     @if (!Model.Checklists.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Списків ще немає.</div>
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Списків ще немає.</div>
                     }
                     else
                     {
@@ -505,15 +588,14 @@
                 </div>
             </div>
 
-            @* ── УЧАСНИКИ ── *@
-            <div class="light-glass-card" style="animation-delay: 0.4s;">
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.4s;">
                 <div class="card-header">
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #6366f1;"><i class="bi bi-people-fill"></i></div>
                         Учасники
                     </div>
                 </div>
-                <div style="padding:1.5rem;">
+                <div style="padding:1.5rem; transform: translateZ(20px);">
 
                     @if (!Model.Participants.Any())
                     {
@@ -552,7 +634,6 @@
                         }
                     }
 
-                    @* Форма запрошення — тільки для організатора *@
                     @if (Model.CurrentUserRole == "Organizer")
                     {
                         <div style="margin-top:1.2rem; padding-top:1.2rem; border-top:1px solid rgba(0,0,0,0.06);">
@@ -604,6 +685,8 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+
     <script>
         var map = L.map('map').setView([48.3794, 31.1656], 5);
 
@@ -719,4 +802,4 @@
         }
         buildFullRoute();
     </script>
-}
+}   
