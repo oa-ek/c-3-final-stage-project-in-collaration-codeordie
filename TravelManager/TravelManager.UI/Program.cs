@@ -97,6 +97,7 @@ builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client
     options.Retry.MaxRetryAttempts = 2;
 });
 
+
 builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
     client.Timeout = TimeSpan.FromSeconds(25); 
@@ -113,7 +114,11 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
+builder.Services.AddHttpClient<IHotelSearchService, RapidApiHotelService>();
+using (var scope = app.Services.CreateScope())
+{
+    await DbInitializer.SeedAdminAsync(scope.ServiceProvider);
+}
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -134,6 +139,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+builder.Services.AddHttpClient<IHotelSearchService, RapidApiHotelService>();
 using (var scope = app.Services.CreateScope())
 {
     await DbInitializer.SeedAdminAsync(scope.ServiceProvider);

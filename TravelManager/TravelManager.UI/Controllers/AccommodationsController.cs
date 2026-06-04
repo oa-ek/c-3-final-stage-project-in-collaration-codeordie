@@ -2,6 +2,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Interfaces.IServices;
@@ -15,15 +19,18 @@ namespace TravelManager.UI.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
         private readonly INominatimService _nominatimService;
+        private readonly IHotelSearchService _hotelSearchService;
 
         public AccommodationsController(
             IUnitOfWork unitOfWork,
             UserManager<User> userManager,
-            INominatimService nominatimService)
+            INominatimService nominatimService,
+            IHotelSearchService hotelSearchService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _nominatimService = nominatimService;
+            _hotelSearchService = hotelSearchService;
         }
 
         [HttpGet]
@@ -45,7 +52,8 @@ namespace TravelManager.UI.Controllers
                 Name = a.Name,
                 Address = a.Address,
                 CheckInTime = a.CheckInTime,
-                CheckOutTime = a.CheckOutTime
+                CheckOutTime = a.CheckOutTime,
+                Trip = a.Trip
             }).ToList();
 
             return View(viewModels);
@@ -101,29 +109,13 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
-            // Автоматично геокодуємо адресу через NominatimService
-            double? lat = null, lon = null;
-            if (!string.IsNullOrWhiteSpace(model.Address))
-            {
-                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
-                if (geo != null)
-                {
-                    lat = geo.Latitude;
-                    lon = geo.Longitude;
-                }
-            }
-
             var entity = new Accommodation
             {
                 Name = model.Name,
                 Address = model.Address,
                 CheckInTime = model.CheckInTime,
                 CheckOutTime = model.CheckOutTime,
-                BookingReference = model.BookingReference,
-                TripId = model.TripId,
-                BookingStatusId = 1,
-                Latitude = lat,
-                Longitude = lon
+                TripId = model.TripId
             };
 
             _unitOfWork.Accommodation.Add(entity);
@@ -153,9 +145,7 @@ namespace TravelManager.UI.Controllers
                 Address = entity.Address,
                 CheckInTime = entity.CheckInTime,
                 CheckOutTime = entity.CheckOutTime,
-                BookingReference = entity.BookingReference,
                 TripId = entity.TripId,
-              
                 TripList = GetAllowedTripsForUser()
             };
 
@@ -182,22 +172,10 @@ namespace TravelManager.UI.Controllers
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
             if (entity == null) return NotFound();
 
-            // Геокодуємо тільки якщо адреса змінилась
-            if (!string.IsNullOrWhiteSpace(model.Address) && model.Address != entity.Address)
-            {
-                var geo = await _nominatimService.GeocodeAddressAsync(model.Address);
-                if (geo != null)
-                {
-                    entity.Latitude = geo.Latitude;
-                    entity.Longitude = geo.Longitude;
-                }
-            }
-
             entity.Name = model.Name;
             entity.Address = model.Address;
             entity.CheckInTime = model.CheckInTime;
             entity.CheckOutTime = model.CheckOutTime;
-            entity.BookingReference = model.BookingReference;
             entity.TripId = model.TripId;
 
             _unitOfWork.Accommodation.Update(entity);
@@ -227,6 +205,49 @@ namespace TravelManager.UI.Controllers
 
             TempData["SuccessMessage"] = "Житло видалено.";
             return RedirectToAction("Details", "Trips", new { id = tripId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchExternal(int tripId)
+        {
+            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
+            if (trip == null) return NotFound();
+
+            var destinations = _unitOfWork.TripDestination.GetAll(d => d.TripId == tripId).ToList();
+
+            // ТУТ БУЛА ПОМИЛКА: Змінено .City на .CityName
+            var mainCity = destinations.FirstOrDefault()?.CityName ?? "Kyiv";
+
+            var checkIn = trip.StartDate.ToString("yyyy-MM-dd");
+            var checkOut = trip.EndDate.ToString("yyyy-MM-dd");
+
+            var hotels = await _hotelSearchService.SearchHotelsAsync(mainCity, checkIn, checkOut);
+
+            ViewBag.TripId = tripId;
+            ViewBag.City = mainCity;
+
+            return View(hotels);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveExternal(int tripId, string name, string address, decimal price, string externalLink)
+        {
+            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
+
+            var accommodation = new Accommodation
+            {
+                TripId = tripId,
+                Name = name,
+                Address = $"{address} | {price} UAH | Link: {externalLink}",
+                CheckInTime = trip?.StartDate ?? DateTime.UtcNow,
+                CheckOutTime = trip?.EndDate ?? DateTime.UtcNow.AddDays(1)
+            };
+
+            _unitOfWork.Accommodation.Add(accommodation);
+            await _unitOfWork.SaveAsync();
+
+            return RedirectToAction("Index", new { tripId = tripId });
         }
 
         private string GetUserRoleInTrip(int tripId)

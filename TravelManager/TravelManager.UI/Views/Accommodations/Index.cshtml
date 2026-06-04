@@ -233,6 +233,38 @@
         transform: scale(0.96);
     }
 
+    /* === СТИЛЬ ДЛЯ НОВОЇ КНОПКИ === */
+    .search-btn {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        color: #0f172a;
+        border: 1px solid rgba(99,102,241,0.3);
+        border-radius: 1.2rem;
+        padding: 0.8rem 1.8rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+        .search-btn:hover {
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 10px 25px rgba(99,102,241,0.2);
+            border-color: #6366f1;
+            color: #4f46e5;
+        }
+
+        .search-btn:active {
+            transform: scale(0.96);
+        }
+
     .glass-card {
         background: rgba(255,255,255,0.55);
         backdrop-filter: blur(30px);
@@ -651,9 +683,14 @@
                     Готелі, хостели та апартаменти для ваших подорожей
                 </p>
             </div>
-            <a asp-action="Create" class="add-btn">
-                <i class="bi bi-plus-lg"></i> Додати житло
-            </a>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a asp-action="SearchExternal" asp-route-tripId="@Context.Request.Query["tripId"]" class="search-btn">
+                    <i class="bi bi-globe"></i> Знайти онлайн
+                </a>
+                <a asp-action="Create" class="add-btn">
+                    <i class="bi bi-plus-lg"></i> Додати вручну
+                </a>
+            </div>
         </div>
 
         <div class="glass-card reveal d2">
@@ -682,9 +719,14 @@
                     <div class="empty-icon"><i class="bi bi-building"></i></div>
                     <div class="empty-title">Ще немає житла</div>
                     <div class="empty-sub">Додай перше помешкання для своєї подорожі</div>
-                    <a asp-action="Create" class="add-btn">
-                        <i class="bi bi-plus-lg"></i> Додати перше житло
-                    </a>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a asp-action="SearchExternal" asp-route-tripId="@Context.Request.Query["tripId"]" class="search-btn">
+                            <i class="bi bi-globe"></i> Знайти онлайн
+                        </a>
+                        <a asp-action="Create" class="add-btn">
+                            <i class="bi bi-plus-lg"></i> Додати вручну
+                        </a>
+                    </div>
                 </div>
             }
             else

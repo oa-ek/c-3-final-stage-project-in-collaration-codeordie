@@ -1,0 +1,56 @@
+﻿@model List<TravelManager.Application.DTOs.External.ExternalHotelDto>
+
+@{
+    ViewData["Title"] = "Пошук готелів";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bolder">Знайдені варіанти у м. @ViewBag.City</h2>
+        <a asp-action="Index" asp-route-tripId="@ViewBag.TripId" class="btn btn-outline-secondary rounded-pill">Повернутися до поїздки</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning rounded-4 shadow-sm">
+            На жаль, за вашим запитом нічого не знайдено або сталася помилка API.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var hotel in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 1.5rem; overflow: hidden;">
+                        @if (!string.IsNullOrEmpty(hotel.ImageUrl))
+                        {
+                            <img src="@hotel.ImageUrl" class="card-img-top" alt="Hotel Image" style="height: 200px; object-fit: cover;">
+                        }
+
+                        <div class="card-body d-flex flex-col">
+                            <h5 class="card-title fw-bolder mb-1">@hotel.Name</h5>
+                            <p class="text-muted small mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> @hotel.Address</p>
+
+                            <div class="mt-auto">
+                                <h4 class="text-success fw-bolder mb-3">@hotel.Price @hotel.Currency</h4>
+
+                                <form asp-action="SaveExternal" method="post">
+                                    <input type="hidden" name="tripId" value="@ViewBag.TripId" />
+                                    <input type="hidden" name="name" value="@hotel.Name" />
+                                    <input type="hidden" name="address" value="@hotel.Address" />
+                                    <input type="hidden" name="price" value="@hotel.Price" />
+                                    <input type="hidden" name="externalLink" value="@hotel.ExternalLink" />
+
+                                    <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold">
+                                        <i class="bi bi-plus-circle"></i> Додати до поїздки
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

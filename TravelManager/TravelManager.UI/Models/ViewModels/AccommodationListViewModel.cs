@@ -1,4 +1,5 @@
 ﻿using System;
+using TravelManager.Domain.Entities;
 
 namespace TravelManager.UI.Models.ViewModels
 {
@@ -9,5 +10,6 @@ namespace TravelManager.UI.Models.ViewModels
         public string Address { get; set; }
         public DateTime CheckInTime { get; set; }
         public DateTime CheckOutTime { get; set; }
+        public Trip Trip { get; set; }
     }
 }
