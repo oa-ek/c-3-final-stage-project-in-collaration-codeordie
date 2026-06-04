@@ -14,9 +14,10 @@ using TravelManager.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews()
-    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
+.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -26,17 +27,23 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Web API для TravelManager"
     });
 
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+
+var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
     if (File.Exists(xmlPath))
         c.IncludeXmlComments(xmlPath);
+
+
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
 
-builder.Services.AddIdentity<User, IdentityRole>(options => {
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+options.UseSqlServer(connectionString));
+
+builder.Services.AddIdentity<User, IdentityRole>(options =>
+{
     options.Password.RequireDigit = false;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -44,12 +51,16 @@ builder.Services.AddIdentity<User, IdentityRole>(options => {
 .AddErrorDescriber<UkrainianIdentityErrorDescriber>();
 
 builder.Services.AddAuthentication()
-    .AddGoogle(options =>
-    {
-        IConfigurationSection googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
-        options.ClientId = googleAuthNSection["ClientId"];
-        options.ClientSecret = googleAuthNSection["ClientSecret"];
-    });
+.AddGoogle(options =>
+{
+    IConfigurationSection googleAuthNSection =
+    builder.Configuration.GetSection("Authentication:Google");
+
+
+    options.ClientId = googleAuthNSection["ClientId"];
+    options.ClientSecret = googleAuthNSection["ClientSecret"];
+});
+
 
 builder.Services.AddTransient<IEmailService, EmailService>();
 
@@ -65,16 +76,30 @@ builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
 
 builder.Services.AddMemoryCache();
 
+//
+// GEMINI AI SERVICE
+//
+builder.Services.AddHttpClient<IAiRecommendationService, AiRecommendationService>(client =>
+{
+    client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+    client.Timeout = TimeSpan.FromSeconds(45);
+    client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler(options =>
+{
+    options.Retry.MaxRetryAttempts = 2;
+});
 
 builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
 {
     client.BaseAddress = new Uri("https://api.open-meteo.com/");
-    client.Timeout = TimeSpan.FromSeconds(20); 
+    client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
-.AddStandardResilienceHandler(options => {
-    options.Retry.MaxRetryAttempts = 3; 
-    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential; 
+.AddStandardResilienceHandler(options =>
+{
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
 builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =>
@@ -83,7 +108,8 @@ builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =
     client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
-.AddStandardResilienceHandler(options => {
+.AddStandardResilienceHandler(options =>
+{
     options.Retry.MaxRetryAttempts = 2;
 });
 
@@ -93,19 +119,23 @@ builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client
     client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
-.AddStandardResilienceHandler(options => {
+.AddStandardResilienceHandler(options =>
+{
     options.Retry.MaxRetryAttempts = 2;
 });
 
-builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
+builder.Services.AddHttpClient<INominatimService, NominatimService>(client =>
+{
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
-    client.Timeout = TimeSpan.FromSeconds(25); 
+    client.Timeout = TimeSpan.FromSeconds(25);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0 (university project)");
 })
-.AddStandardResilienceHandler(options => {
+.AddStandardResilienceHandler(options =>
+{
     options.Retry.MaxRetryAttempts = 3;
-    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(40); 
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(40);
 });
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -115,6 +145,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseSwagger();
+
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TravelManager API v1");
@@ -122,6 +153,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -130,9 +162,9 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+name: "default",
+pattern: "{controller=Home}/{action=Index}/{id?}")
+.WithStaticAssets();
 
 using (var scope = app.Services.CreateScope())
 {
