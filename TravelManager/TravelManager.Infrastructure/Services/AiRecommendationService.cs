@@ -45,78 +45,90 @@ namespace TravelManager.Infrastructure.Services
                     ? cityName
                     : $"{cityName}, {country}";
 
-                var apiKey = _configuration["Gemini:ApiKey"];
-                _logger.LogInformation("=== GEMINI START === City: {City}, ApiKey starts with: {KeyStart}",
-                    cityName, apiKey?.Substring(0, Math.Min(10, apiKey?.Length ?? 0)));
+                // 1) Отримуємо реальні місця з Foursquare
+                var realPlaces = await FetchFoursquarePlacesAsync(cityName, country);
 
-                var prompt = $@"Ти досвідчений тревел-гід. Надай рекомендації для туриста, який відвідує {locationStr}.
+                var apiKey = _configuration["Groq:ApiKey"];
+                var model = _configuration["Groq:Model"] ?? "llama-3.3-70b-versatile";
+
+                _logger.LogInformation("=== GROQ START === City: {City}", cityName);
+
+                // 2) Передаємо реальні місця як контекст у промпт
+                var attractionsContext = realPlaces.Attractions.Any()
+                    ? "Реальні популярні атракції з Foursquare (використай ці назви):\n" +
+                      string.Join("\n", realPlaces.Attractions.Select(p => $"- {p.Name} (рейтинг: {p.Rating}, категорія: {p.Category})"))
+                    : "Використай свої знання про найвідоміші атракції міста.";
+
+                var restaurantsContext = realPlaces.Restaurants.Any()
+                    ? "Реальні популярні ресторани з Foursquare (використай ці назви):\n" +
+                      string.Join("\n", realPlaces.Restaurants.Select(p => $"- {p.Name} (рейтинг: {p.Rating}, категорія: {p.Category})"))
+                    : "Використай свої знання про найвідоміші ресторани міста.";
+
+                var prompt = $@"Ти досвідчений тревел-гід. Надай детальні рекомендації для туриста в {locationStr}.
+
+{attractionsContext}
+
+{restaurantsContext}
+
+ВАЖЛИВО: 
+- Використовуй ТІЛЬКИ реальні назви з наданих списків вище
+- Для кожного місця напиши детальний опис 3-4 речення: що це, чому варто відвідати, цікаві факти, практичні поради
+- Для ресторанів: кухня, фірмові страви, атмосфера, приблизний чек
+- Для порад: конкретна практична інформація про транспорт, валюту, безпеку, етикет, типові пастки для туристів
 
 Відповідай ВИКЛЮЧНО валідним JSON без жодного markdown. Лише JSON:
 {{
   ""attractions"": [
-    {{""name"":""назва"",""description"":""опис"",""category"":""тип"",""priceRange"":""Free"",""emoji"":""🏛"",""bestTime"":""будь-коли""}}
+    {{""name"":""точна назва"",""description"":""3-4 речення детального опису"",""category"":""тип"",""priceRange"":""Free/$/$$/$$$"",""emoji"":""🏛"",""bestTime"":""найкращий час""}}
   ],
   ""restaurants"": [
-    {{""name"":""назва"",""description"":""опис"",""category"":""тип"",""priceRange"":""$$"",""emoji"":""🍽"",""bestTime"":""обід""}}
+    {{""name"":""точна назва"",""description"":""3-4 речення детального опису"",""category"":""тип кухні"",""priceRange"":""$/$$/$$$"",""emoji"":""🍽"",""bestTime"":""обід/вечеря""}}
   ],
   ""tips"": [
-    {{""title"":""порада"",""body"":""деталі"",""emoji"":""💡""}}
+    {{""title"":""коротка назва"",""body"":""3-4 речення конкретної поради"",""emoji"":""💡""}}
   ]
 }}
-attractions рівно 5, restaurants рівно 4, tips рівно 4, мова: українська, ТІЛЬКИ JSON.";
+attractions рівно 8, restaurants рівно 6, tips рівно 7, мова: українська, ТІЛЬКИ JSON.";
 
                 var requestBody = new
                 {
-                    contents = new[]
+                    model = model,
+                    messages = new[]
                     {
-                        new { parts = new[] { new { text = prompt } } }
+                        new { role = "user", content = prompt }
                     },
-                    generationConfig = new
-                    {
-                        temperature = 0.7,
-                        maxOutputTokens = 3000,
-                        responseMimeType = "application/json"
-                    }
+                    temperature = 0.3,
+                    max_tokens = 6000,
+                    response_format = new { type = "json_object" }
                 };
 
                 var json = JsonSerializer.Serialize(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var url = $"v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
-                _logger.LogInformation("=== GEMINI REQUEST URL: {Url}", url.Replace(apiKey ?? "", "***KEY***"));
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-                var response = await _httpClient.PostAsync(url, content);
-
-                _logger.LogInformation("=== GEMINI HTTP STATUS: {Status}", response.StatusCode);
-
+                var response = await _httpClient.PostAsync("openai/v1/chat/completions", content);
                 var responseJson = await response.Content.ReadAsStringAsync();
 
-                _logger.LogInformation("=== GEMINI RAW RESPONSE (first 500): {Response}",
-                    responseJson.Length > 500 ? responseJson.Substring(0, 500) : responseJson);
+                _logger.LogInformation("=== GROQ HTTP STATUS: {Status}", response.StatusCode);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("=== GEMINI ERROR RESPONSE: {Response}", responseJson);
+                    _logger.LogError("=== GROQ ERROR: {Response}", responseJson);
                     return null;
                 }
 
                 using var doc = JsonDocument.Parse(responseJson);
-
                 var textContent = doc.RootElement
-                    .GetProperty("candidates")[0]
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
                     .GetProperty("content")
-                    .GetProperty("parts")[0]
-                    .GetProperty("text")
                     .GetString() ?? "";
-
-                _logger.LogInformation("=== GEMINI TEXT CONTENT (first 300): {Text}",
-                    textContent.Length > 300 ? textContent.Substring(0, 300) : textContent);
 
                 var cleanJson = textContent.Trim();
                 if (cleanJson.StartsWith("```"))
-                {
                     cleanJson = cleanJson.Replace("```json", "").Replace("```", "").Trim();
-                }
 
                 using var resultDoc = JsonDocument.Parse(cleanJson);
                 var root = resultDoc.RootElement;
@@ -129,7 +141,7 @@ attractions рівно 5, restaurants рівно 4, tips рівно 4, мова:
                     PracticalTips = ParseTips(root)
                 };
 
-                _logger.LogInformation("=== GEMINI SUCCESS === Attractions: {A}, Restaurants: {R}, Tips: {T}",
+                _logger.LogInformation("=== SUCCESS === Attractions: {A}, Restaurants: {R}, Tips: {T}",
                     result.Attractions.Count, result.Restaurants.Count, result.PracticalTips.Count);
 
                 _cache.Set(cacheKey, result, CacheDuration);
@@ -137,12 +149,82 @@ attractions рівно 5, restaurants рівно 4, tips рівно 4, мова:
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "=== GEMINI EXCEPTION === Type: {Type}, Message: {Message}",
-                    ex.GetType().Name, ex.Message);
+                _logger.LogError(ex, "=== EXCEPTION === {Message}", ex.Message);
                 return null;
             }
         }
 
+        // ── Foursquare Places ──────────────────────────────────────────────
+        private async Task<FoursquarePlacesResult> FetchFoursquarePlacesAsync(string cityName, string? country)
+        {
+            var result = new FoursquarePlacesResult();
+            var fsqKey = _configuration["Foursquare:ApiKey"];
+            if (string.IsNullOrWhiteSpace(fsqKey))
+                return result;
+
+            var locationQuery = string.IsNullOrWhiteSpace(country) ? cityName : $"{cityName},{country}";
+
+            try
+            {
+                using var fsqClient = new HttpClient(new HttpClientHandler
+                {
+                    AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+                });
+                fsqClient.DefaultRequestHeaders.Add("Authorization", fsqKey);
+                fsqClient.DefaultRequestHeaders.Add("Accept", "application/json");
+
+                // Атракції
+                result.Attractions = await FetchFoursquareCategoryAsync(
+                    fsqClient, locationQuery, "16000", 10); // 16000 = Arts & Entertainment
+
+                // Ресторани
+                result.Restaurants = await FetchFoursquareCategoryAsync(
+                    fsqClient, locationQuery, "13000", 8); // 13000 = Dining and Drinking
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Foursquare fetch failed: {Message}", ex.Message);
+            }
+
+            return result;
+        }
+
+        private async Task<List<FoursquarePlace>> FetchFoursquareCategoryAsync(
+            HttpClient client, string location, string categoryId, int limit)
+        {
+            var url = $"https://api.foursquare.com/v3/places/search" +
+                      $"?near={Uri.EscapeDataString(location)}" +
+                      $"&categories={categoryId}" +
+                      $"&sort=RATING" +
+                      $"&limit={limit}" +
+                      $"&fields=name,rating,categories";
+
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return new List<FoursquarePlace>();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            using var doc = JsonDocument.Parse(json);
+
+            var places = new List<FoursquarePlace>();
+            if (!doc.RootElement.TryGetProperty("results", out var results)) return places;
+
+            foreach (var item in results.EnumerateArray())
+            {
+                var name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                var rating = item.TryGetProperty("rating", out var r) ? r.GetDouble() : 0;
+                var category = "";
+                if (item.TryGetProperty("categories", out var cats) && cats.GetArrayLength() > 0)
+                    category = cats[0].TryGetProperty("name", out var cn) ? cn.GetString() ?? "" : "";
+
+                if (!string.IsNullOrEmpty(name))
+                    places.Add(new FoursquarePlace { Name = name, Rating = rating, Category = category });
+            }
+
+            return places;
+        }
+
+        // ── Parsers ────────────────────────────────────────────────────────
         private static List<AiPlaceCard> ParsePlaces(JsonElement root, string arrayName)
         {
             var list = new List<AiPlaceCard>();
@@ -180,5 +262,19 @@ attractions рівно 5, restaurants рівно 4, tips рівно 4, мова:
 
         private static string GetString(JsonElement el, string prop, string fallback = "") =>
             el.TryGetProperty(prop, out var v) ? v.GetString() ?? fallback : fallback;
+
+        // ── Helper types ───────────────────────────────────────────────────
+        private class FoursquarePlacesResult
+        {
+            public List<FoursquarePlace> Attractions { get; set; } = new();
+            public List<FoursquarePlace> Restaurants { get; set; } = new();
+        }
+
+        private class FoursquarePlace
+        {
+            public string Name { get; set; } = "";
+            public double Rating { get; set; }
+            public string Category { get; set; } = "";
+        }
     }
 }

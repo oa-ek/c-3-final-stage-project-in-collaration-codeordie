@@ -30,14 +30,11 @@
     var checkOut = Model.Trip.EndDate.ToString("yyyy-MM-dd");
     var city = Model.Destinations.FirstOrDefault()?.CityName ?? "";
     var bookingUrl = $"https://www.booking.com/searchresults.html?ss={Uri.EscapeDataString(city)}&checkin={checkIn}&checkout={checkOut}";
-    // ── Генерація посилання для Google Календаря ──
     var gcTitle = Uri.EscapeDataString("Подорож: " + (Model.Trip.Title ?? ""));
     var gcDetails = Uri.EscapeDataString(Model.Trip.Description ?? "Запланована подорож у TravelManager");
     var gcLocation = Uri.EscapeDataString($"{Model.Trip.DepartureLocation} - {Model.Trip.ReturnLocation}");
-   
     var gcStartDate = Model.Trip.StartDate.ToString("yyyyMMdd");
     var gcEndDate = Model.Trip.EndDate.AddDays(1).ToString("yyyyMMdd");
-    
     var googleCalendarUrl = $"https://calendar.google.com/calendar/render?action=TEMPLATE&text={gcTitle}&dates={gcStartDate}/{gcEndDate}&details={gcDetails}&location={gcLocation}";
 }
 
@@ -46,7 +43,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-    body { background: #eef4f9; margin: 0; padding: 0; }
+    body {
+        background: #eef4f9;
+        margin: 0;
+        padding: 0;
+    }
 
     .det-root {
         font-family: 'Inter', sans-serif;
@@ -57,13 +58,31 @@
     }
 
     @@keyframes fadeUp {
-        from { opacity: 0; transform: translateY(24px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(24px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     @@keyframes pulseDot {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,.5); }
-        50%      { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(74,222,128,.5);
+        }
+
+        50% {
+            box-shadow: 0 0 0 8px rgba(74,222,128,0);
+        }
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .hero-glass-card {
@@ -81,10 +100,11 @@
         animation: fadeUp .5s ease both;
         transform-style: preserve-3d;
     }
-    
+
     .hero-dots {
         position: absolute;
-        inset: 0; opacity: 0.04;
+        inset: 0;
+        opacity: 0.04;
         background-image: radial-gradient(circle,#fff 1px,transparent 1px);
         background-size: 24px 24px;
         pointer-events: none;
@@ -98,19 +118,26 @@
 
     .btn-back {
         display: inline-flex;
-        align-items: center; gap: 0.5rem;
+        align-items: center;
+        gap: 0.5rem;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.15);
         color: white;
         padding: 0.6rem 1.2rem;
         border-radius: 50px;
-        font-size: 0.85rem; font-weight: 600;
+        font-size: 0.85rem;
+        font-weight: 600;
         text-decoration: none;
         margin-bottom: 2rem;
         transition: all 0.2s ease;
         backdrop-filter: blur(10px);
     }
-    .btn-back:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(-3px); color: white; }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-3px);
+            color: white;
+        }
 
     .trip-main-title {
         font-family: 'Montserrat', sans-serif;
@@ -124,52 +151,99 @@
 
     .info-pills-row {
         display: flex;
-        flex-wrap: wrap; gap: 0.7rem; margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-bottom: 2.5rem;
     }
+
     .info-pill {
         display: inline-flex;
-        align-items: center; gap: 0.4rem;
+        align-items: center;
+        gap: 0.4rem;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 50px;
         padding: 0.5rem 1.2rem;
-        font-size: 0.8rem; font-weight: 700; color: white;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: white;
         backdrop-filter: blur(10px);
     }
-    .info-pill.active-status {
-        background: rgba(16, 185, 129, 0.2);
-        border-color: rgba(16, 185, 129, 0.4);
+
+        .info-pill.active-status {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .info-pill.past-status {
+            background: rgba(148, 163, 184, 0.2);
+            border-color: rgba(148, 163, 184, 0.4);
+        }
+
+        .info-pill i {
+            opacity: 0.8;
+        }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #4ade80;
+        box-shadow: 0 0 8px #4ade80;
     }
-    .info-pill.past-status { background: rgba(148, 163, 184, 0.2);
-        border-color: rgba(148, 163, 184, 0.4); }
-    .info-pill i { opacity: 0.8; }
-    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
 
     .nav-buttons-row {
         display: flex;
-        flex-wrap: wrap; gap: 0.8rem;
+        flex-wrap: wrap;
+        gap: 0.8rem;
     }
+
     .nav-btn {
         display: inline-flex;
-        align-items: center; gap: 0.5rem;
+        align-items: center;
+        gap: 0.5rem;
         background: white;
         color: #0f172a;
         font-family: 'Montserrat', sans-serif;
-        font-weight: 800; font-size: 0.85rem;
+        font-weight: 800;
+        font-size: 0.85rem;
         padding: 0.8rem 1.5rem;
         border-radius: 50px;
         text-decoration: none;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        border: none; cursor: pointer;
+        border: none;
+        cursor: pointer;
     }
-    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,255,255,0.2); color: #0f172a; }
-    
-    .nav-btn.active { background: #10b981; color: white; box-shadow: 0 4px 20px rgba(16,185,129,0.4); }
-    .nav-btn.active:hover { color: white; box-shadow: 0 6px 25px rgba(16,185,129,0.6); }
-    
-    .nav-btn.ghost { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; box-shadow: none; }
-    .nav-btn.ghost:hover { background: rgba(255,255,255,0.2); color: white; }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,255,255,0.2);
+            color: #0f172a;
+        }
+
+        .nav-btn.active {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+        }
+
+            .nav-btn.active:hover {
+                color: white;
+                box-shadow: 0 6px 25px rgba(16,185,129,0.6);
+            }
+
+        .nav-btn.ghost {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            box-shadow: none;
+        }
+
+            .nav-btn.ghost:hover {
+                background: rgba(255,255,255,0.2);
+                color: white;
+            }
 
     .content-container {
         max-width: 1200px;
@@ -178,11 +252,16 @@
         position: relative;
         z-index: 10;
         display: grid;
-        grid-template-columns: 1fr 380px; 
+        grid-template-columns: 1fr 380px;
         gap: 1.5rem;
         align-items: start;
     }
-    @@media(max-width:900px) { .content-container { grid-template-columns: 1fr; } }
+
+    @@media(max-width:900px) {
+        .content-container {
+            grid-template-columns: 1fr;
+        }
+    }
 
     .light-glass-card {
         background: rgba(255, 255, 255, 0.8);
@@ -196,42 +275,85 @@
         animation: fadeUp .6s ease both;
         transform-style: preserve-3d;
     }
-    .light-glass-card:hover { box-shadow: 0 16px 45px rgba(0, 0, 0, 0.08); }
+
+        .light-glass-card:hover {
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.08);
+        }
 
     .card-header {
         padding: 1.5rem 1.8rem;
         border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        display: flex; justify-content: space-between; align-items: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         transform: translateZ(20px);
     }
+
     .card-header-title {
         font-family: 'Montserrat', sans-serif;
-        font-size: 1.1rem; font-weight: 800;
+        font-size: 1.1rem;
+        font-weight: 800;
         color: #0f172a;
-        display: flex; align-items: center; gap: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
     }
+
     .icon-box {
         width: 36px;
-        height: 36px; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 1.1rem;
+        height: 36px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .btn-add-small {
-        background: rgba(0, 0, 0, 0.04); color: #475569;
-        font-family: 'Montserrat', sans-serif; font-size: 0.75rem; font-weight: 700;
-        padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; transition: all .2s;
-    }
-    .btn-add-small:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color: #0f172a; }
 
-    .clean-table { width: 100%; border-collapse: collapse; transform: translateZ(20px); }
-    .clean-table th {
-        padding: 1rem 1.8rem; text-align: left;
-        font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
+    .btn-add-small {
+        background: rgba(0, 0, 0, 0.04);
+        color: #475569;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all .2s;
     }
-    .clean-table td { padding: 1.2rem 1.8rem;
-        font-size: 0.9rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
-    .clean-table tr:last-child td { border-bottom: none; }
+
+        .btn-add-small:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            color: #0f172a;
+        }
+
+    .clean-table {
+        width: 100%;
+        border-collapse: collapse;
+        transform: translateZ(20px);
+    }
+
+        .clean-table th {
+            padding: 1rem 1.8rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+        }
+
+        .clean-table td {
+            padding: 1.2rem 1.8rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .clean-table tr:last-child td {
+            border-bottom: none;
+        }
 
     .dark-glass-card {
         background: rgba(30, 30, 30, 0.85);
@@ -246,35 +368,158 @@
         animation: fadeUp .6s ease both;
         transform-style: preserve-3d;
     }
+
     .budget-amount {
-        font-family: 'Montserrat', sans-serif; font-size: 2.8rem; font-weight: 900;
-        line-height: 1; margin: 1rem 0 0.5rem; letter-spacing: -0.02em;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.8rem;
+        font-weight: 900;
+        line-height: 1;
+        margin: 1rem 0 0.5rem;
+        letter-spacing: -0.02em;
         transform: translateZ(30px);
     }
 
-    #map { height: 350px;
-        width: 100%; border-radius: 0 0 24px 24px; z-index: 1; }
-    
+    #map {
+        height: 350px;
+        width: 100%;
+        border-radius: 0 0 24px 24px;
+        z-index: 1;
+    }
+
     .list-item-card {
         border: 1px solid rgba(0,0,0,0.05);
-        border-radius: 16px; padding: 1.2rem;
-        background: rgba(255,255,255,0.6); margin-bottom: 0.8rem; transition: all .3s;
+        border-radius: 16px;
+        padding: 1.2rem;
+        background: rgba(255,255,255,0.6);
+        margin-bottom: 0.8rem;
+        transition: all .3s;
         transform: translateZ(20px);
     }
-    .list-item-card:hover { background: white;
-        border-color: rgba(0,0,0,0.1); box-shadow: 0 6px 15px rgba(0,0,0,0.04); transform: translateY(-2px) translateZ(20px); }
 
-    /* ── СТИЛІ ДЛЯ СТРІЧКИ ЧАСУ (TIMELINE) ── */
-    .timeline-container { position: relative; padding-left: 1.8rem; margin-top: 1rem; }
-    .timeline-container::before { 
-        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; 
-        background: rgba(0,0,0,0.06); border-radius: 2px; 
+        .list-item-card:hover {
+            background: white;
+            border-color: rgba(0,0,0,0.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.04);
+            transform: translateY(-2px) translateZ(20px);
+        }
+
+    .timeline-container {
+        position: relative;
+        padding-left: 1.8rem;
+        margin-top: 1rem;
     }
-    .timeline-item { position: relative; margin-bottom: 1.5rem; }
-    .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 2px;
+        }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
     .timeline-dot {
-        position: absolute; left: -2.15rem; top: 0.2rem; width: 14px; height: 14px;
-        border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        position: absolute;
+        left: -2.15rem;
+        top: 0.2rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+
+    /* ── AI PANEL ── */
+    #aiOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 9998;
+        backdrop-filter: blur(4px);
+    }
+
+    #aiPanel {
+        display: none;
+        position: fixed;
+        top: 72px;
+        right: 0;
+        width: 440px;
+        max-width: 100vw;
+        height: calc(100vh - 72px);
+        background: #f8fafc;
+        box-shadow: -10px 0 50px rgba(0,0,0,0.2);
+        z-index: 9999;
+        overflow-y: auto;
+        font-family: 'Inter', sans-serif;
+        animation: slideIn .3s ease;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .ai-tab-btn {
+        flex: 1;
+        padding: 0.5rem 0.3rem;
+        border: none;
+        border-radius: 50px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.72rem;
+        cursor: pointer;
+        transition: all .2s;
+        background: rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.6);
+    }
+
+        .ai-tab-btn.active {
+            background: white;
+            color: #312e81;
+        }
+
+    .ai-place-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 0.8rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: all .2s;
+    }
+
+        .ai-place-card:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+
+    .ai-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(99,102,241,0.2);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 1rem;
     }
 </style>
 
@@ -296,7 +541,7 @@
                     <i class="bi bi-exclamation-triangle-fill" style="color:#f87171;"></i> @TempData["ErrorMessage"]
                 </div>
             }
-            
+
             <a asp-action="Index" class="btn-back">
                 <i class="bi bi-arrow-left"></i> До всіх поїздок
             </a>
@@ -324,11 +569,11 @@
                     <span class="info-pill"><i class="bi bi-geo-alt"></i> @Model.Trip.DepartureLocation → @Model.Trip.ReturnLocation</span>
                 }
                 @if (ViewBag.TotalDistance > 0)
-{
-    <span class="info-pill" title="Розраховано за формулою Гаверсина">
-        <i class="bi bi-rulers"></i> @ViewBag.TotalDistance км
-    </span>
-}
+                {
+                    <span class="info-pill" title="Розраховано за формулою Гаверсина">
+                        <i class="bi bi-rulers"></i> @ViewBag.TotalDistance км
+                    </span>
+                }
                 <span class="info-pill"><i class="bi bi-currency-exchange"></i> @Model.Trip.BaseCurrency</span>
             </div>
 
@@ -336,14 +581,14 @@
                 <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn active"><i class="bi bi-cash-coin"></i> Витрата</a>
                 <a asp-action="DownloadCalendar" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-calendar-plus"></i> В календар</a>
                 <a asp-action="ExportToCsv" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
-    <i class="bi bi-file-earmark-excel" style="color: #10b981;"></i> В Excel
-    <a asp-action="ExportToWord" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
-    <i class="bi bi-file-earmark-word-fill" style="color: #2563eb;"></i> У Word
-</a>
-</a>
-<a href="@googleCalendarUrl" target="_blank" class="nav-btn ghost">
-    <i class="bi bi-google"></i> Google Календар
-</a>
+                    <i class="bi bi-file-earmark-excel" style="color: #10b981;"></i> В Excel
+                </a>
+                <a asp-action="ExportToWord" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
+                    <i class="bi bi-file-earmark-word-fill" style="color: #2563eb;"></i> У Word
+                </a>
+                <a href="@googleCalendarUrl" target="_blank" class="nav-btn ghost">
+                    <i class="bi bi-google"></i> Google Календар
+                </a>
                 <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-building"></i> Житло</a>
                 <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-airplane"></i> Транзит</a>
                 <a asp-controller="TripActivities" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-lightning"></i> Активність</a>
@@ -389,7 +634,15 @@
                                     <td>@d.ArrivalDate.ToString("dd.MM.yyyy")</td>
                                     <td>@d.DepartureDate.ToString("dd.MM.yyyy")</td>
                                     <td style="text-align:right;">
-                                        <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" style="color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.8rem;">
+                                            <button onclick="openAiPanel('@d.CityName', '@d.Country')"
+                                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:50px; padding:0.35rem 0.9rem; font-size:0.75rem; font-weight:800; cursor:pointer; font-family:'Montserrat',sans-serif; box-shadow:0 3px 10px rgba(99,102,241,0.35); transition:all .2s;"
+                                                    onmouseover="this.style.transform='translateY(-1px)'"
+                                                    onmouseout="this.style.transform=''">
+                                                ✨ AI
+                                            </button>
+                                            <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" style="color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -408,7 +661,6 @@
                 <div id="map"></div>
             </div>
 
-            @* ── ХРОНОЛОГІЯ ПОДОРОЖІ (АЛГОРИТМ LINQ) ── *@
             <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.25s;">
                 <div class="card-header">
                     <div class="card-header-title">
@@ -488,7 +740,7 @@
                     </div>
                 }
             </div>
-            
+
             @if (!string.IsNullOrEmpty(Model.Trip.Description))
             {
                 <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.4s;">
@@ -596,7 +848,6 @@
                     </div>
                 </div>
                 <div style="padding:1.5rem; transform: translateZ(20px);">
-
                     @if (!Model.Participants.Any())
                     {
                         <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Учасників ще немає.</div>
@@ -643,14 +894,12 @@
                             <form asp-action="InviteParticipant" method="post">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="tripId" value="@Model.Trip.Id" />
-
                                 <div style="margin-bottom:.7rem;">
                                     <input type="email" name="email" required placeholder="Email користувача"
                                            style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; transition:border-color .2s;"
                                            onfocus="this.style.borderColor='#6366f1'"
                                            onblur="this.style.borderColor='rgba(0,0,0,0.1)'" />
                                 </div>
-
                                 <div style="margin-bottom:.9rem;">
                                     <select name="roleId" required
                                             style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; appearance:none; cursor:pointer; transition:border-color .2s;"
@@ -666,7 +915,6 @@
                                         }
                                     </select>
                                 </div>
-
                                 <button type="submit"
                                         style="width:100%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:12px; padding:.7rem 1rem; font-family:'Montserrat',sans-serif; font-weight:800; font-size:.85rem; cursor:pointer; transition:all .2s; box-shadow:0 4px 15px rgba(99,102,241,0.35);"
                                         onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(99,102,241,0.5)';"
@@ -676,27 +924,58 @@
                             </form>
                         </div>
                     }
-
                 </div>
             </div>
-
         </div>
     </div>
+
+    <!-- ══════════ AI PANEL ══════════ -->
+    <div id="aiOverlay" onclick="closeAiPanel()"></div>
+    <div id="aiPanel">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca); padding:1.5rem; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <div style="font-size:0.65rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.5);">✨ Згенеровано AI · оновлено <span id="aiTime"></span></div>
+                    <div id="aiPanelTitle" style="font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.5rem; color:white; margin-top:0.3rem;"></div>
+                </div>
+                <button onclick="closeAiPanel()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:50%; width:36px; height:36px; cursor:pointer; font-size:1rem; flex-shrink:0;">✕</button>
+            </div>
+            <!-- Tabs -->
+            <div style="display:flex; gap:0.4rem; margin-top:1.2rem;">
+                <button class="ai-tab-btn active" id="tab-attractions" onclick="switchTab('attractions')">🏛 Атракції</button>
+                <button class="ai-tab-btn" id="tab-restaurants" onclick="switchTab('restaurants')">🍽 Ресторани</button>
+                <button class="ai-tab-btn" id="tab-tips" onclick="switchTab('tips')">💡 Поради</button>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:1.2rem;">
+            <!-- Loading -->
+            <div id="aiLoading" style="text-align:center; padding:3rem 1rem; display:none;">
+                <div class="ai-spinner"></div>
+                <div style="font-weight:700; color:#6366f1; font-size:0.95rem;">Генерую рекомендації...</div>
+                <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.4rem;">Зазвичай займає 5–10 секунд</div>
+            </div>
+            <!-- Error -->
+            <div id="aiError" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:16px; padding:1.2rem; text-align:center; color:#ef4444; font-weight:700; font-size:0.9rem;"></div>
+            <!-- Content tabs -->
+            <div id="content-attractions" class="ai-tab-content"></div>
+            <div id="content-restaurants" class="ai-tab-content" style="display:none;"></div>
+            <div id="content-tips" class="ai-tab-content" style="display:none;"></div>
+        </div>
+    </div>
+
 </div>
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
 
     <script>
+        // ══ MAP ══
         var map = L.map('map').setView([48.3794, 31.1656], 5);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
-        var allPoints = [];
-        var routePoints = [];
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        var allPoints = [], routePoints = [];
         const delay = ms => new Promise(res => setTimeout(res, ms));
         const _geoCache = {};
 
@@ -712,94 +991,152 @@
                 let data = await response.json();
                 if (data && data.length > 0) {
                     const latlng = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    _geoCache[key] = latlng;
-                    return latlng;
+                    _geoCache[key] = latlng; return latlng;
                 }
             } catch (e) {}
-            _geoCache[key] = null;
-            return null;
+            _geoCache[key] = null; return null;
         }
 
         async function buildFullRoute() {
             let departureText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.DepartureLocation ?? ""));
             let returnText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.ReturnLocation ?? ""));
-
             let startLatLng = await geocodeAddress(departureText);
             if (startLatLng) {
-                L.marker(startLatLng, {
-                    icon: L.divIcon({ html: "🟢", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] })
-                }).addTo(map).bindPopup("<b>Старт:</b><br>" + departureText);
+                L.marker(startLatLng, { icon: L.divIcon({ html: "🟢", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] }) }).addTo(map).bindPopup("<b>Старт:</b><br>" + departureText);
                 allPoints.push(startLatLng);
             }
-
-            const destinations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                Model.Destinations.Select(d => new {
-                    name = $"{d.CityName}, {d.Country}",
-                    hasCoords = d.Latitude.HasValue && d.Longitude.HasValue,
-                    lat = d.Latitude,
-                    lng = d.Longitude
-                })
-            ));
+            const destinations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Destinations.Select(d => new { name = $"{d.CityName}, {d.Country}", hasCoords = d.Latitude.HasValue && d.Longitude.HasValue, lat = d.Latitude, lng = d.Longitude })));
             for (let dest of destinations) {
-                let latlng = null;
-                if (dest.hasCoords) {
-                    latlng = [dest.lat, dest.lng];
-                } else {
-                    latlng = await geocodeAddress(dest.name);
-                }
-                if (latlng) {
-                    L.marker(latlng).addTo(map).bindPopup("<b>" + dest.name + "</b>");
-                    routePoints.push(latlng);
-                    allPoints.push(latlng);
-                }
+                let latlng = dest.hasCoords ? [dest.lat, dest.lng] : await geocodeAddress(dest.name);
+                if (latlng) { L.marker(latlng).addTo(map).bindPopup("<b>" + dest.name + "</b>"); routePoints.push(latlng); allPoints.push(latlng); }
             }
-
             let endLatLng = await geocodeAddress(returnText);
             if (endLatLng) {
-                L.marker(endLatLng, {
-                    icon: L.divIcon({ html: "🏁", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] })
-                }).addTo(map).bindPopup("<b>Фініш:</b><br>" + returnText);
+                L.marker(endLatLng, { icon: L.divIcon({ html: "🏁", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] }) }).addTo(map).bindPopup("<b>Фініш:</b><br>" + returnText);
                 allPoints.push(endLatLng);
             }
-
             let fullPath = [];
             if (startLatLng) fullPath.push(startLatLng);
             fullPath = fullPath.concat(routePoints);
             if (endLatLng) fullPath.push(endLatLng);
-
-            if (fullPath.length > 1) {
-                L.polyline(fullPath, { color: '#3b82f6', weight: 3, opacity: 0.85, dashArray: '8, 8' }).addTo(map);
-            }
-
-            const accommodations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                Model.Accommodations.Select(a => new {
-                    name = a.Name, address = a.Address,
-                    hasCoords = a.Latitude.HasValue && a.Longitude.HasValue,
-                    lat = a.Latitude, lng = a.Longitude
-                })
-            ));
+            if (fullPath.length > 1) L.polyline(fullPath, { color: '#3b82f6', weight: 3, opacity: 0.85, dashArray: '8, 8' }).addTo(map);
+            const accommodations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Accommodations.Select(a => new { name = a.Name, address = a.Address, hasCoords = a.Latitude.HasValue && a.Longitude.HasValue, lat = a.Latitude, lng = a.Longitude })));
             for (let acc of accommodations) {
-                let latlng = null;
-                if (acc.hasCoords) {
-                    latlng = [acc.lat, acc.lng];
-                } else {
-                    latlng = await geocodeAddress(acc.address ? acc.address : acc.name);
-                }
+                let latlng = acc.hasCoords ? [acc.lat, acc.lng] : await geocodeAddress(acc.address ? acc.address : acc.name);
                 if (latlng) {
-                    L.marker(latlng, {
-                        icon: L.divIcon({
-                            html: "<div style='background:#10b981;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.3);'>🏠</div>",
-                            className: '', iconSize: [30,30], iconAnchor: [15,30]
-                        })
-                    }).addTo(map).bindPopup("<b>" + acc.name + "</b>");
+                    L.marker(latlng, { icon: L.divIcon({ html: "<div style='background:#10b981;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.3);'>🏠</div>", className: '', iconSize: [30,30], iconAnchor: [15,30] }) }).addTo(map).bindPopup("<b>" + acc.name + "</b>");
                     allPoints.push(latlng);
                 }
             }
-
-            if (allPoints.length > 0) {
-                map.fitBounds(new L.LatLngBounds(allPoints), { padding: [30, 30] });
-            }
+            if (allPoints.length > 0) map.fitBounds(new L.LatLngBounds(allPoints), { padding: [30, 30] });
         }
         buildFullRoute();
+
+        // ══ AI PANEL ══
+        let _aiCache = {};
+        let _currentTab = 'attractions';
+
+        function openAiPanel(city, country) {
+            document.getElementById('aiOverlay').style.display = 'block';
+            document.getElementById('aiPanel').style.display = 'block';
+            document.getElementById('aiPanelTitle').textContent = 'Рекомендації для ' + city;
+            document.getElementById('aiTime').textContent = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+            switchTab('attractions');
+            loadAi(city, country);
+        }
+
+        function closeAiPanel() {
+            document.getElementById('aiOverlay').style.display = 'none';
+            document.getElementById('aiPanel').style.display = 'none';
+        }
+
+        function switchTab(tab) {
+            _currentTab = tab;
+            ['attractions', 'restaurants', 'tips'].forEach(t => {
+                document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+                document.getElementById('content-' + t).style.display = t === tab ? 'block' : 'none';
+            });
+        }
+
+        async function loadAi(city, country) {
+            const key = city + '|' + country;
+            if (_aiCache[key]) { renderAi(_aiCache[key]); return; }
+
+            document.getElementById('aiLoading').style.display = 'block';
+            document.getElementById('aiError').style.display = 'none';
+            ['attractions', 'restaurants', 'tips'].forEach(t => document.getElementById('content-' + t).innerHTML = '');
+
+            try {
+                const res = await fetch(`/TripDestinations/AiRecommendations?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || data.error) throw new Error(data?.error || 'Порожня відповідь');
+                _aiCache[key] = data;
+                renderAi(data);
+            } catch (e) {
+                document.getElementById('aiLoading').style.display = 'none';
+                document.getElementById('aiError').style.display = 'block';
+                document.getElementById('aiError').textContent = '😔 Не вдалося завантажити рекомендації. ' + e.message;
+            }
+        }
+
+        function renderAi(data) {
+            document.getElementById('aiLoading').style.display = 'none';
+
+            // Attractions
+            let aHtml = '';
+            (data.attractions || []).forEach(p => {
+                aHtml += `<div class="ai-place-card">
+                    <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
+                        <span style="font-size:1.6rem;">${p.emoji || '📍'}</span>
+                        <div>
+                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem;">${p.name}</div>
+                            <div style="font-size:0.75rem; color:#64748b;">${p.category}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.85rem; color:#475569; line-height:1.5; margin-bottom:0.7rem;">${p.description}</div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <span style="font-size:0.72rem; font-weight:700; background:#ede9fe; color:#7c3aed; border-radius:50px; padding:0.25rem 0.7rem;">${p.priceRange}</span>
+                        <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; border-radius:50px; padding:0.25rem 0.7rem;">⏰ ${p.bestTime}</span>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('content-attractions').innerHTML = aHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
+
+            // Restaurants
+            let rHtml = '';
+            (data.restaurants || []).forEach(p => {
+                rHtml += `<div class="ai-place-card">
+                    <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
+                        <span style="font-size:1.6rem;">${p.emoji || '🍽'}</span>
+                        <div>
+                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem;">${p.name}</div>
+                            <div style="font-size:0.75rem; color:#64748b;">${p.category}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.85rem; color:#475569; line-height:1.5; margin-bottom:0.7rem;">${p.description}</div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <span style="font-size:0.72rem; font-weight:700; background:#fef3c7; color:#d97706; border-radius:50px; padding:0.25rem 0.7rem;">${p.priceRange}</span>
+                        <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; border-radius:50px; padding:0.25rem 0.7rem;">⏰ ${p.bestTime}</span>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('content-restaurants').innerHTML = rHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
+
+            // Tips
+            let tHtml = '';
+            (data.tips || []).forEach(t => {
+                tHtml += `<div class="ai-place-card">
+                    <div style="display:flex; align-items:flex-start; gap:0.8rem;">
+                        <span style="font-size:1.6rem; flex-shrink:0;">${t.emoji || '💡'}</span>
+                        <div>
+                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem; margin-bottom:0.3rem;">${t.title}</div>
+                            <div style="font-size:0.85rem; color:#475569; line-height:1.5;">${t.body}</div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('content-tips').innerHTML = tHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
+        }
     </script>
-}   
+}

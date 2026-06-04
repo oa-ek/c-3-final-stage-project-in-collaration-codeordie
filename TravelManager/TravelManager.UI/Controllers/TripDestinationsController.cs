@@ -2,10 +2,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TravelManager.Application.DTOs.External;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Interfaces.IServices;
-using TravelManager.Application.DTOs.External;
+using TravelManager.Infrastructure.Services;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -99,7 +100,20 @@ namespace TravelManager.UI.Controllers
                 country = result.Country
             });
         }
+        [HttpGet]
+        public async Task<IActionResult> AiRecommendations(string city, string country)
+        {
+            var result = await _aiService.GetRecommendationsAsync(city, country);
+            if (result == null)
+                return Json(new { error = "Не вдалося отримати рекомендації" });
 
+            return Json(new
+            {
+                attractions = result.Attractions,
+                restaurants = result.Restaurants,
+                tips = result.PracticalTips
+            });
+        }
         [HttpGet]
         public IActionResult Create(int? tripId)
         {

@@ -77,11 +77,11 @@ builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
 builder.Services.AddMemoryCache();
 
 //
-// GEMINI AI SERVICE
+//  AI SERVICE
 //
 builder.Services.AddHttpClient<IAiRecommendationService, AiRecommendationService>(client =>
 {
-    client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+    client.BaseAddress = new Uri("https://api.groq.com/");
     client.Timeout = TimeSpan.FromSeconds(90);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
 })
