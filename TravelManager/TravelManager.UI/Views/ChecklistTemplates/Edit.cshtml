@@ -5,76 +5,116 @@
 }
 
 <div class="relative w-full max-w-3xl mx-auto min-h-[85vh] py-10 z-10 px-4">
+    <!-- Навігація назад -->
     <div class="mb-8 flex items-center justify-between">
         <a asp-action="Index" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
-            <i class="bi bi-arrow-left"></i> Назад до шаблонів
+            <i class="bi bi-arrow-left text-sm"></i> Назад до шаблонів
         </a>
     </div>
 
-    <!-- 1. Налаштування імені шаблону -->
-    <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md mb-8">
-        <h2 class="text-xl font-black text-slate-800 mb-4">⚙️ Налаштування шаблону</h2>
-        <form asp-action="Edit" method="post">
-            <input type="hidden" asp-for="Id" />
+    <div class="space-y-8">
+        <!-- 1. Налаштування імені шаблону -->
+        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
+            <h2 class="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                <i class="bi bi-gear-fill text-indigo-500"></i> Налаштування шаблону
+            </h2>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div class="mb-2">
+                    <label asp-for="Title" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Назва шаблону</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input asp-for="Title" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-800 font-bold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner" placeholder="Назва шаблону..." required />
+                        <button type="submit" class="px-6 py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-md active:scale-95 transition-all text-xs uppercase tracking-widest whitespace-nowrap">
+                            Зберегти назву
+                        </button>
+                    </div>
+                    <span asp-validation-for="Title" class="text-rose-500 text-xs font-bold mt-1 block"></span>
+                </div>
+            </form>
+        </div>
 
-            <div class="mb-4">
-                <label asp-for="Title" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Назва шаблону</label>
-                <div class="flex gap-2">
-                    <input asp-for="Title" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-inner" required />
-                    <button type="submit" class="px-6 py-3 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-md transition-all text-xs uppercase tracking-widest">
-                        Зберегти назву
+        <!-- 2. СВІТЛА форма для швидкого інтерактивного ДОДАВАННЯ нової речі (Поле на всю ширину) -->
+        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
+            <h3 class="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
+                <i class="bi bi-plus-circle-fill text-emerald-500"></i> Додати нову річ до списку
+            </h3>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Вона миттєво з'явиться у списку нижче</p>
+
+            <form asp-action="AddItem" method="post" class="flex flex-col gap-3 w-full">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="templateId" value="@Model.Id" />
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full">
+                    <!-- Поле вводу на всю ширину -->
+                    <input type="text" name="content" required placeholder="Напишіть річ (наприклад: Сонцезахисні окуляри, Аптечка...)"
+                           class="flex-1 w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-800 font-bold focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner text-sm" />
+
+                    <!-- Кнопка додавання -->
+                    <button type="submit" class="px-6 py-4 rounded-2xl font-black text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-xs uppercase tracking-widest text-center whitespace-nowrap">
+                        Додати річ <i class="bi bi-plus-lg ml-1"></i>
                     </button>
                 </div>
-                <span asp-validation-for="Title" class="text-rose-500 text-xs font-bold mt-1 block"></span>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
 
-    <!-- 2. Списки та інтерактивне керування речами -->
-    <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
-        <h2 class="text-xl font-black text-slate-800 mb-4">🎒 Речі у цьому шаблоні</h2>
+        <!-- 3. Списки та інтерактивне керування речами (Головна форма) -->
+        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
+            <h2 class="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
+                <i class="bi bi-backpack-fill text-indigo-500"></i> Речі у цьому шаблоні
+            </h2>
 
-        <!-- Форма для швидкого додавання нової речі -->
-        <form asp-action="AddItem" method="post" class="flex gap-2 mb-6 bg-slate-50 p-1.5 border border-slate-200 rounded-2xl shadow-inner focus-within:border-cyan-500 focus-within:bg-white transition-all">
-            <input type="hidden" name="templateId" value="@Model.Id" />
-            <input type="text" name="content" required placeholder="Напишіть річ (наприклад: Рушник, Павербанк...)"
-                   class="flex-1 bg-transparent border-0 focus:ring-0 text-slate-700 placeholder:text-slate-400 font-bold px-4 outline-none text-sm" />
-            <button type="submit" class="px-5 py-3 rounded-xl font-black text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-xs uppercase tracking-widest">
-                Додати річ <i class="bi bi-plus-lg ml-1"></i>
-            </button>
-        </form>
-
-        <!-- Список існуючих речей -->
-        <div class="space-y-2">
-            @if (!Model.Items.Any())
-            {
-                <div class="text-center py-8 text-slate-400">
-                    <i class="bi bi-inbox text-3xl mb-2 block"></i>
-                    <p class="font-bold text-sm">Шаблон порожній.</p>
-                    <p class="text-xs">Додайте свою першу річ за допомогою поля вище!</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var item in Model.Items)
-                {
-                    <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100/50 rounded-2xl hover:border-slate-200 transition-colors group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2.5 h-2.5 rounded-full bg-indigo-400"></div>
-                            <span class="font-bold text-slate-700">@item.Content</span>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Title" /> <!-- Зберігаємо Title для моделі при надсиланні списку речей -->
+                <!-- Список існуючих речей з полями вводу для безпосереднього РЕДАГУВАННЯ назви -->
+                <div class="space-y-3 mb-8">
+                    @if (Model.Items == null || !Model.Items.Any())
+                    {
+                        <div class="text-center py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
+                            <i class="bi bi-inbox text-4xl mb-2 block text-slate-300"></i>
+                            <p class="font-bold text-sm">Шаблон поки що порожній.</p>
+                            <p class="text-xs">Додайте речі за допомогою форми вище, перш ніж зберегти зміни.</p>
                         </div>
+                    }
+                    else
+                    {
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Ви можете змінити назву будь-якої речі прямо в полі нижче:</p>
 
-                        <!-- Форма видалення речі -->
-                        <form asp-action="RemoveItem" method="post" class="m-0" onsubmit="return confirm('Видалити річ «@item.Content» з шаблону?');">
-                            <input type="hidden" name="itemId" value="@item.Id" />
-                            <input type="hidden" name="templateId" value="@Model.Id" />
-                            <button type="submit" class="text-slate-300 hover:text-rose-500 transition-colors px-2">
-                                <i class="bi bi-trash3-fill text-base"></i>
-                            </button>
-                        </form>
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-sm hover:border-slate-200 transition-all group">
+                                <!-- Приховані поля для правильного зв'язування колекції у POST-запиті -->
+                                <input type="hidden" asp-for="@Model.Items[i].Id" />
+
+                                <!-- Номер елемента -->
+                                <div class="w-8 h-8 rounded-xl bg-slate-200/60 text-slate-500 flex items-center justify-center font-black text-xs shrink-0">
+                                    @(i + 1)
+                                </div>
+
+                                <!-- Текстове поле редагування конкретної речі -->
+                                <input asp-for="@Model.Items[i].Content" class="flex-1 bg-transparent border-0 font-bold text-slate-700 focus:ring-0 p-0 outline-none text-sm placeholder:font-normal focus:placeholder:text-transparent" required />
+
+                                <!-- Кнопка швидкого видалення елемента з шаблону -->
+                                <button type="submit" asp-action="RemoveItem" asp-route-itemId="@Model.Items[i].Id" asp-route-templateId="@Model.Id" class="text-slate-300 hover:text-rose-500 transition-colors px-2 shrink-0" title="Видалити річ" onclick="return confirm('Вилучити річ з шаблону?');">
+                                    <i class="bi bi-trash3-fill text-base"></i>
+                                </button>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Кнопки дій головної форми (Зберегти все) -->
+                @if (Model.Items != null && Model.Items.Any())
+                {
+                    <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+                        <button type="submit" class="w-full sm:w-auto px-8 py-4 rounded-full font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                            Зберегти всі зміни <i class="bi bi-check-circle-fill text-sm"></i>
+                        </button>
                     </div>
                 }
-            }
+            </form>
         </div>
     </div>
 </div>

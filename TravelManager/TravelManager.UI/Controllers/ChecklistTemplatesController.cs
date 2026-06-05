@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -125,22 +126,38 @@ namespace TravelManager.UI.Controllers
             return View(viewModel);
         }
 
-        // 6. Оновлення назви шаблону (POST)
+        // 6. Оновлення назви шаблону ТА всіх його внутрішніх речей (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(TemplateEditViewModel model)
         {
             var userId = _userManager.GetUserId(User);
-            var template = _unitOfWork.ChecklistTemplate.Get(t => t.Id == model.Id);
+            // ВАЖЛИВО: завантажуємо шаблон разом із речами (Items) з бази даних
+            var template = _unitOfWork.ChecklistTemplate.Get(t => t.Id == model.Id, includeProperties: "Items");
 
             if (template == null) return NotFound();
             if (template.OwnerId != userId) return Forbid();
 
+            // 1. Оновлюємо заголовок самого шаблону
             template.Title = model.Title;
+
+            // 2. Пробігаємося по кожній надісланій речі й оновлюємо її контент у базі
+            if (model.Items != null)
+            {
+                foreach (var submittedItem in model.Items)
+                {
+                    var dbItem = template.Items.FirstOrDefault(i => i.Id == submittedItem.Id);
+                    if (dbItem != null)
+                    {
+                        dbItem.Content = submittedItem.Content?.Trim() ?? string.Empty;
+                    }
+                }
+            }
+
             _unitOfWork.ChecklistTemplate.Update(template);
             await _unitOfWork.SaveAsync();
 
-            TempData["SuccessMessage"] = "Назву шаблону успішно оновлено!";
+            TempData["SuccessMessage"] = "Шаблон та його елементи успішно оновлено!";
             return RedirectToAction(nameof(Index));
         }
 
