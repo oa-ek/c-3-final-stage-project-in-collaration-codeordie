@@ -30,6 +30,7 @@ namespace TravelManager.Infrastructure.Repositories
         public IRepository<TripParticipant> TripParticipant { get; private set; }
         public IRepository<TripRole> TripRole { get; private set; }
         public IChecklistTemplateRepository ChecklistTemplate { get; private set; }
+        public IRepository<ChecklistTemplateItem> ChecklistTemplateItem { get; private set; }
 
 
         public UnitOfWork(ApplicationDbContext ctx)
@@ -52,6 +53,7 @@ namespace TravelManager.Infrastructure.Repositories
             TripParticipant = new Repository<TripParticipant>(_ctx);
             TripRole = new Repository<TripRole>(_ctx);
             ChecklistTemplate = new ChecklistTemplateRepository(_ctx);
+            ChecklistTemplateItem = new Repository<ChecklistTemplateItem>(_ctx);
 
         }
 

@@ -5,47 +5,76 @@
 }
 
 <div class="relative w-full max-w-3xl mx-auto min-h-[85vh] py-10 z-10 px-4">
-    <div class="mb-8">
-        <a asp-action="Index" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors mb-4">
+    <div class="mb-8 flex items-center justify-between">
+        <a asp-action="Index" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
             <i class="bi bi-arrow-left"></i> Назад до шаблонів
         </a>
-        <h1 class="text-3xl font-black tracking-tight text-slate-800">
-            ✏️ Редагувати: @Model.Title
-        </h1>
     </div>
 
-    <div class="bg-white/80 backdrop-blur-md border border-slate-100 rounded-3xl p-6 md:p-8 shadow-xl">
+    <!-- 1. Налаштування імені шаблону -->
+    <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md mb-8">
+        <h2 class="text-xl font-black text-slate-800 mb-4">⚙️ Налаштування шаблону</h2>
         <form asp-action="Edit" method="post">
             <input type="hidden" asp-for="Id" />
 
-            <div class="mb-6">
+            <div class="mb-4">
                 <label asp-for="Title" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Назва шаблону</label>
-                <input asp-for="Title" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-inner" required />
+                <div class="flex gap-2">
+                    <input asp-for="Title" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-inner" required />
+                    <button type="submit" class="px-6 py-3 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-md transition-all text-xs uppercase tracking-widest">
+                        Зберегти назву
+                    </button>
+                </div>
                 <span asp-validation-for="Title" class="text-rose-500 text-xs font-bold mt-1 block"></span>
             </div>
-
-            <div class="mb-8">
-                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Елементи шаблону (Речі)</label>
-
-                <div class="space-y-3">
-                    @for (int i = 0; i < Model.Items.Count; i++)
-                    {
-                        <div class="flex items-center gap-3 bg-slate-50/50 border border-slate-100 rounded-2xl p-3 shadow-sm">
-                            <input type="hidden" asp-for="@Model.Items[i].Id" />
-                            <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs">
-                                @(i + 1)
-                            </div>
-                            <input asp-for="@Model.Items[i].Content" class="flex-1 bg-transparent border-0 font-bold text-slate-700 focus:ring-0 p-0 outline-none" />
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button type="submit" class="px-6 py-3 rounded-full font-black text-white bg-cyan-600 hover:bg-cyan-700 hover:shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest">
-                    Зберегти зміни <i class="bi bi-check-circle-fill ml-1"></i>
-                </button>
-            </div>
         </form>
+    </div>
+
+    <!-- 2. Списки та інтерактивне керування речами -->
+    <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
+        <h2 class="text-xl font-black text-slate-800 mb-4">🎒 Речі у цьому шаблоні</h2>
+
+        <!-- Форма для швидкого додавання нової речі -->
+        <form asp-action="AddItem" method="post" class="flex gap-2 mb-6 bg-slate-50 p-1.5 border border-slate-200 rounded-2xl shadow-inner focus-within:border-cyan-500 focus-within:bg-white transition-all">
+            <input type="hidden" name="templateId" value="@Model.Id" />
+            <input type="text" name="content" required placeholder="Напишіть річ (наприклад: Рушник, Павербанк...)"
+                   class="flex-1 bg-transparent border-0 focus:ring-0 text-slate-700 placeholder:text-slate-400 font-bold px-4 outline-none text-sm" />
+            <button type="submit" class="px-5 py-3 rounded-xl font-black text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                Додати річ <i class="bi bi-plus-lg ml-1"></i>
+            </button>
+        </form>
+
+        <!-- Список існуючих речей -->
+        <div class="space-y-2">
+            @if (!Model.Items.Any())
+            {
+                <div class="text-center py-8 text-slate-400">
+                    <i class="bi bi-inbox text-3xl mb-2 block"></i>
+                    <p class="font-bold text-sm">Шаблон порожній.</p>
+                    <p class="text-xs">Додайте свою першу річ за допомогою поля вище!</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in Model.Items)
+                {
+                    <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100/50 rounded-2xl hover:border-slate-200 transition-colors group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2.5 h-2.5 rounded-full bg-indigo-400"></div>
+                            <span class="font-bold text-slate-700">@item.Content</span>
+                        </div>
+
+                        <!-- Форма видалення речі -->
+                        <form asp-action="RemoveItem" method="post" class="m-0" onsubmit="return confirm('Видалити річ «@item.Content» з шаблону?');">
+                            <input type="hidden" name="itemId" value="@item.Id" />
+                            <input type="hidden" name="templateId" value="@Model.Id" />
+                            <button type="submit" class="text-slate-300 hover:text-rose-500 transition-colors px-2">
+                                <i class="bi bi-trash3-fill text-base"></i>
+                            </button>
+                        </form>
+                    </div>
+                }
+            }
+        </div>
     </div>
 </div>

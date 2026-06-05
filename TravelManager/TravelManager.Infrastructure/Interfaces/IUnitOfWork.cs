@@ -27,6 +27,7 @@ namespace TravelManager.Infrastructure.Interfaces
         IRepository<TripRole> TripRole { get; }
 
         IChecklistTemplateRepository ChecklistTemplate { get; }
+        IRepository<ChecklistTemplateItem> ChecklistTemplateItem { get; }
 
         void Save();
         Task SaveAsync();
