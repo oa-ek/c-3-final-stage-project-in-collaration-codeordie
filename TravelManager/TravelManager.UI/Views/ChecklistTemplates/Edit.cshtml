@@ -4,117 +4,339 @@
     ViewData["Title"] = "Редагування шаблону";
 }
 
-<div class="relative w-full max-w-3xl mx-auto min-h-[85vh] py-10 z-10 px-4">
-    <!-- Навігація назад -->
-    <div class="mb-8 flex items-center justify-between">
-        <a asp-action="Index" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
-            <i class="bi bi-arrow-left text-sm"></i> Назад до шаблонів
-        </a>
-    </div>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <div class="space-y-8">
-        <!-- 1. Налаштування імені шаблону -->
-        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
-            <h2 class="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
-                <i class="bi bi-gear-fill text-indigo-500"></i> Налаштування шаблону
-            </h2>
-            <form asp-action="Edit" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
-                <div class="mb-2">
-                    <label asp-for="Title" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Назва шаблону</label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input asp-for="Title" class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-800 font-bold focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-inner" placeholder="Назва шаблону..." required />
-                        <button type="submit" class="px-6 py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-md active:scale-95 transition-all text-xs uppercase tracking-widest whitespace-nowrap">
-                            Зберегти назву
-                        </button>
-                    </div>
-                    <span asp-validation-for="Title" class="text-rose-500 text-xs font-bold mt-1 block"></span>
-                </div>
-            </form>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .template-root {
+        font-family: 'DM Sans', sans-serif;
+        min-height: 100vh;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+    }
+
+        /* Живий фон як у профілі */
+        .template-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99,102,241,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 90% 80%, rgba(236,72,153,0.10) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg) brightness(1);
+        }
+
+        100% {
+            filter: hue-rotate(25deg) brightness(1.03);
+        }
+    }
+
+    /* Плаваючі blob-и */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.18;
+        z-index: -1;
+        animation: blobFloat linear infinite;
+        pointer-events: none;
+    }
+
+    .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: #6366f1;
+        top: -100px;
+        left: -100px;
+        animation-duration: 20s;
+    }
+
+    .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: #ec4899;
+        bottom: -80px;
+        right: -80px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+    }
+
+    .blob-3 {
+        width: 300px;
+        height: 300px;
+        background: #10b981;
+        top: 40%;
+        left: 60%;
+        animation-duration: 18s;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(40px,-30px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(-20px,40px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: revealUp 0.65s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .delay-1 {
+        animation-delay: 0.05s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.15s;
+    }
+
+    /* Головна об'єднана картка */
+    .glass-card {
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2.5rem;
+        box-shadow: 0 15px 50px rgba(99,102,241,0.08);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            background-size: 200% 200%;
+            animation: titleGradient 5s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+    @@keyframes titleGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    /* Інпути */
+    .unified-input {
+        background: rgba(248, 250, 252, 0.8);
+        border: 1.5px solid rgba(226, 232, 240, 0.8);
+        transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    }
+
+        .unified-input:focus {
+            background: white;
+            border-color: rgba(99,102,241,0.4);
+            box-shadow: 0 4px 20px rgba(99,102,241,0.08);
+            transform: translateY(-2px);
+        }
+
+    /* Окремі елементи списку */
+    .item-row {
+        background: rgba(248, 250, 252, 0.65);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        border-radius: 1.2rem;
+        padding: 0.8rem 1.1rem;
+        transition: all 0.2s ease;
+    }
+
+        .item-row:hover {
+            background: white;
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.05);
+        }
+
+    .save-btn {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        background-size: 200% 200%;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 1rem 3rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+        animation: btnGradient 4s ease infinite;
+    }
+
+    @@keyframes btnGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .save-btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 30px rgba(99,102,241,0.45);
+    }
+</style>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="template-root">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Навігація назад -->
+        <div class="reveal delay-1 mb-6">
+            <a asp-action="Index" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors">
+                <i class="bi bi-arrow-left"></i> Назад до шаблонів
+            </a>
         </div>
 
-        <!-- 2. СВІТЛА форма для швидкого інтерактивного ДОДАВАННЯ нової речі (Поле на всю ширину) -->
-        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
-            <h3 class="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
-                <i class="bi bi-plus-circle-fill text-emerald-500"></i> Додати нову річ до списку
-            </h3>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Вона миттєво з'явиться у списку нижче</p>
+        <!-- Заголовок -->
+        <div class="reveal delay-1 mb-8">
+            <h1 class="page-title">Налаштування <span>шаблону</span></h1>
+            <p style="color:#64748b; font-weight:500; margin-top:0.5rem;">Керуйте назвою та всіма речами в одному місці</p>
+        </div>
 
-            <form asp-action="AddItem" method="post" class="flex flex-col gap-3 w-full">
+        <!-- ЄДИНА ЗГРУПОВАНА КАРТКА -->
+        <div class="glass-card p-6 md:p-10 reveal delay-2">
+
+            <!-- 1. ГОЛОВНА ФОРМА (Початок: Назва) -->
+            <form asp-action="Edit" method="post" id="mainEditForm">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="templateId" value="@Model.Id" />
+                <input type="hidden" asp-for="Id" />
 
-                <div class="flex flex-col sm:flex-row gap-3 w-full">
-                    <!-- Поле вводу на всю ширину -->
-                    <input type="text" name="content" required placeholder="Напишіть річ (наприклад: Сонцезахисні окуляри, Аптечка...)"
-                           class="flex-1 w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-slate-800 font-bold focus:outline-none focus:border-emerald-500 focus:bg-white transition-all shadow-inner text-sm" />
+                <!-- Поле назви шаблону -->
+                <div class="mb-10 pb-8 border-b border-slate-200/60">
+                    <label asp-for="Title" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">Назва шаблону</label>
+                    <input asp-for="Title" class="unified-input w-full rounded-2xl px-5 py-4 text-slate-800 text-lg font-black outline-none placeholder:text-slate-300" placeholder="Введіть назву шаблону..." required form="mainEditForm" />
+                    <span asp-validation-for="Title" class="text-rose-500 text-xs font-bold mt-2 ml-2 block"></span>
+                </div>
+            </form>
 
-                    <!-- Кнопка додавання -->
-                    <button type="submit" class="px-6 py-4 rounded-2xl font-black text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-xs uppercase tracking-widest text-center whitespace-nowrap">
-                        Додати річ <i class="bi bi-plus-lg ml-1"></i>
+            <!-- 2. СВІТЛА ФОРМА ШВИДКОГО ДОДАВАННЯ (Між назвою та списком) -->
+            <div class="mb-10 pb-8 border-b border-slate-200/60">
+                <h3 class="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
+                    <i class="bi bi-plus-circle-fill text-emerald-500"></i> Додати нову річ
+                </h3>
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Вона миттєво з'явиться у списку нижче</p>
+
+                <form asp-action="AddItem" method="post" class="flex flex-col sm:flex-row gap-3 w-full">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="templateId" value="@Model.Id" />
+
+                    <!-- Поле на всю ширину -->
+                    <input type="text" name="content" required placeholder="Наприклад: Окуляри, Шкарпетки, Паспорт..."
+                           class="unified-input flex-1 w-full rounded-2xl px-5 py-3.5 text-slate-800 font-bold outline-none text-sm placeholder:text-slate-400" />
+
+                    <button type="submit" class="px-8 py-3.5 rounded-2xl font-black text-white bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-xs uppercase tracking-widest text-center whitespace-nowrap shadow-sm hover:shadow-md">
+                        Додати <i class="bi bi-plus-lg ml-1"></i>
                     </button>
-                </div>
-            </form>
-        </div>
+                </form>
+            </div>
 
-        <!-- 3. Списки та інтерактивне керування речами (Головна форма) -->
-        <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-md">
-            <h2 class="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
-                <i class="bi bi-backpack-fill text-indigo-500"></i> Речі у цьому шаблоні
-            </h2>
+            <!-- 3. ГОЛОВНА ФОРМА (Продовження: Список речей та Зберегти) -->
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3 ml-2 flex justify-between items-center">
+                    <span>Вміст шаблону</span>
+                    <span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">
+                        @(Model.Items?.Count ?? 0) елементів
+                    </span>
+                </label>
 
-            <form asp-action="Edit" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
-                <input type="hidden" asp-for="Title" /> <!-- Зберігаємо Title для моделі при надсиланні списку речей -->
-                <!-- Список існуючих речей з полями вводу для безпосереднього РЕДАГУВАННЯ назви -->
                 <div class="space-y-3 mb-8">
                     @if (Model.Items == null || !Model.Items.Any())
                     {
-                        <div class="text-center py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/30">
-                            <i class="bi bi-inbox text-4xl mb-2 block text-slate-300"></i>
-                            <p class="font-bold text-sm">Шаблон поки що порожній.</p>
-                            <p class="text-xs">Додайте речі за допомогою форми вище, перш ніж зберегти зміни.</p>
+                        <div class="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                            <i class="bi bi-inbox text-4xl mb-3 block text-slate-300"></i>
+                            <p class="font-bold text-sm text-slate-500">Ваш шаблон поки що порожній</p>
+                            <p class="text-xs mt-1">Скористайтеся формою додавання вище.</p>
                         </div>
                     }
                     else
                     {
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Ви можете змінити назву будь-якої речі прямо в полі нижче:</p>
-
                         @for (int i = 0; i < Model.Items.Count; i++)
                         {
-                            <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3 shadow-sm hover:border-slate-200 transition-all group">
-                                <!-- Приховані поля для правильного зв'язування колекції у POST-запиті -->
-                                <input type="hidden" asp-for="@Model.Items[i].Id" />
+                            <div class="flex items-center gap-3 item-row group">
+                                <input type="hidden" asp-for="@Model.Items[i].Id" form="mainEditForm" />
 
-                                <!-- Номер елемента -->
-                                <div class="w-8 h-8 rounded-xl bg-slate-200/60 text-slate-500 flex items-center justify-center font-black text-xs shrink-0">
+                                <!-- Лаконічний лічильник -->
+                                <div class="w-8 h-8 rounded-xl bg-slate-200/50 text-slate-500 flex items-center justify-center font-black text-xs shrink-0">
                                     @(i + 1)
                                 </div>
 
-                                <!-- Текстове поле редагування конкретної речі -->
-                                <input asp-for="@Model.Items[i].Content" class="flex-1 bg-transparent border-0 font-bold text-slate-700 focus:ring-0 p-0 outline-none text-sm placeholder:font-normal focus:placeholder:text-transparent" required />
+                                <!-- Поле редагування (Належить до основної форми) -->
+                                <input asp-for="@Model.Items[i].Content" class="flex-1 bg-transparent border-0 font-bold text-slate-700 focus:ring-0 p-0 outline-none text-sm px-2 placeholder:font-normal focus:placeholder:text-transparent" required form="mainEditForm" />
 
-                                <!-- Кнопка швидкого видалення елемента з шаблону -->
-                                <button type="submit" asp-action="RemoveItem" asp-route-itemId="@Model.Items[i].Id" asp-route-templateId="@Model.Id" class="text-slate-300 hover:text-rose-500 transition-colors px-2 shrink-0" title="Видалити річ" onclick="return confirm('Вилучити річ з шаблону?');">
-                                    <i class="bi bi-trash3-fill text-base"></i>
-                                </button>
+                                <!-- Кнопка видалення (Окрема форма) -->
+                                <form asp-action="RemoveItem" method="post" class="m-0" onsubmit="return confirm('Вилучити цю річ з шаблону?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="itemId" value="@Model.Items[i].Id" />
+                                    <input type="hidden" name="templateId" value="@Model.Id" />
+                                    <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors shrink-0" title="Вилучити">
+                                        <i class="bi bi-trash3-fill text-sm"></i>
+                                    </button>
+                                </form>
                             </div>
                         }
                     }
                 </div>
 
-                <!-- Кнопки дій головної форми (Зберегти все) -->
-                @if (Model.Items != null && Model.Items.Any())
-                {
-                    <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
-                        <button type="submit" class="w-full sm:w-auto px-8 py-4 rounded-full font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            Зберегти всі зміни <i class="bi bi-check-circle-fill text-sm"></i>
-                        </button>
-                    </div>
-                }
-            </form>
+                <!-- ЄДИНА КНОПКА ЗБЕРЕЖЕННЯ (Зберігає назву та оновлені речі) -->
+                <div class="flex items-center justify-end pt-8 border-t border-slate-200/60">
+                    <!-- Кнопка submit прив'язана до основної форми -->
+                    <button type="submit" form="mainEditForm" class="save-btn w-full sm:w-auto flex items-center justify-center gap-2">
+                        Зберегти всі зміни <i class="bi bi-check2-circle text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
