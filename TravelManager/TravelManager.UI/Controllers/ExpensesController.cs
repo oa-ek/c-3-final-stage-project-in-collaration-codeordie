@@ -99,7 +99,8 @@ namespace TravelManager.UI.Controllers
                     Currency = e.Currency,
                     Date = e.Date,
                     CategoryName = e.Category?.Name ?? "Невідомо",
-                    TripTitle = e.Trip?.Title ?? "Невідомо"
+                    TripTitle = e.Trip?.Title ?? "Невідомо",
+                     TripId = e.TripId
                 };
             }).ToList();
 

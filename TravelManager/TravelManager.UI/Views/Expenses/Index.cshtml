@@ -58,6 +58,19 @@
                 <i class="bi bi-plus-lg text-lg group-hover:rotate-90 transition-transform duration-500"></i>
             </span>
         </a>
+        @if (Model.Any())
+        {
+            <a asp-controller="Export"
+               asp-action="Trip"
+               asp-route-tripId="@Model.First().Id" {{-- замінити на TripId після додання поля до ViewModel --}}
+               class="mt-8 md:mt-0 group relative inline-flex items-center justify-center px-6 py-4
+                  font-black text-slate-700 transition-all duration-300
+                  bg-white/80 border border-white rounded-full shadow-sm
+                  hover:shadow-md hover:-translate-y-1 uppercase tracking-widest text-xs">
+                <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-500 mr-2"></i>
+                Excel
+            </a>
+        }
     </div>
 
     <div class="relative z-20 grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 stagger-item" style="animation-delay: 0.2s;">

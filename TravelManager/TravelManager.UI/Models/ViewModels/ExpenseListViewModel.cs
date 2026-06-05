@@ -11,5 +11,7 @@ namespace TravelManager.UI.Models.ViewModels
         public DateTime Date { get; set; }
         public string CategoryName { get; set; }
         public string TripTitle { get; set; }
+        public int TripId { get; set; }
+
     }
 }
