@@ -174,5 +174,7 @@ using (var scope = app.Services.CreateScope())
 {
     await DbInitializer.SeedAdminAsync(scope.ServiceProvider);
 }
+await app.SeedDemoDataAsync("andrii.minich@oa.edu.ua"); // email свого акаунту
+
 
 app.Run();

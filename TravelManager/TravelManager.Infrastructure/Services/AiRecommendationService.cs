@@ -160,12 +160,13 @@ attractions рівно 8, restaurants рівно 6, tips рівно 7, мова:
             var groqKey = _configuration["Groq:ApiKey"];
             if (string.IsNullOrWhiteSpace(groqKey))
             {
-                return "<div style='color: #ef4444; font-weight: bold;'>API ключ Groq відсутній. Перевірте appsettings.json.</div>";
+                return "<div style='color: #ef4444; font-weight: bold;'>API ключ Groq відсутній.</div>";
             }
 
             var categoriesText = string.Join("\n", expensesByCategory.Select(kvp => $"- {kvp.Key}: {kvp.Value} {currency}"));
 
             var prompt = $@"Ти фінансовий тревел-експерт. Проаналізуй витрати мандрівника:
+
 Локація: {destination}
 Тривалість: {days} днів
 Загальний бюджет: {totalAmount} {currency}
@@ -173,32 +174,34 @@ attractions рівно 8, restaurants рівно 6, tips рівно 7, мова:
 Витрати за категоріями:
 {categoriesText}
 
-Дай відповідь виключно українською мовою. Використовуй HTML-теги (<b>, <ul>, <li>, <br>) для форматування, щоб текст виглядав красиво на веб-сторінці. 
-Твоя відповідь має містити 3 блоки:
-<b>1. Аналіз переплат:</b> (оціни, на яку категорію пішло найбільше грошей і чи виправдано це).<br><br>
-<b>2. Оцінка бюджету:</b> (порівняй витрати з типовим бюджетом для цього напрямку на таку кількість днів).<br><br>
-<b>3. Поради на майбутнє:</b> (надай 3 конкретні поради щодо економії у вигляді маркованого списку <ul><li>).";
+Дай відповідь **виключно українською** мовою. Використовуй HTML-теги для красивого форматування.";
 
             try
             {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {groqKey}");
+                // Використовуємо той самий _httpClient, що і в рекомендаціях
+                var model = _configuration["Groq:Model"] ?? "llama-3.3-70b-versatile";
 
                 var requestBody = new
                 {
-                    model = "llama3-8b-8192",
+                    model = model,
                     messages = new[]
                     {
-                new { role = "system", content = "Ти досвідчений фінансовий тревел-аналітик. Відповідай коротко, професійно та корисно." },
+                new { role = "system", content = "Ти досвідчений фінансовий тревел-аналітик. Відповідай чітко, професійно та корисною." },
                 new { role = "user", content = prompt }
             },
-                    temperature = 0.7
+                    temperature = 0.6,
+                    max_tokens = 1500
                 };
 
-                var response = await client.PostAsJsonAsync("https://api.groq.com/openai/v1/chat/completions", requestBody);
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", groqKey);
+
+                var response = await _httpClient.PostAsJsonAsync("openai/v1/chat/completions", requestBody);
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Groq AnalyzeExpenses Error: {Status} - {Error}", response.StatusCode, errorContent);
                     return $"<div style='color: #ef4444;'>Помилка API: {response.StatusCode}</div>";
                 }
 
@@ -207,13 +210,15 @@ attractions рівно 8, restaurants рівно 6, tips рівно 7, мова:
                 var resultText = doc.RootElement
                     .GetProperty("choices")[0]
                     .GetProperty("message")
-                    .GetProperty("content").GetString();
+                    .GetProperty("content")
+                    .GetString();
 
-                return resultText ?? "Порожня відповідь від AI.";
+                return resultText ?? "AI не зміг сформувати відповідь.";
             }
             catch (Exception ex)
             {
-                return $"<div style='color: #ef4444;'>Помилка обробки: {ex.Message}</div>";
+                _logger.LogError(ex, "AnalyzeExpensesAsync exception");
+                return $"<div style='color: #ef4444;'>Помилка: {ex.Message}</div>";
             }
         }
         // ── Foursquare Places ──────────────────────────────────────────────
