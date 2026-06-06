@@ -203,7 +203,8 @@ attractions рівно 8, restaurants рівно 6, tips рівно 7, мова:
             if (!response.IsSuccessStatusCode) return new List<FoursquarePlace>();
 
             var json = await response.Content.ReadAsStringAsync();
-
+            _logger.LogInformation("=== FOURSQUARE RESPONSE (first 500): {Json}",
+    json.Length > 500 ? json.Substring(0, 500) : json);
             using var doc = JsonDocument.Parse(json);
 
             var places = new List<FoursquarePlace>();

@@ -69,13 +69,13 @@
         }
     }
 
-    @@keyframes pulseDot {
-        0%, 100% {
-            box-shadow: 0 0 0 0 rgba(74,222,128,.5);
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
         }
 
-        50% {
-            box-shadow: 0 0 0 8px rgba(74,222,128,0);
+        to {
+            opacity: 1;
         }
     }
 
@@ -85,385 +85,16 @@
         }
     }
 
-    .hero-glass-card {
-        max-width: 1200px;
-        margin: 0 auto 2rem auto;
-        background: linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(30, 27, 75, 0.85) 100%);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 32px;
-        padding: 3rem;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-        position: relative;
-        overflow: hidden;
-        animation: fadeUp .5s ease both;
-        transform-style: preserve-3d;
-    }
-
-    .hero-dots {
-        position: absolute;
-        inset: 0;
-        opacity: 0.04;
-        background-image: radial-gradient(circle,#fff 1px,transparent 1px);
-        background-size: 24px 24px;
-        pointer-events: none;
-    }
-
-    .hero-content {
-        position: relative;
-        z-index: 2;
-        transform: translateZ(30px);
-    }
-
-    .btn-back {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: white;
-        padding: 0.6rem 1.2rem;
-        border-radius: 50px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        margin-bottom: 2rem;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-    }
-
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(-3px);
-            color: white;
+    @@keyframes pulse-ring {
+        0% {
+            transform: scale(1);
+            opacity: .6;
         }
 
-    .trip-main-title {
-        font-family: 'Montserrat', sans-serif;
-        font-size: clamp(3rem, 6vw, 4.5rem);
-        font-weight: 900;
-        color: white;
-        line-height: 1;
-        letter-spacing: -0.03em;
-        margin-bottom: 1.5rem;
-    }
-
-    .info-pills-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.7rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .info-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 50px;
-        padding: 0.5rem 1.2rem;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: white;
-        backdrop-filter: blur(10px);
-    }
-
-        .info-pill.active-status {
-            background: rgba(16, 185, 129, 0.2);
-            border-color: rgba(16, 185, 129, 0.4);
+        100% {
+            transform: scale(2.2);
+            opacity: 0;
         }
-
-        .info-pill.past-status {
-            background: rgba(148, 163, 184, 0.2);
-            border-color: rgba(148, 163, 184, 0.4);
-        }
-
-        .info-pill i {
-            opacity: 0.8;
-        }
-
-    .status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #4ade80;
-        box-shadow: 0 0 8px #4ade80;
-    }
-
-    .nav-buttons-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.8rem;
-    }
-
-    .nav-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: white;
-        color: #0f172a;
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 800;
-        font-size: 0.85rem;
-        padding: 0.8rem 1.5rem;
-        border-radius: 50px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        border: none;
-        cursor: pointer;
-    }
-
-        .nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255,255,255,0.2);
-            color: #0f172a;
-        }
-
-        .nav-btn.active {
-            background: #10b981;
-            color: white;
-            box-shadow: 0 4px 20px rgba(16,185,129,0.4);
-        }
-
-            .nav-btn.active:hover {
-                color: white;
-                box-shadow: 0 6px 25px rgba(16,185,129,0.6);
-            }
-
-        .nav-btn.ghost {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            box-shadow: none;
-        }
-
-            .nav-btn.ghost:hover {
-                background: rgba(255,255,255,0.2);
-                color: white;
-            }
-
-    .content-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0;
-        position: relative;
-        z-index: 10;
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 1.5rem;
-        align-items: start;
-    }
-
-    @@media(max-width:900px) {
-        .content-container {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .light-glass-card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 1);
-        border-radius: 24px;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.05);
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-        animation: fadeUp .6s ease both;
-        transform-style: preserve-3d;
-    }
-
-        .light-glass-card:hover {
-            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.08);
-        }
-
-    .card-header {
-        padding: 1.5rem 1.8rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transform: translateZ(20px);
-    }
-
-    .card-header-title {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #0f172a;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-    }
-
-    .icon-box {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.1rem;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    .btn-add-small {
-        background: rgba(0, 0, 0, 0.04);
-        color: #475569;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        text-decoration: none;
-        transition: all .2s;
-    }
-
-        .btn-add-small:hover {
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            color: #0f172a;
-        }
-
-    .clean-table {
-        width: 100%;
-        border-collapse: collapse;
-        transform: translateZ(20px);
-    }
-
-        .clean-table th {
-            padding: 1rem 1.8rem;
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #64748b;
-        }
-
-        .clean-table td {
-            padding: 1.2rem 1.8rem;
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-        }
-
-        .clean-table tr:last-child td {
-            border-bottom: none;
-        }
-
-    .dark-glass-card {
-        background: rgba(30, 30, 30, 0.85);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 24px;
-        padding: 2rem;
-        color: white;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
-        animation: fadeUp .6s ease both;
-        transform-style: preserve-3d;
-    }
-
-    .budget-amount {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 2.8rem;
-        font-weight: 900;
-        line-height: 1;
-        margin: 1rem 0 0.5rem;
-        letter-spacing: -0.02em;
-        transform: translateZ(30px);
-    }
-
-    #map {
-        height: 350px;
-        width: 100%;
-        border-radius: 0 0 24px 24px;
-        z-index: 1;
-    }
-
-    .list-item-card {
-        border: 1px solid rgba(0,0,0,0.05);
-        border-radius: 16px;
-        padding: 1.2rem;
-        background: rgba(255,255,255,0.6);
-        margin-bottom: 0.8rem;
-        transition: all .3s;
-        transform: translateZ(20px);
-    }
-
-        .list-item-card:hover {
-            background: white;
-            border-color: rgba(0,0,0,0.1);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.04);
-            transform: translateY(-2px) translateZ(20px);
-        }
-
-    .timeline-container {
-        position: relative;
-        padding-left: 1.8rem;
-        margin-top: 1rem;
-    }
-
-        .timeline-container::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: rgba(0,0,0,0.06);
-            border-radius: 2px;
-        }
-
-    .timeline-item {
-        position: relative;
-        margin-bottom: 1.5rem;
-    }
-
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-
-    .timeline-dot {
-        position: absolute;
-        left: -2.15rem;
-        top: 0.2rem;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-
-    /* ── AI PANEL ── */
-    #aiOverlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.4);
-        z-index: 9998;
-        backdrop-filter: blur(4px);
-    }
-
-    #aiPanel {
-        display: none;
-        position: fixed;
-        top: 72px;
-        right: 0;
-        width: 440px;
-        max-width: 100vw;
-        height: calc(100vh - 72px);
-        background: #f8fafc;
-        box-shadow: -10px 0 50px rgba(0,0,0,0.2);
-        z-index: 9999;
-        overflow-y: auto;
-        font-family: 'Inter', sans-serif;
-        animation: slideIn .3s ease;
     }
 
     @@keyframes slideIn {
@@ -478,18 +109,658 @@
         }
     }
 
+    @@keyframes floatBadge {
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-4px);
+        }
+    }
+
+    @@keyframes shimmer {
+        0% {
+            background-position: -200% center;
+        }
+
+        100% {
+            background-position: 200% center;
+        }
+    }
+
+    /* ─── HERO ─────────────────────────────────── */
+    .hero-glass-card {
+        max-width: 1200px;
+        margin: 0 auto 2rem auto;
+        background: linear-gradient(135deg, rgba(17,24,39,.88) 0%, rgba(30,27,75,.88) 100%);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 32px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp .5s ease both;
+    }
+
+    .hero-dots {
+        position: absolute;
+        inset: 0;
+        opacity: .04;
+        background-image: radial-gradient(circle,#fff 1px,transparent 1px);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+    /* animated gradient orb */
+    .hero-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        pointer-events: none;
+        opacity: .15;
+    }
+
+    .hero-orb-1 {
+        width: 300px;
+        height: 300px;
+        background: #6366f1;
+        top: -80px;
+        right: -60px;
+        animation: floatBadge 6s ease-in-out infinite;
+    }
+
+    .hero-orb-2 {
+        width: 200px;
+        height: 200px;
+        background: #10b981;
+        bottom: -60px;
+        left: 10%;
+        animation: floatBadge 8s ease-in-out infinite reverse;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        background: rgba(255,255,255,.08);
+        border: 1px solid rgba(255,255,255,.15);
+        color: white;
+        padding: .6rem 1.2rem;
+        border-radius: 50px;
+        font-size: .85rem;
+        font-weight: 600;
+        text-decoration: none;
+        margin-bottom: 2rem;
+        transition: all .2s ease;
+    }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,.15);
+            transform: translateX(-3px);
+            color: white;
+        }
+
+    .trip-main-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: clamp(3rem,6vw,4.5rem);
+        font-weight: 900;
+        color: white;
+        line-height: 1;
+        letter-spacing: -.03em;
+        margin-bottom: 1.5rem;
+    }
+
+    /* shimmer on title */
+    .title-shimmer {
+        background: linear-gradient(90deg, white 0%, #a5b4fc 40%, white 60%, #6ee7b7 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 4s linear infinite;
+    }
+
+    .info-pills-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .7rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .info-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.15);
+        border-radius: 50px;
+        padding: .5rem 1.2rem;
+        font-size: .8rem;
+        font-weight: 700;
+        color: white;
+        backdrop-filter: blur(10px);
+        transition: all .2s;
+    }
+
+        .info-pill:hover {
+            background: rgba(255,255,255,.18);
+            transform: translateY(-1px);
+        }
+
+        .info-pill.active-status {
+            background: rgba(16,185,129,.2);
+            border-color: rgba(16,185,129,.4);
+        }
+
+        .info-pill.past-status {
+            background: rgba(148,163,184,.2);
+            border-color: rgba(148,163,184,.4);
+        }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #4ade80;
+        box-shadow: 0 0 0 0 rgba(74,222,128,.5);
+        animation: pulse-ring 1.5s ease-out infinite;
+    }
+
+    .nav-buttons-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .8rem;
+    }
+
+    .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        background: white;
+        color: #0f172a;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: .85rem;
+        padding: .8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all .25s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,.12);
+        border: none;
+        cursor: pointer;
+    }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,.15);
+            color: #0f172a;
+        }
+
+        .nav-btn.active {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 20px rgba(16,185,129,.4);
+        }
+
+            .nav-btn.active:hover {
+                color: white;
+                box-shadow: 0 8px 28px rgba(16,185,129,.5);
+            }
+
+        .nav-btn.ghost {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: white;
+            box-shadow: none;
+        }
+
+            .nav-btn.ghost:hover {
+                background: rgba(255,255,255,.2);
+                color: white;
+            }
+
+    /* ─── LAYOUT ───────────────────────────────── */
+    .content-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    @@media(max-width:900px) {
+        .content-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ─── CARDS ────────────────────────────────── */
+    .light-glass-card {
+        background: rgba(255,255,255,.82);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,1);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.06);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        animation: fadeUp .6s ease both;
+        transition: box-shadow .3s, transform .3s;
+    }
+
+        .light-glass-card:hover {
+            box-shadow: 0 16px 48px rgba(0,0,0,.1);
+        }
+
+    .card-header {
+        padding: 1.4rem 1.8rem;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+    }
+
+    .icon-box {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    }
+
+    .btn-add-small {
+        background: rgba(0,0,0,.04);
+        color: #475569;
+        font-family: 'Montserrat', sans-serif;
+        font-size: .75rem;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all .2s;
+        border: 1px solid transparent;
+    }
+
+        .btn-add-small:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+            color: #0f172a;
+            border-color: rgba(0,0,0,.05);
+        }
+
+    /* ─── ROUTE TABLE ──────────────────────────── */
+    .clean-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .clean-table th {
+            padding: .9rem 1.8rem;
+            text-align: left;
+            font-size: .68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: #94a3b8;
+        }
+
+        .clean-table td {
+            padding: 1.1rem 1.8rem;
+            font-size: .9rem;
+            border-bottom: 1px solid rgba(0,0,0,.04);
+        }
+
+        .clean-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .clean-table tbody tr {
+            transition: background .15s;
+        }
+
+            .clean-table tbody tr:hover {
+                background: rgba(99,102,241,.03);
+            }
+
+    /* ─── MAP CARD ─────────────────────────────── */
+    .map-wrapper {
+        position: relative;
+        border-radius: 0 0 24px 24px;
+        overflow: hidden;
+    }
+
+    #map {
+        height: 380px;
+        width: 100%;
+        z-index: 1;
+    }
+
+    /* Custom Leaflet marker styles */
+    .marker-pin-start,
+    .marker-pin-dest,
+    .marker-pin-end,
+    .marker-pin-hotel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        box-shadow: 0 4px 16px rgba(0,0,0,.25);
+        border: 3px solid white;
+    }
+
+    .marker-pin-start {
+        background: #10b981;
+        width: 36px;
+        height: 36px;
+    }
+
+    .marker-pin-dest {
+        background: #6366f1;
+        width: 32px;
+        height: 32px;
+    }
+
+    .marker-pin-end {
+        background: #ef4444;
+        width: 36px;
+        height: 36px;
+    }
+
+    .marker-pin-hotel {
+        background: #f59e0b;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        transform: none;
+    }
+
+        .marker-pin-start span,
+        .marker-pin-dest span,
+        .marker-pin-end span,
+        .marker-pin-hotel span {
+            transform: rotate(45deg);
+            font-size: 15px;
+            display: block;
+        }
+
+        .marker-pin-hotel span {
+            transform: none;
+        }
+
+    /* pulse ring under dest markers */
+    .marker-pulse {
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(99,102,241,.3);
+        top: 0;
+        left: 0;
+        animation: pulse-ring 2s ease-out infinite;
+    }
+
+    /* Leaflet popup */
+    .leaflet-popup-content-wrapper {
+        border-radius: 16px !important;
+        box-shadow: 0 8px 30px rgba(0,0,0,.15) !important;
+        border: none !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    .leaflet-popup-tip {
+        display: none !important;
+    }
+
+    /* ─── TIMELINE ─────────────────────────────── */
+    .timeline-container {
+        position: relative;
+        padding-left: 2rem;
+        margin-top: .5rem;
+    }
+
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            bottom: 6px;
+            width: 2px;
+            background: linear-gradient(to bottom, #6366f1, #10b981, #f59e0b);
+            border-radius: 2px;
+            opacity: .25;
+        }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.4rem;
+    }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .timeline-dot {
+        position: absolute;
+        left: -2.2rem;
+        top: .2rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        transition: transform .2s;
+    }
+
+    .timeline-item:hover .timeline-dot {
+        transform: scale(1.3);
+    }
+
+    /* ─── TRANSPORT ────────────────────────────── */
+    .transit-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.1rem 1.8rem;
+        border-bottom: 1px solid rgba(0,0,0,.04);
+        transition: background .15s;
+    }
+
+        .transit-row:hover {
+            background: rgba(139,92,246,.03);
+        }
+
+        .transit-row:last-child {
+            border-bottom: none;
+        }
+
+    .transit-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        transition: transform .2s;
+    }
+
+    .transit-row:hover .transit-icon-box {
+        transform: scale(1.1) rotate(-5deg);
+    }
+
+    /* ─── SIDEBAR DARK ─────────────────────────── */
+    .dark-glass-card {
+        background: linear-gradient(135deg, rgba(15,23,42,.92) 0%, rgba(30,27,75,.92) 100%);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 24px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 16px 48px rgba(0,0,0,.18);
+        animation: fadeUp .6s ease both;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .dark-glass-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40px;
+            right: -40px;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99,102,241,.3), transparent 70%);
+            pointer-events: none;
+        }
+
+    .budget-amount {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2.8rem;
+        font-weight: 900;
+        line-height: 1;
+        margin: .8rem 0 .4rem;
+        letter-spacing: -.02em;
+        background: linear-gradient(90deg, #fff, #a5b4fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* ─── LIST ITEM ────────────────────────────── */
+    .list-item-card {
+        border: 1px solid rgba(0,0,0,.05);
+        border-radius: 16px;
+        padding: 1.1rem;
+        background: rgba(255,255,255,.55);
+        margin-bottom: .75rem;
+        transition: all .25s;
+    }
+
+        .list-item-card:hover {
+            background: white;
+            border-color: rgba(0,0,0,.08);
+            box-shadow: 0 6px 20px rgba(0,0,0,.06);
+            transform: translateY(-2px);
+        }
+
+    /* ─── AI PANEL ─────────────────────────────── */
+    #aiOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 9998;
+        backdrop-filter: blur(6px);
+    }
+
+    #aiPanel {
+        display: none;
+        position: fixed;
+        top: 72px;
+        right: 0;
+        width: 450px;
+        max-width: 100vw;
+        height: calc(100vh - 72px);
+        background: #f8fafc;
+        box-shadow: -12px 0 50px rgba(0,0,0,.2);
+        z-index: 9999;
+        overflow-y: auto;
+        font-family: 'Inter', sans-serif;
+        animation: slideIn .3s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    .ai-panel-header {
+        background: linear-gradient(135deg,#1e1b4b,#312e81);
+        padding: 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .ai-panel-city {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 900;
+        font-size: 1.45rem;
+        color: white;
+        margin-top: .25rem;
+    }
+
+    .ai-panel-meta {
+        font-size: .62rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,.45);
+    }
+
+    .ai-close-btn {
+        position: absolute;
+        top: 1.2rem;
+        right: 1.2rem;
+        background: rgba(255,255,255,.1);
+        border: 1px solid rgba(255,255,255,.2);
+        color: white;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        cursor: pointer;
+        font-size: .9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .2s;
+    }
+
+        .ai-close-btn:hover {
+            background: rgba(255,255,255,.2);
+        }
+
+    .ai-tabs {
+        display: flex;
+        gap: .4rem;
+        margin-top: 1.1rem;
+    }
+
     .ai-tab-btn {
         flex: 1;
-        padding: 0.5rem 0.3rem;
+        padding: .5rem .3rem;
         border: none;
         border-radius: 50px;
         font-family: 'Montserrat', sans-serif;
         font-weight: 800;
-        font-size: 0.72rem;
+        font-size: .7rem;
         cursor: pointer;
         transition: all .2s;
-        background: rgba(255,255,255,0.12);
-        color: rgba(255,255,255,0.6);
+        background: rgba(255,255,255,.1);
+        color: rgba(255,255,255,.55);
     }
 
         .ai-tab-btn.active {
@@ -500,44 +771,47 @@
     .ai-place-card {
         background: white;
         border-radius: 16px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        padding: .95rem 1.1rem;
+        margin-bottom: .75rem;
+        border: 1px solid rgba(0,0,0,.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
         transition: all .2s;
     }
 
         .ai-place-card:hover {
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 6px 20px rgba(0,0,0,.08);
             transform: translateY(-1px);
         }
 
     .ai-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(99,102,241,0.2);
+        width: 38px;
+        height: 38px;
+        border: 3px solid rgba(99,102,241,.15);
         border-top-color: #6366f1;
         border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        animation: spin .7s linear infinite;
         margin: 0 auto 1rem;
     }
 </style>
 
 <div class="det-root">
 
-    <div class="hero-glass-card" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.05">
+    <!-- ══ HERO ══ -->
+    <div class="hero-glass-card" data-tilt data-tilt-max="1" data-tilt-speed="1000" data-tilt-glare data-tilt-max-glare="0.04">
         <div class="hero-dots"></div>
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
         <div class="hero-content">
 
             @if (TempData["SuccessMessage"] != null)
             {
-                <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35); border-radius:16px; color:#d1fae5; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
+                <div style="margin-bottom:1.2rem;padding:.9rem 1.4rem;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:16px;color:#d1fae5;font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.6rem;">
                     <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i> @TempData["SuccessMessage"]
                 </div>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                <div style="margin-bottom:1.2rem; padding:.9rem 1.4rem; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); border-radius:16px; color:#fecaca; font-weight:700; font-size:.9rem; display:flex; align-items:center; gap:.6rem;">
+                <div style="margin-bottom:1.2rem;padding:.9rem 1.4rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);border-radius:16px;color:#fecaca;font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.6rem;">
                     <i class="bi bi-exclamation-triangle-fill" style="color:#f87171;"></i> @TempData["ErrorMessage"]
                 </div>
             }
@@ -546,7 +820,9 @@
                 <i class="bi bi-arrow-left"></i> До всіх поїздок
             </a>
 
-            <h1 class="trip-main-title">@Model.Trip.Title</h1>
+            <h1 class="trip-main-title">
+                <span class="title-shimmer">@Model.Trip.Title</span>
+            </h1>
 
             <div class="info-pills-row">
                 @if (isActive)
@@ -580,15 +856,9 @@
             <div class="nav-buttons-row">
                 <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn active"><i class="bi bi-cash-coin"></i> Витрата</a>
                 <a asp-action="DownloadCalendar" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-calendar-plus"></i> В календар</a>
-                <a asp-action="ExportToCsv" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
-                    <i class="bi bi-file-earmark-excel" style="color: #10b981;"></i> В Excel
-                </a>
-                <a asp-action="ExportToWord" asp-route-id="@Model.Trip.Id" class="nav-btn ghost">
-                    <i class="bi bi-file-earmark-word-fill" style="color: #2563eb;"></i> У Word
-                </a>
-                <a href="@googleCalendarUrl" target="_blank" class="nav-btn ghost">
-                    <i class="bi bi-google"></i> Google Календар
-                </a>
+                <a asp-action="ExportToCsv" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-file-earmark-excel" style="color:#10b981;"></i> Excel</a>
+                <a asp-action="ExportToWord" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-file-earmark-word-fill" style="color:#2563eb;"></i> Word</a>
+                <a href="@googleCalendarUrl" target="_blank" class="nav-btn ghost"><i class="bi bi-google"></i> Google Cal</a>
                 <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-building"></i> Житло</a>
                 <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-airplane"></i> Транзит</a>
                 <a asp-controller="TripActivities" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-lightning"></i> Активність</a>
@@ -596,24 +866,27 @@
                 <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-check2-square"></i> Чекліст</a>
                 <a asp-action="Edit" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-pencil"></i> Редагувати</a>
             </div>
-
         </div>
     </div>
 
+    <!-- ══ CONTENT GRID ══ -->
     <div class="content-container">
 
+        <!-- LEFT -->
         <div>
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.1s;">
+
+            <!-- ROUTE -->
+            <div class="light-glass-card" style="animation-delay:.05s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #3b82f6;"><i class="bi bi-geo-alt-fill"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#3b82f6,#6366f1);"><i class="bi bi-geo-alt-fill"></i></div>
                         Маршрут
                     </div>
                     <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Місто</a>
                 </div>
                 @if (!Model.Destinations.Any())
                 {
-                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Міста ще не додані.</div>
+                    <div style="padding:1.8rem;color:#94a3b8;font-style:italic;font-size:.9rem;">Міста ще не додані.</div>
                 }
                 else
                 {
@@ -630,18 +903,18 @@
                             @foreach (var d in Model.Destinations)
                             {
                                 <tr>
-                                    <td style="font-weight:800; color:#111827;">@d.CityName, @d.Country</td>
-                                    <td>@d.ArrivalDate.ToString("dd.MM.yyyy")</td>
-                                    <td>@d.DepartureDate.ToString("dd.MM.yyyy")</td>
+                                    <td style="font-weight:800;color:#111827;">@d.CityName, @d.Country</td>
+                                    <td style="color:#64748b;">@d.ArrivalDate.ToString("dd.MM.yyyy")</td>
+                                    <td style="color:#64748b;">@d.DepartureDate.ToString("dd.MM.yyyy")</td>
                                     <td style="text-align:right;">
-                                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.8rem;">
+                                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.7rem;">
                                             <button onclick="openAiPanel('@d.CityName', '@d.Country')"
-                                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:50px; padding:0.35rem 0.9rem; font-size:0.75rem; font-weight:800; cursor:pointer; font-family:'Montserrat',sans-serif; box-shadow:0 3px 10px rgba(99,102,241,0.35); transition:all .2s;"
-                                                    onmouseover="this.style.transform='translateY(-1px)'"
-                                                    onmouseout="this.style.transform=''">
-                                                ✨ AI
+                                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:50px;padding:.35rem .95rem;font-size:.72rem;font-weight:800;cursor:pointer;font-family:'Montserrat',sans-serif;box-shadow:0 3px 12px rgba(99,102,241,.35);transition:all .2s;"
+                                                    onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(99,102,241,.5)'"
+                                                    onmouseout="this.style.transform='';this.style.boxShadow='0 3px 12px rgba(99,102,241,.35)'">
+                                                ✦ AI
                                             </button>
-                                            <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" style="color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                            <a asp-controller="TripDestinations" asp-action="Edit" asp-route-id="@d.Id" style="color:#6366f1;font-weight:800;text-decoration:none;font-size:.85rem;">Ред.</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -651,27 +924,31 @@
                 }
             </div>
 
-            <div class="light-glass-card" style="animation-delay: 0.2s;">
+            <!-- MAP -->
+            <div class="light-glass-card" style="animation-delay:.1s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #f59e0b;"><i class="bi bi-map"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#f97316);"><i class="bi bi-map-fill"></i></div>
                         Карта подорожі
                     </div>
                 </div>
-                <div id="map"></div>
+                <div class="map-wrapper">
+                    <div id="map"></div>
+                </div>
             </div>
 
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.25s;">
+            <!-- TIMELINE -->
+            <div class="light-glass-card" style="animation-delay:.15s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #ec4899;"><i class="bi bi-clock-history"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#ec4899,#f43f5e);"><i class="bi bi-clock-history"></i></div>
                         Хронологія
                     </div>
                 </div>
-                <div style="padding:1.5rem; transform: translateZ(20px);">
+                <div style="padding:1.5rem;">
                     @if (Model.Timeline == null || !Model.Timeline.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Додайте квитки, міста або житло, щоб побачити маршрут.</div>
+                        <div style="color:#94a3b8;font-style:italic;font-size:.9rem;">Додайте квитки, міста або житло, щоб побачити маршрут.</div>
                     }
                     else
                     {
@@ -679,21 +956,15 @@
                             @foreach (var item in Model.Timeline)
                             {
                                 <div class="timeline-item">
-                                    <div class="timeline-dot" style="background-color: @item.IconColor;"></div>
-                                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div class="timeline-dot" style="background:@item.IconColor;"></div>
+                                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                                         <div>
-                                            <div style="font-family:'Montserrat'; font-weight:800; color:#111827; font-size:1rem;">
-                                                @item.Title
-                                            </div>
-                                            <div style="font-size:.85rem; color:#64748b; margin-top:.2rem;">
-                                                @item.Subtitle
-                                            </div>
+                                            <div style="font-family:'Montserrat';font-weight:800;color:#111827;font-size:.95rem;">@item.Title</div>
+                                            <div style="font-size:.82rem;color:#64748b;margin-top:.15rem;">@item.Subtitle</div>
                                         </div>
-                                        <div style="text-align:right;">
-                                            <span style="font-size:.75rem; font-weight:800; color:@item.IconColor; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); padding:.3rem .6rem; border-radius:50px;">
-                                                <i class="bi @item.IconClass me-1"></i> @item.EventDate.ToString("dd MMM HH:mm")
-                                            </span>
-                                        </div>
+                                        <span style="font-size:.72rem;font-weight:800;color:@item.IconColor;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.06);padding:.28rem .65rem;border-radius:50px;white-space:nowrap;margin-left:.5rem;">
+                                            <i class="bi @item.IconClass me-1"></i>@item.EventDate.ToString("dd MMM HH:mm")
+                                        </span>
                                     </div>
                                 </div>
                             }
@@ -702,37 +973,36 @@
                 </div>
             </div>
 
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.3s;">
+            <!-- TRANSPORT -->
+            <div class="light-glass-card" style="animation-delay:.2s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #8b5cf6;"><i class="bi bi-airplane-fill"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);"><i class="bi bi-airplane-fill"></i></div>
                         Транспорт
                     </div>
                     <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Квиток</a>
                 </div>
                 @if (!Model.Transits.Any())
                 {
-                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Квитки відсутні.</div>
+                    <div style="padding:1.8rem;color:#94a3b8;font-style:italic;font-size:.9rem;">Квитки відсутні.</div>
                 }
                 else
                 {
-                    <div style="padding: 0.5rem 0; transform: translateZ(20px);">
+                    <div>
                         @foreach (var t in Model.Transits)
                         {
-                            <div style="display:flex; align-items:center; gap:1rem; padding:1.2rem 1.8rem; border-bottom:1px solid rgba(0,0,0,0.04);">
-                                <div style="width:44px; height:44px; border-radius:14px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-                                    @(t.TransitType?.Name switch { "Поїзд" => "🚄", "Автобус" => "🚌", "Корабель" => "🚢", "Авто" => "🚗", _ => "✈️" })
-                                </div>
+                            var tEmoji = t.TransitType?.Name switch { "Поїзд" => "🚄", "Автобус" => "🚌", "Корабель" => "🚢", "Авто" => "🚗", _ => "✈️" };
+                            var tColor = t.TransitType?.Name switch { "Поїзд" => "rgba(245,158,11,.1)", "Автобус" => "rgba(16,185,129,.1)", "Корабель" => "rgba(59,130,246,.1)", _ => "rgba(139,92,246,.1)" };
+                            <div class="transit-row">
+                                <div class="transit-icon-box" style="background:@tColor;">@tEmoji</div>
                                 <div style="flex:1;">
-                                    <div style="font-weight:800; color:#111827; font-size:1.05rem;">@t.DepartureLocation → @t.ArrivalLocation</div>
-                                    <div style="font-size:.85rem; color:#64748b; margin-top:.2rem;">
-                                        @t.TransitType?.Name · @t.DepartureTime.ToString("dd.MM.yyyy HH:mm")
-                                    </div>
+                                    <div style="font-weight:800;color:#111827;font-size:1rem;">@t.DepartureLocation → @t.ArrivalLocation</div>
+                                    <div style="font-size:.82rem;color:#64748b;margin-top:.15rem;">@t.TransitType?.Name · @t.DepartureTime.ToString("dd.MM.yyyy HH:mm")</div>
                                 </div>
                                 @if (!string.IsNullOrEmpty(t.BookingReference))
                                 {
-                                    <span style="font-size:.75rem; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:50px; padding:.3rem .8rem; color:#475569; font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                                        Квиток: @t.BookingReference
+                                    <span style="font-size:.72rem;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:50px;padding:.3rem .8rem;color:#6366f1;font-weight:700;">
+                                        #@t.BookingReference
                                     </span>
                                 }
                             </div>
@@ -743,61 +1013,67 @@
 
             @if (!string.IsNullOrEmpty(Model.Trip.Description))
             {
-                <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.4s;">
+                <div class="light-glass-card" style="animation-delay:.25s;">
                     <div class="card-header">
                         <div class="card-header-title">
-                            <div class="icon-box" style="background: #10b981;"><i class="bi bi-card-text"></i></div>
+                            <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-card-text"></i></div>
                             Опис
                         </div>
                     </div>
-                    <div style="padding:1.8rem; color:#475569; line-height:1.6; transform: translateZ(20px);">
-                        @Model.Trip.Description
-                    </div>
+                    <div style="padding:1.8rem;color:#475569;line-height:1.7;font-size:.95rem;">@Model.Trip.Description</div>
                 </div>
             }
         </div>
 
+        <!-- RIGHT -->
         <div>
-            <div class="dark-glass-card" data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.15" style="animation-delay: 0.1s;">
-                <div style="display:flex; justify-content:space-between; align-items:center; transform: translateZ(20px);">
-                    <div style="font-size:0.75rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.6);">Загальний бюджет</div>
+
+            <!-- BUDGET -->
+            <div class="dark-glass-card" style="animation-delay:.05s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);">Загальний бюджет</div>
                     <a asp-controller="Expenses" asp-action="Create" asp-route-tripId="@Model.Trip.Id"
-                       style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:0.4rem 1rem; color:white; text-decoration:none; font-size:0.75rem; font-weight:700; transition:all 0.2s;">
+                       style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:50px;padding:.38rem 1rem;color:white;text-decoration:none;font-size:.72rem;font-weight:700;transition:all .2s;"
+                       onmouseover="this.style.background='rgba(255,255,255,.15)'"
+                       onmouseout="this.style.background='rgba(255,255,255,.08)'">
                         + Витрата
                     </a>
                 </div>
                 <div class="budget-amount">@totalBudget.ToString("N0") @baseCurr</div>
-                <div style="font-size:0.85rem; color:rgba(255,255,255,0.5); transform: translateZ(20px);">@Model.Expenses.Count() витрат · з конвертацією</div>
+                <div style="font-size:.82rem;color:rgba(255,255,255,.4);">@Model.Expenses.Count() витрат · з конвертацією</div>
             </div>
 
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.2s;">
+            <!-- ACCOMMODATION -->
+            <div class="light-glass-card" style="animation-delay:.1s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #14b8a6;"><i class="bi bi-building"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#14b8a6,#0d9488);"><i class="bi bi-building"></i></div>
                         Житло
                     </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <a href="@bookingUrl" target="_blank" class="btn-add-small" style="background: linear-gradient(135deg, #6366f1, #ec4899); color: white; border: none; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
-                            <i class="bi bi-globe" style="margin-right:3px;"></i> Booking
+                    <div style="display:flex;align-items:center;gap:.4rem;">
+                        <a href="@bookingUrl" target="_blank" class="btn-add-small" style="background:linear-gradient(135deg,#6366f1,#ec4899);color:white;border:none;box-shadow:0 3px 10px rgba(99,102,241,.25);">
+                            <i class="bi bi-globe"></i> Booking
                         </a>
                         <a asp-controller="Accommodations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Додати</a>
                     </div>
                 </div>
-                <div style="padding:1.5rem;">
+                <div style="padding:1.3rem;">
                     @if (!Model.Accommodations.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Житло ще не додано.</div>
+                        <div style="color:#94a3b8;font-style:italic;font-size:.9rem;">Житло ще не додано.</div>
                     }
                     else
                     {
                         @foreach (var a in Model.Accommodations)
                         {
                             <div class="list-item-card">
-                                <div style="font-family:'Montserrat'; font-weight:800; color:#111827; font-size:1.05rem; margin-bottom:.2rem;">@a.Name</div>
-                                <div style="font-size:.85rem; color:#64748b; margin-bottom:.8rem;">@a.Address</div>
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-size:.8rem; font-weight:700; color:#475569;">📅 @a.CheckInTime.ToString("dd.MM.yyyy")</span>
-                                    <a asp-controller="Accommodations" asp-action="Edit" asp-route-id="@a.Id" style="font-size:.8rem; color:#3b82f6; font-weight:800; text-decoration:none;">Ред.</a>
+                                <div style="font-family:'Montserrat';font-weight:800;color:#111827;font-size:1rem;margin-bottom:.2rem;">@a.Name</div>
+                                <div style="font-size:.82rem;color:#64748b;margin-bottom:.7rem;">@a.Address</div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="font-size:.78rem;font-weight:700;color:#475569;background:rgba(0,0,0,.04);padding:.2rem .6rem;border-radius:50px;">
+                                        <i class="bi bi-calendar-check me-1"></i>@a.CheckInTime.ToString("dd.MM.yyyy")
+                                    </span>
+                                    <a asp-controller="Accommodations" asp-action="Edit" asp-route-id="@a.Id" style="font-size:.78rem;color:#6366f1;font-weight:800;text-decoration:none;">Ред.</a>
                                 </div>
                             </div>
                         }
@@ -805,34 +1081,34 @@
                 </div>
             </div>
 
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.3s;">
+            <!-- CHECKLISTS -->
+            <div class="light-glass-card" style="animation-delay:.15s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #64748b;"><i class="bi bi-check2-square"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#64748b,#475569);"><i class="bi bi-check2-square"></i></div>
                         Списки речей
                     </div>
                     <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Новий</a>
                 </div>
-                <div style="padding:1.5rem;">
+                <div style="padding:1.3rem;">
                     @if (!Model.Checklists.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Списків ще немає.</div>
+                        <div style="color:#94a3b8;font-style:italic;font-size:.9rem;">Списків ще немає.</div>
                     }
                     else
                     {
                         @foreach (var c in Model.Checklists)
                         {
                             int total = c.Items?.Count() ?? 0;
-                            int checked_ = c.Items?.Count(i => i.IsChecked) ?? 0;
-                            int pct = total > 0 ? (int)Math.Round((double)checked_ / total * 100) : 0;
-
-                            <a asp-controller="Checklists" asp-action="Details" asp-route-id="@c.Id" style="display:block; text-decoration:none;" class="list-item-card">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <span style="font-family:'Montserrat'; font-weight:700; font-size:.95rem; color:#0f172a;">@c.Title</span>
-                                    <span style="font-size:.8rem; font-weight:800; color:#64748b;">@checked_ / @total</span>
+                            int done = c.Items?.Count(i => i.IsChecked) ?? 0;
+                            int pct = total > 0 ? (int)Math.Round((double)done / total * 100) : 0;
+                            <a asp-controller="Checklists" asp-action="Details" asp-route-id="@c.Id" style="display:block;text-decoration:none;" class="list-item-card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="font-family:'Montserrat';font-weight:700;font-size:.9rem;color:#0f172a;">@c.Title</span>
+                                    <span style="font-size:.75rem;font-weight:800;color:#64748b;">@done / @total</span>
                                 </div>
-                                <div style="height:6px; background:rgba(0,0,0,0.05); border-radius:50px; margin-top:0.8rem; overflow:hidden;">
-                                    <div style="height:100%; width:@pct%; background:#10b981; border-radius:50px;"></div>
+                                <div style="height:5px;background:rgba(0,0,0,.06);border-radius:50px;margin-top:.75rem;overflow:hidden;">
+                                    <div style="height:100%;width:@pct%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:50px;transition:width .5s ease;"></div>
                                 </div>
                             </a>
                         }
@@ -840,42 +1116,41 @@
                 </div>
             </div>
 
-            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.4s;">
+            <!-- PARTICIPANTS -->
+            <div class="light-glass-card" style="animation-delay:.2s;">
                 <div class="card-header">
                     <div class="card-header-title">
-                        <div class="icon-box" style="background: #6366f1;"><i class="bi bi-people-fill"></i></div>
+                        <div class="icon-box" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);"><i class="bi bi-people-fill"></i></div>
                         Учасники
                     </div>
                 </div>
-                <div style="padding:1.5rem; transform: translateZ(20px);">
+                <div style="padding:1.3rem;">
                     @if (!Model.Participants.Any())
                     {
-                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Учасників ще немає.</div>
+                        <div style="color:#94a3b8;font-style:italic;font-size:.9rem;">Учасників ще немає.</div>
                     }
                     else
                     {
                         @foreach (var p in Model.Participants)
                         {
-                            <div style="display:flex; align-items:center; justify-content:space-between; padding:.7rem 0; border-bottom:1px solid rgba(0,0,0,0.05);">
-                                <div style="display:flex; align-items:center; gap:.75rem;">
-                                    <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:1rem;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem 0;border-bottom:1px solid rgba(0,0,0,.05);">
+                                <div style="display:flex;align-items:center;gap:.7rem;">
+                                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:.95rem;flex-shrink:0;">
                                         @(p.UserName?.Length > 0 ? p.UserName[0].ToString().ToUpper() : "?")
                                     </div>
                                     <div>
-                                        <div style="font-weight:700; color:#111827; font-size:.9rem;">@p.UserName</div>
-                                        <div style="font-size:.75rem; color:#64748b;">@p.Role</div>
+                                        <div style="font-weight:700;color:#111827;font-size:.88rem;">@p.UserName</div>
+                                        <div style="font-size:.72rem;color:#94a3b8;">@p.Role</div>
                                     </div>
                                 </div>
                                 @if (Model.CurrentUserRole == "Organizer" && p.Role != "Organizer")
                                 {
-                                    <form asp-action="RemoveParticipant" method="post" style="margin:0;"
-                                          onsubmit="return confirm('Видалити @p.UserName з поїздки?');">
+                                    <form asp-action="RemoveParticipant" method="post" style="margin:0;" onsubmit="return confirm('Видалити @p.UserName з поїздки?');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="tripId" value="@Model.Trip.Id" />
                                         <input type="hidden" name="userId" value="@p.UserId" />
-                                        <button type="submit"
-                                                style="background:none; border:none; color:#ef4444; font-size:.8rem; font-weight:700; cursor:pointer; padding:.3rem .6rem; border-radius:8px; transition:background .2s;"
-                                                onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+                                        <button type="submit" style="background:none;border:none;color:#ef4444;font-size:.78rem;cursor:pointer;padding:.25rem .5rem;border-radius:8px;transition:background .2s;"
+                                                onmouseover="this.style.background='rgba(239,68,68,.08)'"
                                                 onmouseout="this.style.background='none'">
                                             <i class="bi bi-person-dash"></i>
                                         </button>
@@ -887,24 +1162,20 @@
 
                     @if (Model.CurrentUserRole == "Organizer")
                     {
-                        <div style="margin-top:1.2rem; padding-top:1.2rem; border-top:1px solid rgba(0,0,0,0.06);">
-                            <div style="font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#64748b; margin-bottom:.8rem;">
-                                Запросити учасника
-                            </div>
+                        <div style="margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid rgba(0,0,0,.06);">
+                            <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:.75rem;">Запросити учасника</div>
                             <form asp-action="InviteParticipant" method="post">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="tripId" value="@Model.Trip.Id" />
-                                <div style="margin-bottom:.7rem;">
+                                <div style="margin-bottom:.6rem;">
                                     <input type="email" name="email" required placeholder="Email користувача"
-                                           style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; transition:border-color .2s;"
-                                           onfocus="this.style.borderColor='#6366f1'"
-                                           onblur="this.style.borderColor='rgba(0,0,0,0.1)'" />
+                                           style="width:100%;padding:.62rem 1rem;border:1px solid rgba(0,0,0,.1);border-radius:12px;font-size:.86rem;font-family:'Inter',sans-serif;background:rgba(255,255,255,.8);outline:none;box-sizing:border-box;transition:border-color .2s;"
+                                           onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='rgba(0,0,0,.1)'" />
                                 </div>
-                                <div style="margin-bottom:.9rem;">
+                                <div style="margin-bottom:.85rem;">
                                     <select name="roleId" required
-                                            style="width:100%; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; box-sizing:border-box; appearance:none; cursor:pointer; transition:border-color .2s;"
-                                            onfocus="this.style.borderColor='#6366f1'"
-                                            onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                                            style="width:100%;padding:.62rem 1rem;border:1px solid rgba(0,0,0,.1);border-radius:12px;font-size:.86rem;font-family:'Inter',sans-serif;background:rgba(255,255,255,.8);outline:none;box-sizing:border-box;appearance:none;cursor:pointer;transition:border-color .2s;"
+                                            onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='rgba(0,0,0,.1)'">
                                         <option value="" disabled selected>Оберіть роль</option>
                                         @foreach (var role in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.AvailableRoles)
                                         {
@@ -916,10 +1187,10 @@
                                     </select>
                                 </div>
                                 <button type="submit"
-                                        style="width:100%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border:none; border-radius:12px; padding:.7rem 1rem; font-family:'Montserrat',sans-serif; font-weight:800; font-size:.85rem; cursor:pointer; transition:all .2s; box-shadow:0 4px 15px rgba(99,102,241,0.35);"
-                                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(99,102,241,0.5)';"
-                                        onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 15px rgba(99,102,241,0.35)';">
-                                    <i class="bi bi-person-plus-fill"></i> Запросити
+                                        style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:12px;padding:.68rem;font-family:'Montserrat',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;transition:all .2s;box-shadow:0 4px 15px rgba(99,102,241,.3);"
+                                        onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 22px rgba(99,102,241,.45)'"
+                                        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(99,102,241,.3)'">
+                                    <i class="bi bi-person-plus-fill me-1"></i> Запросити
                                 </button>
                             </form>
                         </div>
@@ -929,118 +1200,154 @@
         </div>
     </div>
 
-    <!-- ══════════ AI PANEL ══════════ -->
+    <!-- ══ AI PANEL ══ -->
     <div id="aiOverlay" onclick="closeAiPanel()"></div>
     <div id="aiPanel">
-        <!-- Header -->
-        <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca); padding:1.5rem; position:relative;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <div style="font-size:0.65rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.5);">✨ Згенеровано AI · оновлено <span id="aiTime"></span></div>
-                    <div id="aiPanelTitle" style="font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.5rem; color:white; margin-top:0.3rem;"></div>
-                </div>
-                <button onclick="closeAiPanel()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:50%; width:36px; height:36px; cursor:pointer; font-size:1rem; flex-shrink:0;">✕</button>
-            </div>
-            <!-- Tabs -->
-            <div style="display:flex; gap:0.4rem; margin-top:1.2rem;">
+        <div class="ai-panel-header">
+            <div class="ai-panel-meta">✦ AI рекомендації · <span id="aiTime"></span></div>
+            <div class="ai-panel-city" id="aiPanelTitle"></div>
+            <button class="ai-close-btn" onclick="closeAiPanel()">✕</button>
+            <div class="ai-tabs">
                 <button class="ai-tab-btn active" id="tab-attractions" onclick="switchTab('attractions')">🏛 Атракції</button>
                 <button class="ai-tab-btn" id="tab-restaurants" onclick="switchTab('restaurants')">🍽 Ресторани</button>
                 <button class="ai-tab-btn" id="tab-tips" onclick="switchTab('tips')">💡 Поради</button>
             </div>
         </div>
-
-        <!-- Body -->
-        <div style="padding:1.2rem;">
-            <!-- Loading -->
-            <div id="aiLoading" style="text-align:center; padding:3rem 1rem; display:none;">
+        <div style="padding:1.1rem;">
+            <div id="aiLoading" style="text-align:center;padding:3rem 1rem;display:none;">
                 <div class="ai-spinner"></div>
-                <div style="font-weight:700; color:#6366f1; font-size:0.95rem;">Генерую рекомендації...</div>
-                <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.4rem;">Зазвичай займає 5–10 секунд</div>
+                <div style="font-weight:700;color:#6366f1;font-size:.95rem;">Генерую рекомендації...</div>
+                <div style="font-size:.8rem;color:#94a3b8;margin-top:.35rem;">Зазвичай 5–10 секунд</div>
             </div>
-            <!-- Error -->
-            <div id="aiError" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:16px; padding:1.2rem; text-align:center; color:#ef4444; font-weight:700; font-size:0.9rem;"></div>
-            <!-- Content tabs -->
-            <div id="content-attractions" class="ai-tab-content"></div>
-            <div id="content-restaurants" class="ai-tab-content" style="display:none;"></div>
-            <div id="content-tips" class="ai-tab-content" style="display:none;"></div>
+            <div id="aiError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:1.1rem;text-align:center;color:#ef4444;font-weight:700;font-size:.88rem;"></div>
+            <div id="content-attractions"></div>
+            <div id="content-restaurants" style="display:none;"></div>
+            <div id="content-tips" style="display:none;"></div>
         </div>
     </div>
-
 </div>
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-
     <script>
-        // ══ MAP ══
-        var map = L.map('map').setView([48.3794, 31.1656], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        // ══ MAP ══════════════════════════════════════════
+        var map = L.map('map', { zoomControl: false }).setView([48.3794,31.1656], 5);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
         var allPoints = [], routePoints = [];
         const delay = ms => new Promise(res => setTimeout(res, ms));
         const _geoCache = {};
 
         async function geocodeAddress(address) {
-            if (!address || !address.trim()) return null;
+            if (!address?.trim()) return null;
             const key = address.trim().toLowerCase();
             if (_geoCache[key] !== undefined) return _geoCache[key];
             try {
                 await delay(1200);
-                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(address)}`;
-                let response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                if (!response.ok) { _geoCache[key] = null; return null; }
-                let data = await response.json();
-                if (data && data.length > 0) {
-                    const latlng = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    _geoCache[key] = latlng; return latlng;
-                }
-            } catch (e) {}
+                const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=uk&q=${encodeURIComponent(address)}`, { headers: { Accept: 'application/json' } });
+                const d = await r.json();
+                if (d?.length) { const ll = [parseFloat(d[0].lat), parseFloat(d[0].lon)]; _geoCache[key] = ll; return ll; }
+            } catch {}
             _geoCache[key] = null; return null;
         }
 
+        function mkPin(type, label) {
+            const configs = {
+                start: { color: '#10b981', size: 38, emoji: '🟢' },
+                dest:  { color: '#6366f1', size: 34, emoji: '📍' },
+                end:   { color: '#ef4444', size: 38, emoji: '🏁' },
+                hotel: { color: '#f59e0b', size: 30, emoji: '🏨' }
+            };
+            const c = configs[type];
+            const html = `
+                <div style="position:relative;width:${c.size}px;height:${c.size + 8}px;">
+                    ${type === 'dest' ? `<div style="position:absolute;inset:0;border-radius:50%;background:${c.color};opacity:.2;animation:pulse-ring 2s ease-out infinite;"></div>` : ''}
+                    <div style="
+                        width:${c.size}px;height:${c.size}px;
+                        background:${c.color};
+                        border-radius:${type === 'hotel' ? '10px' : '50% 50% 50% 0'};
+                        transform:${type === 'hotel' ? 'none' : 'rotate(-45deg)'};
+                        border:3px solid white;
+                        box-shadow:0 4px 16px rgba(0,0,0,.25);
+                        display:flex;align-items:center;justify-content:center;
+                        position:relative;z-index:1;
+                    ">
+                        <span style="transform:${type === 'hotel' ? 'none' : 'rotate(45deg)'};font-size:${c.size * .4}px;display:block;line-height:1;">${c.emoji}</span>
+                    </div>
+                </div>`;
+            return L.divIcon({ html, className: '', iconSize: [c.size, c.size + 8], iconAnchor: [c.size/2, c.size + 8] });
+        }
+
+        function mkPopup(title, sub) {
+            return `<div style="font-family:'Inter',sans-serif;min-width:140px;">
+                <div style="font-weight:800;color:#111827;font-size:.92rem;">${title}</div>
+                ${sub ? `<div style="font-size:.78rem;color:#64748b;margin-top:.2rem;">${sub}</div>` : ''}
+            </div>`;
+        }
+
         async function buildFullRoute() {
-            let departureText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.DepartureLocation ?? ""));
-            let returnText = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.ReturnLocation ?? ""));
-            let startLatLng = await geocodeAddress(departureText);
-            if (startLatLng) {
-                L.marker(startLatLng, { icon: L.divIcon({ html: "🟢", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] }) }).addTo(map).bindPopup("<b>Старт:</b><br>" + departureText);
-                allPoints.push(startLatLng);
+            const dep = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.DepartureLocation ?? ""));
+            const ret = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trip.ReturnLocation ?? ""));
+
+            let startLL = await geocodeAddress(dep);
+            if (startLL) {
+                L.marker(startLL, { icon: mkPin('start') }).addTo(map)
+                    .bindPopup(mkPopup('Старт', dep));
+                allPoints.push(startLL);
             }
-            const destinations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Destinations.Select(d => new { name = $"{d.CityName}, {d.Country}", hasCoords = d.Latitude.HasValue && d.Longitude.HasValue, lat = d.Latitude, lng = d.Longitude })));
-            for (let dest of destinations) {
-                let latlng = dest.hasCoords ? [dest.lat, dest.lng] : await geocodeAddress(dest.name);
-                if (latlng) { L.marker(latlng).addTo(map).bindPopup("<b>" + dest.name + "</b>"); routePoints.push(latlng); allPoints.push(latlng); }
-            }
-            let endLatLng = await geocodeAddress(returnText);
-            if (endLatLng) {
-                L.marker(endLatLng, { icon: L.divIcon({ html: "🏁", className: 'fs-4 border-0 bg-transparent', iconSize: [24,24], iconAnchor: [12,12] }) }).addTo(map).bindPopup("<b>Фініш:</b><br>" + returnText);
-                allPoints.push(endLatLng);
-            }
-            let fullPath = [];
-            if (startLatLng) fullPath.push(startLatLng);
-            fullPath = fullPath.concat(routePoints);
-            if (endLatLng) fullPath.push(endLatLng);
-            if (fullPath.length > 1) L.polyline(fullPath, { color: '#3b82f6', weight: 3, opacity: 0.85, dashArray: '8, 8' }).addTo(map);
-            const accommodations = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Accommodations.Select(a => new { name = a.Name, address = a.Address, hasCoords = a.Latitude.HasValue && a.Longitude.HasValue, lat = a.Latitude, lng = a.Longitude })));
-            for (let acc of accommodations) {
-                let latlng = acc.hasCoords ? [acc.lat, acc.lng] : await geocodeAddress(acc.address ? acc.address : acc.name);
-                if (latlng) {
-                    L.marker(latlng, { icon: L.divIcon({ html: "<div style='background:#10b981;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,.3);'>🏠</div>", className: '', iconSize: [30,30], iconAnchor: [15,30] }) }).addTo(map).bindPopup("<b>" + acc.name + "</b>");
-                    allPoints.push(latlng);
+
+            const dests = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Destinations.Select(d => new { name = $"{d.CityName}, {d.Country}", hasCoords = d.Latitude.HasValue && d.Longitude.HasValue, lat = d.Latitude, lng = d.Longitude })));
+            for (const dest of dests) {
+                const ll = dest.hasCoords ? [dest.lat, dest.lng] : await geocodeAddress(dest.name);
+                if (ll) {
+                    L.marker(ll, { icon: mkPin('dest') }).addTo(map)
+                        .bindPopup(mkPopup(dest.name));
+                    routePoints.push(ll); allPoints.push(ll);
                 }
             }
-            if (allPoints.length > 0) map.fitBounds(new L.LatLngBounds(allPoints), { padding: [30, 30] });
+
+            let endLL = await geocodeAddress(ret);
+            if (endLL) {
+                L.marker(endLL, { icon: mkPin('end') }).addTo(map)
+                    .bindPopup(mkPopup('Фініш', ret));
+                allPoints.push(endLL);
+            }
+
+            const path = [startLL, ...routePoints, endLL].filter(Boolean);
+            if (path.length > 1) {
+                // Shadow line
+                L.polyline(path, { color: '#000', weight: 6, opacity: .08 }).addTo(map);
+                // Main line
+                L.polyline(path, { color: '#6366f1', weight: 3, opacity: .85, dashArray: '10,6' }).addTo(map);
+            }
+
+            const accs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Accommodations.Select(a => new { name = a.Name, address = a.Address, hasCoords = a.Latitude.HasValue && a.Longitude.HasValue, lat = a.Latitude, lng = a.Longitude })));
+            for (const acc of accs) {
+                const ll = acc.hasCoords ? [acc.lat, acc.lng] : await geocodeAddress(acc.address || acc.name);
+                if (ll) {
+                    L.marker(ll, { icon: mkPin('hotel') }).addTo(map)
+                        .bindPopup(mkPopup(acc.name, '🏨 Житло'));
+                    allPoints.push(ll);
+                }
+            }
+
+            if (allPoints.length) map.fitBounds(L.latLngBounds(allPoints), { padding: [40,40] });
         }
         buildFullRoute();
 
-        // ══ AI PANEL ══
-        let _aiCache = {};
-        let _currentTab = 'attractions';
+        // ══ AI PANEL ══════════════════════════════════════
+        let _aiCache = {}, _currentTab = 'attractions';
 
         function openAiPanel(city, country) {
             document.getElementById('aiOverlay').style.display = 'block';
             document.getElementById('aiPanel').style.display = 'block';
             document.getElementById('aiPanelTitle').textContent = 'Рекомендації для ' + city;
-            document.getElementById('aiTime').textContent = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('aiTime').textContent = new Date().toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'});
             switchTab('attractions');
             loadAi(city, country);
         }
@@ -1052,7 +1359,7 @@
 
         function switchTab(tab) {
             _currentTab = tab;
-            ['attractions', 'restaurants', 'tips'].forEach(t => {
+            ['attractions','restaurants','tips'].forEach(t => {
                 document.getElementById('tab-' + t).classList.toggle('active', t === tab);
                 document.getElementById('content-' + t).style.display = t === tab ? 'block' : 'none';
             });
@@ -1061,82 +1368,54 @@
         async function loadAi(city, country) {
             const key = city + '|' + country;
             if (_aiCache[key]) { renderAi(_aiCache[key]); return; }
-
             document.getElementById('aiLoading').style.display = 'block';
             document.getElementById('aiError').style.display = 'none';
-            ['attractions', 'restaurants', 'tips'].forEach(t => document.getElementById('content-' + t).innerHTML = '');
-
+            ['attractions','restaurants','tips'].forEach(t => document.getElementById('content-'+t).innerHTML='');
             try {
                 const res = await fetch(`/TripDestinations/AiRecommendations?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}`);
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                if (!res.ok) throw new Error('HTTP '+res.status);
                 const data = await res.json();
-                if (!data || data.error) throw new Error(data?.error || 'Порожня відповідь');
+                if (!data||data.error) throw new Error(data?.error||'Порожня відповідь');
                 _aiCache[key] = data;
                 renderAi(data);
-            } catch (e) {
+            } catch(e) {
                 document.getElementById('aiLoading').style.display = 'none';
                 document.getElementById('aiError').style.display = 'block';
-                document.getElementById('aiError').textContent = '😔 Не вдалося завантажити рекомендації. ' + e.message;
+                document.getElementById('aiError').textContent = '😔 ' + e.message;
             }
+        }
+
+        function mkCard(p, isPlace) {
+            return `<div class="ai-place-card">
+                <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.5rem;">
+                    <span style="font-size:1.7rem;">${p.emoji||'📍'}</span>
+                    <div>
+                        <div style="font-family:'Montserrat',sans-serif;font-weight:800;color:#111827;font-size:.93rem;">${p.name}</div>
+                        <div style="font-size:.72rem;color:#94a3b8;">${p.category}</div>
+                    </div>
+                </div>
+                <div style="font-size:.84rem;color:#475569;line-height:1.55;margin-bottom:.65rem;">${p.description}</div>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+                    <span style="font-size:.7rem;font-weight:700;background:${isPlace?'#ede9fe':'#fef3c7'};color:${isPlace?'#7c3aed':'#d97706'};border-radius:50px;padding:.2rem .65rem;">${p.priceRange}</span>
+                    <span style="font-size:.7rem;font-weight:700;background:#e0f2fe;color:#0369a1;border-radius:50px;padding:.2rem .65rem;">⏰ ${p.bestTime}</span>
+                </div>
+            </div>`;
         }
 
         function renderAi(data) {
             document.getElementById('aiLoading').style.display = 'none';
-
-            // Attractions
-            let aHtml = '';
-            (data.attractions || []).forEach(p => {
-                aHtml += `<div class="ai-place-card">
-                    <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
-                        <span style="font-size:1.6rem;">${p.emoji || '📍'}</span>
+            document.getElementById('content-attractions').innerHTML = (data.attractions||[]).map(p=>mkCard(p,true)).join('') || '<div style="color:#94a3b8;font-style:italic;padding:1rem;">Немає даних</div>';
+            document.getElementById('content-restaurants').innerHTML = (data.restaurants||[]).map(p=>mkCard(p,false)).join('') || '<div style="color:#94a3b8;font-style:italic;padding:1rem;">Немає даних</div>';
+            document.getElementById('content-tips').innerHTML = (data.tips||[]).map(t=>`
+                <div class="ai-place-card">
+                    <div style="display:flex;align-items:flex-start;gap:.8rem;">
+                        <span style="font-size:1.7rem;flex-shrink:0;">${t.emoji||'💡'}</span>
                         <div>
-                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem;">${p.name}</div>
-                            <div style="font-size:0.75rem; color:#64748b;">${p.category}</div>
+                            <div style="font-family:'Montserrat',sans-serif;font-weight:800;color:#111827;font-size:.93rem;margin-bottom:.3rem;">${t.title}</div>
+                            <div style="font-size:.84rem;color:#475569;line-height:1.55;">${t.body}</div>
                         </div>
                     </div>
-                    <div style="font-size:0.85rem; color:#475569; line-height:1.5; margin-bottom:0.7rem;">${p.description}</div>
-                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                        <span style="font-size:0.72rem; font-weight:700; background:#ede9fe; color:#7c3aed; border-radius:50px; padding:0.25rem 0.7rem;">${p.priceRange}</span>
-                        <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; border-radius:50px; padding:0.25rem 0.7rem;">⏰ ${p.bestTime}</span>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('content-attractions').innerHTML = aHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
-
-            // Restaurants
-            let rHtml = '';
-            (data.restaurants || []).forEach(p => {
-                rHtml += `<div class="ai-place-card">
-                    <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
-                        <span style="font-size:1.6rem;">${p.emoji || '🍽'}</span>
-                        <div>
-                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem;">${p.name}</div>
-                            <div style="font-size:0.75rem; color:#64748b;">${p.category}</div>
-                        </div>
-                    </div>
-                    <div style="font-size:0.85rem; color:#475569; line-height:1.5; margin-bottom:0.7rem;">${p.description}</div>
-                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                        <span style="font-size:0.72rem; font-weight:700; background:#fef3c7; color:#d97706; border-radius:50px; padding:0.25rem 0.7rem;">${p.priceRange}</span>
-                        <span style="font-size:0.72rem; font-weight:700; background:#e0f2fe; color:#0369a1; border-radius:50px; padding:0.25rem 0.7rem;">⏰ ${p.bestTime}</span>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('content-restaurants').innerHTML = rHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
-
-            // Tips
-            let tHtml = '';
-            (data.tips || []).forEach(t => {
-                tHtml += `<div class="ai-place-card">
-                    <div style="display:flex; align-items:flex-start; gap:0.8rem;">
-                        <span style="font-size:1.6rem; flex-shrink:0;">${t.emoji || '💡'}</span>
-                        <div>
-                            <div style="font-family:'Montserrat',sans-serif; font-weight:800; color:#111827; font-size:0.95rem; margin-bottom:0.3rem;">${t.title}</div>
-                            <div style="font-size:0.85rem; color:#475569; line-height:1.5;">${t.body}</div>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('content-tips').innerHTML = tHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
+                </div>`).join('') || '<div style="color:#94a3b8;font-style:italic;padding:1rem;">Немає даних</div>';
         }
     </script>
 }
