@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization; // ВИПРАВЛЕНО: прибрано дублюючий using
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.UI.Models.ViewModels;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TravelManager.UI.Controllers
 {
@@ -28,21 +32,37 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Передаємо ID поточного користувача у View, щоб розрізняти боржника та отримувача
+            ViewBag.CurrentUserId = currentUserId;
+
             var myTripIds = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId)
                 .Select(tp => tp.TripId)
                 .ToList();
 
+            // Завантажуємо зв'язані сутності подорожей та платників
             var splits = _unitOfWork.ExpenseSplit
-                .GetAll(s => myTripIds.Contains(s.Expense.TripId), includeProperties: "Expense,Debtor");
+                .GetAll(s => myTripIds.Contains(s.Expense.TripId),
+                        includeProperties: "Expense,Debtor,Expense.Trip,Expense.Payer");
 
             var viewModels = splits.Select(s => new ExpenseSplitListViewModel
             {
                 Id = s.Id,
                 ExpenseName = s.Expense?.Title ?? string.Empty,
+                ExpenseTitle = s.Expense?.Title ?? string.Empty,
                 DebtorName = s.Debtor?.UserName ?? string.Empty,
                 OwedAmount = s.OwedAmount,
-                IsSettled = s.IsSettled
+                IsSettled = s.IsSettled,
+                ReceiptImageUrl = s.Expense?.ReceiptImageUrl,
+
+                TripName = s.Expense?.Trip?.Title ?? "Без назви подорожі",
+                TripId = s.Expense?.TripId ?? 0,
+                Currency = s.Expense?.Currency ?? "UAH",
+                PayerName = s.Expense?.Payer?.UserName ?? "Невідомий платник",
+                PayerId = s.Expense?.PayerId ?? string.Empty,
+
+                // ЗАПОВНЮЄМО ID боржника:
+                DebtorId = s.DebtorId ?? string.Empty
             }).ToList();
 
             return View(viewModels);
@@ -50,7 +70,7 @@ namespace TravelManager.UI.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Settle(int id)
+        public async Task<IActionResult> MarkAsSettled(int id)
         {
             var entity = _unitOfWork.ExpenseSplit.Get(u => u.Id == id, includeProperties: "Expense", tracked: true);
             if (entity == null)

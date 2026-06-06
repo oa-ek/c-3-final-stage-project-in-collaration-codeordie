@@ -2,13 +2,15 @@
 
 @{
     ViewData["Title"] = "Додати витрату";
+    var returnUrl = ViewBag.ReturnUrl as string;
 }
 
 <style>
+    /* Анімація появи */
     @@keyframes fadeSlideUp {
         0% {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
         }
 
         100% {
@@ -18,448 +20,484 @@
     }
 
     .stagger-item {
-        animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        opacity: 0;
+        animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @@keyframes blob {
-        0% {
-            transform: translate(0px, 0px) scale(1);
+    /* Дуже компактний скролбар для учасників */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(251, 191, 36, 0.4);
+        border-radius: 4px;
+    }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
         }
-
-        33% {
-            transform: translate(30px, -50px) scale(1.1);
-        }
-
-        66% {
-            transform: translate(-20px, 20px) scale(0.9);
-        }
-
-        100% {
-            transform: translate(0px, 0px) scale(1);
-        }
-    }
-
-    .animate-blob {
-        animation: blob 7s infinite alternate;
-    }
-
-    .animation-delay-2000 {
-        animation-delay: 2s;
-    }
-
-    .animation-delay-4000 {
-        animation-delay: 4s;
-    }
-
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
 
     input[type="date"]::-webkit-calendar-picker-indicator {
         background-color: white;
-        padding: 8px;
+        padding: 4px;
         cursor: pointer;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        transition: 0.3s;
+        border-radius: 6px;
     }
-
-        input[type="date"]::-webkit-calendar-picker-indicator:hover {
-            background-color: #f1f5f9;
-            transform: scale(1.05);
-        }
 </style>
 
-<div class="relative w-full max-w-3xl mx-auto min-h-[85vh] py-10 z-10 px-4 flex flex-col justify-center overflow-hidden">
+<!-- Головний адаптивний контейнер, адаптований під 100% висоти екрану без скролу -->
+<div class="relative w-full max-w-6xl mx-auto py-4 z-10 px-4 flex flex-col justify-start">
 
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <div class="absolute top-10 left-10 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div class="absolute top-20 right-10 w-72 h-72 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+    <!-- Компактна шапка -->
+    <div class="text-center mb-4 stagger-item">
+        <h1 class="text-3xl font-black text-slate-800 tracking-tight">Новий чек 💸</h1>
+        <p class="text-slate-400 text-xs font-semibold">Створення та розподіл витрати</p>
     </div>
 
-    <div class="relative z-20 mb-8 text-center stagger-item" style="animation-delay: 0.1s;">
-        <h1 class="text-4xl md:text-5xl font-black text-slate-800 tracking-tighter mb-2">Нова витрата 💸</h1>
-        <p class="text-slate-500 font-bold text-sm uppercase tracking-widest">Зафіксуй, куди пішли гроші</p>
-    </div>
+    <!-- Обгортка форми БЕЗ overflow-hidden, щоб випадаючі списки не обрізалися -->
+    <div class="relative bg-white/70 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-5 shadow-lg stagger-item">
 
-    <form asp-action="Create" method="post" class="relative z-20" id="expenseForm">
-        <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-6 text-sm font-bold text-center bg-rose-100/50 backdrop-blur-md py-4 rounded-2xl border border-rose-200/50"></div>
-
-        @* ── Приховані поля splits — ТІЛЬКИ ОДИН РАЗ ── *@
-        <div id="hidden-splits-container">
-            @for (int i = 0; i < Model.Splits.Count; i++)
-            {
-                <input type="hidden" asp-for="Splits[i].UserId" class="split-user-hidden" data-index="@i" />
-                <input type="hidden" asp-for="Splits[i].UserName" />
-                <input type="hidden" asp-for="Splits[i].OwedAmount" class="split-amount-hidden" data-index="@i" />
-            }
-        </div>
-
-        @* ── Сума + Валюта ── *@
-        <div class="flex flex-col items-center justify-center mb-10 stagger-item" style="animation-delay: 0.2s;">
-            <div class="relative w-fit max-w-full mx-auto">
-
-                <div class="flex flex-nowrap items-center p-2 bg-white/70 backdrop-blur-xl border-4 border-white/90 rounded-[2.5rem] shadow-[0_15px_35px_rgba(0,0,0,0.05)] focus-within:border-emerald-300 focus-within:shadow-[0_20px_40px_rgba(16,185,129,0.15)] transition-all duration-300">
-
-                    <div class="relative shrink-0">
-                        <select asp-for="Currency" asp-items="Model.CurrencyList"
-                                class="appearance-none whitespace-nowrap bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-sm py-4 pl-6 pr-10 rounded-[2rem] border-0 outline-none cursor-pointer transition-colors focus:ring-0 focus:bg-emerald-50 focus:text-emerald-700">
-                        </select>
-                        <i class="bi bi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold pointer-events-none"></i>
-                    </div>
-
-                    <input asp-for="TotalAmount" id="TotalAmountInput" type="number" step="0.01" placeholder="0.00"
-                           style="min-width: 4ch; width: 5ch; field-sizing: content;"
-                           oninput="this.style.width = Math.max(5, this.value.length + 1.5) + 'ch';"
-                           class="bg-transparent border-0 text-right text-4xl md:text-5xl font-black text-slate-800 py-3 pr-4 pl-4 outline-none focus:ring-0 placeholder:text-slate-300 transition-all duration-75" />
-                </div>
-
-                <div class="flex justify-between w-full mt-2 px-4 gap-4">
-                    <span asp-validation-for="Currency" class="text-xs text-rose-500 font-bold whitespace-nowrap"></span>
-                    <span asp-validation-for="TotalAmount" class="text-xs text-rose-500 font-bold text-right whitespace-nowrap"></span>
-                </div>
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="text-rose-600 mb-4 p-3 bg-rose-100/80 backdrop-blur-md rounded-xl text-xs font-bold border border-rose-200 flex items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
             </div>
-        </div>
+        }
 
-        @* ── Основна картка ── *@
-        <div class="bg-white/50 backdrop-blur-[40px] border border-white/80 rounded-[3rem] p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] stagger-item" style="animation-delay: 0.3s;">
-            <div class="space-y-6">
+        <form asp-action="Create" method="post" id="expenseForm">
+            <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-4 text-xs font-bold text-center bg-rose-100/50 py-2 rounded-xl border border-rose-200/50"></div>
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
 
-                @* Опис *@
-                <div class="flex flex-col group relative">
-                    <label asp-for="Description" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-blue-500 transition-colors">
-                        <i class="bi bi-chat-square-quote-fill text-lg"></i> За що платимо?
-                    </label>
-                    <input asp-for="Description" placeholder="Наприклад: Таксі до аеропорту 🚖"
-                           class="w-full bg-white/60 border-2 border-white/90 rounded-[2rem] py-4 pl-6 pr-6 text-base font-bold text-slate-800 outline-none focus:ring-4 focus:ring-blue-400/20 focus:border-blue-400 focus:bg-white hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] placeholder:text-slate-400" />
-                    <span asp-validation-for="Description" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                </div>
+            <!-- Двоколонкова компактна структура -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <!-- ЛІВА КОЛОНКА: Основні поля введення (5 колонок) -->
+                <div class="lg:col-span-6 space-y-4">
 
-                    @* Поїздка *@
-                    <div class="flex flex-col group relative">
-                        <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-indigo-500 transition-colors">
-                            <i class="bi bi-airplane-engines text-lg"></i> Поїздка
-                        </label>
-                        <div class="relative">
-                            <select asp-for="TripId" asp-items="Model.TripList" id="TripIdSelect"
-                                    class="w-full appearance-none bg-white/60 border-2 border-white/90 rounded-[2rem] py-4 pl-6 pr-12 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-400/20 focus:border-indigo-400 focus:bg-white hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] cursor-pointer">
-                                <option value="">-- Оберіть поїздку --</option>
-                            </select>
-                            <i class="bi bi-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"></i>
-                        </div>
-                        <span asp-validation-for="TripId" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                    </div>
-
-                    @* Категорія *@
-                    <div class="flex flex-col group relative">
-                        <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-fuchsia-500 transition-colors">
-                            <i class="bi bi-tags-fill text-lg"></i> Категорія
-                        </label>
-                        <div class="relative">
-                            <select asp-for="CategoryId" asp-items="Model.CategoryList"
-                                    class="w-full appearance-none bg-white/60 border-2 border-white/90 rounded-[2rem] py-4 pl-6 pr-12 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-fuchsia-400/20 focus:border-fuchsia-400 focus:bg-white hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] cursor-pointer">
-                                <option value="">-- Оберіть категорію --</option>
-                            </select>
-                            <i class="bi bi-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"></i>
-                        </div>
-                        <span asp-validation-for="CategoryId" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                    </div>
-
-                    @* Платник *@
-                    <div class="flex flex-col group relative">
-                        <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-emerald-500 transition-colors">
-                            <i class="bi bi-person-bounding-box text-lg"></i> Хто заплатив?
-                        </label>
-                        <div class="relative">
-                            <select asp-for="PayerId" asp-items="Model.PayerList" id="PayerIdSelect"
-                                    class="w-full appearance-none bg-white/60 border-2 border-white/90 rounded-[2rem] py-4 pl-6 pr-12 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-400/20 focus:border-emerald-400 focus:bg-white hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] cursor-pointer">
-                                <option value="">-- Оберіть платника --</option>
-                            </select>
-                            <i class="bi bi-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"></i>
-                        </div>
-                        <span asp-validation-for="PayerId" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                    </div>
-
-                    @* Дата *@
-                    <div class="flex flex-col group relative">
-                        <label asp-for="Date" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 group-focus-within:text-rose-400 transition-colors flex items-center gap-2">
-                            <i class="bi bi-calendar-event text-lg"></i> Коли?
-                        </label>
-                        <input asp-for="Date" type="date"
-                               class="w-full bg-white/60 border-2 border-white/90 rounded-[2rem] py-[0.85rem] pl-6 pr-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-rose-400/20 focus:border-rose-400 focus:bg-white hover:bg-white/80 transition-all cursor-pointer shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]" />
-                        <span asp-validation-for="Date" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                    </div>
-
-                </div>
-
-                @* Посилання на чек *@
-                <div class="flex flex-col group relative">
-                    <label asp-for="ReceiptImageUrl" class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-violet-500 transition-colors">
-                        <i class="bi bi-link-45deg text-lg"></i> Посилання на чек (необов'язково)
-                    </label>
-                    <input asp-for="ReceiptImageUrl" placeholder="https://..."
-                           class="w-full bg-white/60 border-2 border-white/90 rounded-[2rem] py-4 pl-6 pr-6 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-violet-400/20 focus:border-violet-400 focus:bg-white hover:bg-white/80 transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] placeholder:text-slate-400" />
-                    <span asp-validation-for="ReceiptImageUrl" class="text-xs text-rose-500 font-bold absolute -bottom-5 left-4"></span>
-                </div>
-
-            </div>
-
-            @* ── Блок поділу боргу ── *@
-            <div id="splits-section" class="mt-8 pt-6 border-t border-slate-200/60 @(Model.Splits.Any() ? "" : "hidden")">
-                <div class="flex items-center justify-between mb-4 pl-1 flex-wrap gap-2">
-                    <div class="flex items-center gap-2">
-                        <i class="bi bi-people-fill text-emerald-500 text-lg"></i>
-                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-500">Поділ боргу</span>
-                    </div>
-                    <div class="flex gap-2 flex-wrap">
-                        <button type="button" id="assignToPayerBtn"
-                                class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-black text-xs uppercase tracking-widest transition-all hover:scale-105 border border-blue-200/50">
-                            <i class="bi bi-person-check-fill"></i> На платника
-                        </button>
-                        <button type="button" id="splitEvenlyBtn"
-                                class="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black text-xs uppercase tracking-widest transition-all hover:scale-105 border border-emerald-200/50">
-                            <i class="bi bi-distribute-horizontal"></i> Порівну
-                        </button>
-                    </div>
-                </div>
-
-                <div class="space-y-3" id="splits-ui">
-                    @* Динамічно заповнюється через JS або з моделі *@
-                    @for (int i = 0; i < Model.Splits.Count; i++)
-                    {
-                        <div class="flex items-center gap-4 bg-white/60 border border-white/80 rounded-2xl px-5 py-3 hover:bg-white/80 transition-all split-row" data-split-index="@i">
-                            <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                                <i class="bi bi-person-fill text-emerald-400"></i>
-                            </div>
-                            <span class="flex-1 font-bold text-slate-700 text-sm">@Model.Splits[i].UserName</span>
-                            <div class="relative w-36 shrink-0">
-                                <input type="number" step="0.01" min="0"
-                                       class="split-ui-amount w-full bg-white/70 border-2 border-white/90 rounded-xl py-2 pl-3 pr-8 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 transition-all text-right"
-                                       value="0" data-index="@i" placeholder="0.00" />
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none"></span>
+                    <!-- Поїздка & Категорія в один рядок -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col relative z-[100]">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                                <i class="bi bi-airplane-engines"></i> Поїздка
+                            </label>
+                            <select asp-for="TripId" asp-items="Model.TripList" class="sr-only real-select" id="TripId"></select>
+                            <div class="relative custom-dropdown w-full">
+                                <button type="button" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none flex justify-between items-center" onclick="toggleDropdown(this)">
+                                    <span class="selected-text text-slate-800 truncate">
+                                        @(Model.TripList?.FirstOrDefault(x => x.Selected)?.Text ?? "-- Оберіть поїздку --")
+                                    </span>
+                                    <i class="bi bi-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                <div class="dropdown-menu absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible translate-y-1 transition-all duration-200 overflow-hidden z-[1000]">
+                                    <ul class="max-h-40 overflow-y-auto py-1 custom-scrollbar">
+                                        @if (Model.TripList != null)
+                                        {
+                                            foreach (var item in Model.TripList)
+                                            {
+                                                <li class="px-4 py-2 text-slate-700 text-xs font-bold cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors" onclick="selectItem(this, '@item.Value')">@item.Text</li>
+                                            }
+                                        }
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    }
+
+                        <div class="flex flex-col relative z-[90]">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                                <i class="bi bi-tags-fill"></i> Категорія
+                            </label>
+                            <select asp-for="CategoryId" asp-items="Model.CategoryList" class="sr-only real-select"></select>
+                            <div class="relative custom-dropdown w-full">
+                                <button type="button" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none flex justify-between items-center" onclick="toggleDropdown(this)">
+                                    <span class="selected-text text-slate-800 truncate">
+                                        @(Model.CategoryList?.FirstOrDefault(x => x.Selected)?.Text ?? "-- Оберіть --")
+                                    </span>
+                                    <i class="bi bi-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                <div class="dropdown-menu absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible translate-y-1 transition-all duration-200 overflow-hidden z-[1000]">
+                                    <ul class="max-h-40 overflow-y-auto py-1 custom-scrollbar">
+                                        @if (Model.CategoryList != null)
+                                        {
+                                            foreach (var item in Model.CategoryList)
+                                            {
+                                                <li class="px-4 py-2 text-slate-700 text-xs font-bold cursor-pointer hover:bg-fuchsia-50 hover:text-fuchsia-600 transition-colors" onclick="selectItem(this, '@item.Value')">@item.Text</li>
+                                            }
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Що купили (Назва витрати) -->
+                    <div class="flex flex-col relative">
+                        <label asp-for="Description" class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                            <i class="bi bi-chat-square-quote-fill"></i> Що купили?
+                        </label>
+                        <input asp-for="Description" placeholder="Кава з круасаном на Монмартрі 🥐☕" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-4 text-sm font-bold text-slate-800 outline-none focus:border-amber-400 hover:bg-slate-50 transition-all" />
+                        <span asp-validation-for="Description" class="text-[10px] text-rose-500 font-bold block"></span>
+                    </div>
+
+                    <!-- Сума, Валюта та Дата в один рядок -->
+                    <div class="grid grid-cols-12 gap-3 items-end">
+                        <div class="col-span-5 flex flex-col relative">
+                            <label asp-for="TotalAmount" class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                                <i class="bi bi-cash-coin"></i> Сума
+                            </label>
+                            <input asp-for="TotalAmount" id="TotalAmountInput" type="number" step="0.01" placeholder="0.00" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-lg font-black text-slate-800 outline-none focus:border-emerald-400 hover:bg-slate-50 transition-all" />
+                            <span asp-validation-for="TotalAmount" class="text-[10px] text-rose-500 font-bold block"></span>
+                        </div>
+
+                        <!-- Випадаючий список валют (Не перекривається завдяки підвищеному z-index) -->
+                        <div class="col-span-4 flex flex-col relative z-[80]">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2">
+                                Валюта
+                            </label>
+                            <select asp-for="Currency" asp-items="Model.CurrencyList" class="sr-only real-select" id="Currency"></select>
+                            <div class="relative custom-dropdown w-full">
+                                <button type="button" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-2.5 text-xs font-bold text-slate-700 outline-none flex justify-between items-center" onclick="toggleDropdown(this)">
+                                    <span class="selected-text text-slate-800 truncate">
+                                        @(Model.CurrencyList?.FirstOrDefault(x => x.Selected)?.Text ?? "UAH")
+                                    </span>
+                                    <i class="bi bi-chevron-down text-slate-400 text-[10px]"></i>
+                                </button>
+                                <div class="dropdown-menu absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible translate-y-1 transition-all duration-200 overflow-hidden z-[5000] !important">
+                                    <ul class="max-h-40 overflow-y-auto py-1 custom-scrollbar">
+                                        @if (Model.CurrencyList != null)
+                                        {
+                                            foreach (var item in Model.CurrencyList)
+                                            {
+                                                <li class="px-3 py-2 text-slate-700 text-xs font-bold cursor-pointer hover:bg-cyan-50 hover:text-cyan-600 transition-colors" onclick="selectItem(this, '@item.Value')">@item.Text</li>
+                                            }
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-span-3 flex flex-col relative">
+                            <label asp-for="Date" class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2">Дата</label>
+                            <input asp-for="Date" type="date" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-2 text-xs font-bold text-slate-700 outline-none hover:bg-slate-50 transition-all cursor-pointer" />
+                        </div>
+                    </div>
+
+                    <!-- Хто заплатив -->
+                    <div class="flex flex-col relative z-[70]">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                            <i class="bi bi-person-fill-check"></i> Хто заплатив?
+                        </label>
+                        <select asp-for="PayerId" asp-items="Model.PayerList" class="sr-only real-select" id="PayerIdSelect"></select>
+                        <div class="relative custom-dropdown w-full">
+                            <button type="button" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none flex justify-between items-center" onclick="toggleDropdown(this)">
+                                <span class="selected-text text-slate-800">
+                                    @(Model.PayerList?.FirstOrDefault(x => x.Selected)?.Text ?? "-- Оберіть платника --")
+                                </span>
+                                <i class="bi bi-chevron-down text-slate-400 text-xs"></i>
+                            </button>
+                            <div class="dropdown-menu absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg opacity-0 invisible translate-y-1 transition-all duration-200 overflow-hidden z-[1000]">
+                                <ul class="max-h-40 overflow-y-auto py-1 custom-scrollbar">
+                                    <li class="px-4 py-2 text-slate-400 text-xs font-bold cursor-pointer hover:bg-slate-100 transition-colors" onclick="selectItem(this, '')">-- Оберіть платника --</li>
+                                    @if (Model.PayerList != null)
+                                    {
+                                        foreach (var item in Model.PayerList)
+                                        {
+                                            <li class="px-4 py-2 text-slate-700 font-bold cursor-pointer hover:bg-emerald-50 hover:text-emerald-600 transition-colors flex items-center gap-2" id="payer-option-@item.Value" onclick="selectItem(this, '@item.Value')">
+                                                <i class="bi bi-person-circle text-emerald-300"></i> @item.Text
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                        <span asp-validation-for="PayerId" class="text-[10px] text-rose-500 font-bold block"></span>
+                    </div>
+
+                    <!-- Посилання на чек -->
+                    <div class="flex flex-col relative">
+                        <label asp-for="ReceiptImageUrl" class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-2 flex items-center gap-1">
+                            <i class="bi bi-link-45deg"></i> Чек (Опціонально)
+                        </label>
+                        <input asp-for="ReceiptImageUrl" placeholder="https://..." class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold text-slate-800 outline-none focus:border-blue-400 hover:bg-slate-50 transition-all" />
+                        <span asp-validation-for="ReceiptImageUrl" class="text-[10px] text-rose-500 font-bold block"></span>
+                    </div>
+
                 </div>
 
-                <div class="mt-4 flex items-center justify-between px-5 py-3 bg-slate-50/80 border border-slate-200/60 rounded-2xl">
-                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">Розподілено</span>
-                    <div class="flex items-center gap-3">
-                        <span id="splitSumDisplay" class="text-lg font-black text-slate-800">0.00</span>
-                        <span class="text-xs font-bold text-slate-400">з</span>
-                        <span id="splitTotalDisplay" class="text-lg font-black text-emerald-600">0.00</span>
-                        <span id="splitStatusIcon" class="text-lg">⚪</span>
+                <!-- ПРАВА КОЛОНКА: Роподіл боргів та прив'язки (7 колонок) -->
+                <div class="lg:col-span-6 space-y-4">
+
+                    <!-- Розподіл часток -->
+                    <div class="border border-slate-200/80 bg-slate-50/50 rounded-2xl p-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                            <h4 class="text-sm font-black text-slate-800 m-0 flex items-center gap-1">
+                                <i class="bi bi-people-fill text-indigo-500"></i> Борги учасників
+                            </h4>
+                            <div class="flex items-center gap-1.5">
+                                <!-- КНОПКА: ЗАПИСАТИ НА ПЛАТНИКА -->
+                                <button type="button" onclick="splitOnlyToPayer()" class="px-2.5 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 font-bold text-[10px] rounded-lg transition-all flex items-center gap-1">
+                                    <i class="bi bi-person-check-fill"></i> Оплатив сам
+                                </button>
+                                <!-- КНОПКА: ПОДІЛИТИ ПОРІВНУ -->
+                                <button type="button" id="btnSplitEqually" class="px-2.5 py-1.5 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-bold text-[10px] rounded-lg transition-all flex items-center gap-1">
+                                    <i class="bi bi-calculator"></i> Порівну
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Компактний контейнер для скролу учасників (захист від випадання за екран) -->
+                        <div class="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar" id="splitsContainer">
+                            @for (int i = 0; i < Model.Splits.Count; i++)
+                            {
+                                <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-xl shadow-xs">
+                                    <input type="hidden" asp-for="Splits[i].UserId" class="split-user-hidden" data-index="@i" />
+                                    <input type="hidden" asp-for="Splits[i].UserName" />
+                                    <input type="hidden" asp-for="Splits[i].OwedAmount" class="split-amount-hidden" data-index="@i" />
+
+                                    <div class="font-bold text-slate-700 text-xs flex items-center gap-2">
+                                        <div class="w-6 h-6 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-xs">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        @Model.Splits[i].UserName
+                                    </div>
+
+                                    <div class="w-1/3 relative">
+                                        <input type="number" step="0.01" min="0" data-index="@i" class="split-ui-input w-full bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-lg focus:border-emerald-400 block px-2.5 py-1.5 pr-8 transition-all outline-none text-right" value="@Model.Splits[i].OwedAmount" />
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                            <span class="currency-addon text-[9px] font-black text-slate-400">UAH</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.Splits.Count == 0)
+                            {
+                                <div class="text-center text-xs font-bold text-slate-400 py-4">
+                                    Оберіть поїздку для відображення учасників.
+                                </div>
+                            }
+                        </div>
                     </div>
+
+                    <!-- Компактний блок прив'язок до поїздки з оновленим дизайном -->
+                    <div class="p-4 bg-gradient-to-br from-slate-50 to-white border border-slate-200/60 rounded-2xl shadow-sm">
+                        <h4 class="text-xs font-black text-slate-700 mb-3 flex items-center gap-1.5">
+                            <i class="bi bi-paperclip text-slate-400"></i> Деталі прив'язки
+                            <span class="text-[9px] font-medium text-slate-400 ml-auto uppercase tracking-widest">(Опціонально)</span>
+                        </h4>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                                    <i class="bi bi-car-front-fill"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <select asp-for="TransitId" asp-items="Model.TransitList" class="w-full bg-white border border-slate-200 hover:border-blue-300 rounded-lg py-1.5 px-3 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                                        <option value="">-- Обрати транспорт --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-fuchsia-50 text-fuchsia-500 flex items-center justify-center shrink-0">
+                                    <i class="bi bi-house-door-fill"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <select asp-for="AccommodationId" asp-items="Model.AccommodationList" class="w-full bg-white border border-slate-200 hover:border-fuchsia-300 rounded-lg py-1.5 px-3 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-fuchsia-500/20 focus:border-fuchsia-500 transition-all cursor-pointer">
+                                        <option value="">-- Обрати житло --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                                    <i class="bi bi-ticket-perforated-fill"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <select asp-for="TripActivityId" asp-items="Model.ActivityList" class="w-full bg-white border border-slate-200 hover:border-amber-300 rounded-lg py-1.5 px-3 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all cursor-pointer">
+                                        <option value="">-- Обрати активність --</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <p id="splitError" class="text-xs text-rose-500 font-bold mt-2 pl-1 hidden">
-                    ⚠️ Сума часток має дорівнювати загальній сумі витрати
-                </p>
             </div>
 
-            @* ── Кнопки ── *@
-            <div class="mt-10 flex flex-col sm:flex-row items-center justify-end gap-4 pt-6 border-t border-slate-200/60">
-                <a asp-action="Index" class="w-full sm:w-auto px-8 py-4 rounded-full font-black text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all text-xs uppercase tracking-widest text-center">
-                    Скасувати
-                </a>
-                <button type="submit" class="w-full sm:w-auto px-10 py-4 font-black text-white bg-slate-900 rounded-full shadow-[0_10px_20px_-5px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_30px_-5px_rgba(0,0,0,0.4)] hover:-translate-y-1 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-3 active:scale-95">
-                    Зберегти <i class="bi bi-check2-circle text-lg"></i>
+            <!-- Компактні кнопки дій внизу форми -->
+            <div class="mt-4 flex flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                @if (!string.IsNullOrEmpty(returnUrl))
+                {
+                    <a href="@returnUrl" class="px-5 py-2.5 rounded-full font-black text-slate-400 hover:text-slate-600 text-xs uppercase tracking-widest text-center transition-colors">
+                        Скасувати
+                    </a>
+                }
+                else
+                {
+                    <button type="button" onclick="history.back()" class="px-5 py-2.5 rounded-full font-black text-slate-400 hover:text-slate-600 text-xs uppercase tracking-widest text-center transition-colors">
+                        Скасувати
+                    </button>
+                }
+
+                <button type="submit" class="group relative inline-flex items-center justify-center px-8 py-3 font-black text-white transition-all duration-300 bg-slate-900 rounded-full shadow-md hover:shadow-lg uppercase tracking-widest text-xs overflow-hidden active:scale-95">
+                    <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
+                    <span class="relative flex items-center gap-1.5">
+                        Зберегти <i class="bi bi-send-check-fill text-xs"></i>
+                    </span>
                 </button>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+
     <script>
-        const totalInput    = document.getElementById('TotalAmountInput');
-        const tripSelect    = document.getElementById('TripIdSelect');
-        const payerSelect   = document.getElementById('PayerIdSelect');
-        const splitEvenBtn  = document.getElementById('splitEvenlyBtn');
-        const assignPayerBtn= document.getElementById('assignToPayerBtn');
-        const splitSumEl    = document.getElementById('splitSumDisplay');
-        const splitTotalEl  = document.getElementById('splitTotalDisplay');
-        const splitStatusEl = document.getElementById('splitStatusIcon');
-        const splitErrorEl  = document.getElementById('splitError');
-        const splitsSection = document.getElementById('splits-section');
-        const splitsUi      = document.getElementById('splits-ui');
-        const hiddenContainer = document.getElementById('hidden-splits-container');
+        document.addEventListener('DOMContentLoaded', function () {
+            // ЛОГІКА КАСТОМНИХ СЕЛЕКТІВ
+            window.toggleDropdown = function(button) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu !== button.nextElementSibling) {
+                        menu.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                        menu.previousElementSibling.querySelector('.bi-chevron-down').classList.remove('rotate-180');
+                        menu.parentElement.classList.remove('z-[1000]');
+                    }
+                });
 
-        const uiAmounts = () => document.querySelectorAll('.split-ui-amount');
+                const menu = button.nextElementSibling;
+                const icon = button.querySelector('.bi-chevron-down');
+                const container = button.parentElement;
+                const isOpening = menu.classList.contains('opacity-0');
 
-        // ── Оновити підсумок ──────────────────────────────────────
-        function updateSummary() {
-            const total = parseFloat(totalInput?.value || 0);
-            let sum = 0;
-            uiAmounts().forEach(inp => sum += parseFloat(inp.value || 0));
-            sum = Math.round(sum * 100) / 100;
-            const rounded = Math.round(total * 100) / 100;
+                if (isOpening) {
+                    menu.classList.remove('opacity-0', 'invisible', 'translate-y-1');
+                    icon.classList.add('rotate-180');
+                    container.classList.add('z-[1000]');
+                } else {
+                    menu.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                    icon.classList.remove('rotate-180');
+                    setTimeout(() => container.classList.remove('z-[1000]'), 200);
+                }
+            };
 
-            if (splitSumEl)   splitSumEl.textContent   = sum.toFixed(2);
-            if (splitTotalEl) splitTotalEl.textContent = rounded.toFixed(2);
+            window.selectItem = function(liElement, value) {
+                const text = liElement.innerText.trim();
+                const container = liElement.closest('.custom-dropdown');
+                const triggerBtn = container.querySelector('.selected-text');
+                const realSelect = container.parentElement.querySelector('.real-select');
+                const menu = container.querySelector('.dropdown-menu');
+                const icon = container.querySelector('.bi-chevron-down');
 
-            const ok = Math.abs(sum - rounded) < 0.01;
-            if (splitStatusEl) splitStatusEl.textContent = sum === 0 ? '⚪' : ok ? '✅' : '❌';
-            if (splitErrorEl)  splitErrorEl.classList.toggle('hidden', ok || sum === 0);
+                triggerBtn.innerText = text;
+                triggerBtn.classList.remove('text-slate-400');
+                triggerBtn.classList.add('text-slate-800');
+                realSelect.value = value;
 
-            syncHiddenFields();
-        }
-
-        // ── Синхронізація UI → приховані поля ────────────────────
-        function syncHiddenFields() {
-            uiAmounts().forEach(inp => {
-                const idx    = inp.dataset.index;
-                const hidden = document.querySelector(`.split-amount-hidden[data-index="${idx}"]`);
-                if (hidden) hidden.value = inp.value || '0';
-            });
-        }
-
-        // ── AJAX: завантажити учасників при зміні поїздки ────────
-        if (tripSelect) {
-            tripSelect.addEventListener('change', async function () {
-                const tripId = this.value;
-                if (!tripId) {
-                    splitsSection.classList.add('hidden');
-                    splitsUi.innerHTML = '';
-                    hiddenContainer.innerHTML = '';
-                    payerSelect.innerHTML = '<option value="">-- Оберіть платника --</option>';
+                // Якщо змінили поїздку — перезавантажуємо з новим TripId і зберігаємо returnUrl
+                if (realSelect.id === 'TripId') {
+                    const rUrl = encodeURIComponent(document.getElementsByName('returnUrl')[0]?.value || '');
+                    window.location.href = '/Expenses/Create?tripId=' + value + '&returnUrl=' + rUrl;
                     return;
                 }
 
-                try {
-                    const res  = await fetch(`/Expenses/GetTripParticipants?tripId=${tripId}`);
-                    const data = await res.json();
+                realSelect.dispatchEvent(new Event('change'));
+                if (typeof $(realSelect).valid === "function") $(realSelect).valid();
 
-                    // Очищаємо
-                    payerSelect.innerHTML = '<option value="">-- Оберіть платника --</option>';
-                    splitsUi.innerHTML    = '';
-                    hiddenContainer.innerHTML = '';
+                menu.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                icon.classList.remove('rotate-180');
+                setTimeout(() => container.classList.remove('z-[1000]'), 200);
+            };
 
-                    if (!data.length) return;
-
-                    // Заповнюємо платника
-                    data.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value       = p.userId;
-                        opt.textContent = p.userName;
-                        payerSelect.appendChild(opt);
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-dropdown')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.add('opacity-0', 'invisible', 'translate-y-1');
+                        menu.parentElement.classList.remove('z-[1000]');
                     });
-
-                    // Заповнюємо splits UI та приховані поля
-                    data.forEach((p, i) => {
-                        // UI рядок
-                        splitsUi.insertAdjacentHTML('beforeend', `
-                            <div class="flex items-center gap-4 bg-white/60 border border-white/80 rounded-2xl px-5 py-3 hover:bg-white/80 transition-all split-row" data-split-index="${i}">
-                                <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                                    <i class="bi bi-person-fill text-emerald-400"></i>
-                                </div>
-                                <span class="flex-1 font-bold text-slate-700 text-sm">${p.userName}</span>
-                                <div class="relative w-36 shrink-0">
-                                    <input type="number" step="0.01" min="0"
-                                           class="split-ui-amount w-full bg-white/70 border-2 border-white/90 rounded-xl py-2 pl-3 pr-8 text-sm font-black text-slate-800 outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 transition-all text-right"
-                                           value="0" data-index="${i}" placeholder="0.00" />
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">UAH</span>
-                                </div>
-                            </div>
-                        `);
-
-                        // Приховані поля
-                        hiddenContainer.insertAdjacentHTML('beforeend', `
-                            <input type="hidden" name="Splits[${i}].UserId"   class="split-user-hidden"   data-index="${i}" value="${p.userId}" />
-                            <input type="hidden" name="Splits[${i}].UserName"                             data-index="${i}" value="${p.userName}" />
-                            <input type="hidden" name="Splits[${i}].OwedAmount" class="split-amount-hidden" data-index="${i}" value="0" />
-                        `);
+                    document.querySelectorAll('.bi-chevron-down').forEach(icon => {
+                        icon.classList.remove('rotate-180');
                     });
-
-                    splitsSection.classList.remove('hidden');
-                    updateSummary();
-                } catch(e) {
-                    console.error('Помилка завантаження учасників:', e);
                 }
             });
-        }
 
-        // ── Розділити порівну ─────────────────────────────────────
-        if (splitEvenBtn) {
-            splitEvenBtn.addEventListener('click', function () {
-                const total  = parseFloat(totalInput?.value || 0);
-                const inputs = uiAmounts();
-                if (!inputs.length || total <= 0) return;
+            // ЛОГІКА ДЛЯ БОРГІВ І ВАЛЮТИ
+            const totalInput = document.getElementById('TotalAmountInput');
+            const currencySelect = document.getElementById('Currency');
+            const splitUIInputs = document.querySelectorAll('.split-ui-input');
+            const currencyAddons = document.querySelectorAll('.currency-addon');
+            const btnSplitEqually = document.getElementById('btnSplitEqually');
 
-                const each      = Math.floor((total / inputs.length) * 100) / 100;
-                const remainder = Math.round((total - each * inputs.length) * 100) / 100;
-
-                inputs.forEach((inp, i) => {
-                    inp.value = i === 0 ? (each + remainder).toFixed(2) : each.toFixed(2);
+            if (currencySelect) {
+                currencySelect.addEventListener('change', function() {
+                    const selectedText = this.options[this.selectedIndex].text.split(' ')[0];
+                    currencyAddons.forEach(addon => addon.textContent = selectedText);
                 });
-                updateSummary();
-            });
-        }
-
-        // ── Записати на платника (без боргу) ─────────────────────
-        if (assignPayerBtn) {
-            assignPayerBtn.addEventListener('click', function () {
-                const total   = parseFloat(totalInput?.value || 0);
-                const payerId = payerSelect?.value;
-                if (!payerId || total <= 0) return;
-
-                uiAmounts().forEach(inp => {
-                    const idx    = inp.dataset.index;
-                    const userId = document.querySelector(`.split-user-hidden[data-index="${idx}"]`)?.value;
-                    inp.value    = userId === payerId ? total.toFixed(2) : '0';
-                });
-                updateSummary();
-            });
-        }
-
-        // ── Слухаємо зміни ────────────────────────────────────────
-        if (totalInput) totalInput.addEventListener('input', updateSummary);
-        document.addEventListener('input', e => {
-            if (e.target.classList.contains('split-ui-amount')) updateSummary();
-        });
-
-        // ── Валідація перед сабмітом ──────────────────────────────
-        document.getElementById('expenseForm').addEventListener('submit', function (e) {
-            const total  = parseFloat(totalInput?.value || 0);
-            const inputs = uiAmounts();
-
-            if (!inputs.length) return; // немає учасників — ок
-
-            let sum = 0;
-            inputs.forEach(inp => sum += parseFloat(inp.value || 0));
-            sum = Math.round(sum * 100) / 100;
-
-            // Всі нулі → автоматично на платника
-            if (sum === 0) {
-                const payerId = payerSelect?.value;
-                inputs.forEach(inp => {
-                    const idx    = inp.dataset.index;
-                    const hidden = document.querySelector(`.split-amount-hidden[data-index="${idx}"]`);
-                    const userId = document.querySelector(`.split-user-hidden[data-index="${idx}"]`)?.value;
-                    if (hidden) hidden.value = userId === payerId ? total.toFixed(2) : '0';
-                });
-                return;
             }
 
-            if (Math.abs(sum - Math.round(total * 100) / 100) >= 0.01) {
-                e.preventDefault();
-                if (splitErrorEl) splitErrorEl.classList.remove('hidden');
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                return;
+            if (btnSplitEqually) {
+                btnSplitEqually.addEventListener('click', function() {
+                    const total = parseFloat(totalInput.value);
+                    if (isNaN(total) || total <= 0) {
+                        alert("Спочатку введіть загальну суму!");
+                        return;
+                    }
+
+                    const count = splitUIInputs.length;
+                    if (count === 0) return;
+
+                    const splitAmount = Math.floor((total / count) * 100) / 100;
+                    let remainder = total - (splitAmount * count);
+
+                    splitUIInputs.forEach((input, index) => {
+                        let amount = splitAmount;
+                        if (index === 0) {
+                            amount += remainder;
+                        }
+                        input.value = amount.toFixed(2);
+                    });
+                });
             }
 
-            syncHiddenFields();
-        });
+            // ШВИДКИЙ ЗАПИС НА ПЛАТНИКА
+            window.splitOnlyToPayer = function() {
+                const total = parseFloat(totalInput?.value || 0);
+                if (isNaN(total) || total <= 0) {
+                    alert("Спочатку введіть загальну суму!");
+                    return;
+                }
 
-        // ── Ініціалізація ─────────────────────────────────────────
-        updateSummary();
+                const payerId = document.getElementById('PayerIdSelect')?.value;
+                if (!payerId) {
+                    alert("Будь ласка, оберіть того, хто заплатив!");
+                    return;
+                }
+
+                splitUIInputs.forEach(uiInput => {
+                    const idx = uiInput.dataset.index;
+                    const userId = document.querySelector(`.split-user-hidden[data-index="${idx}"]`)?.value;
+
+                    if (userId === payerId) {
+                        uiInput.value = total.toFixed(2);
+                    } else {
+                        uiInput.value = '0.00';
+                    }
+                });
+            };
+
+            // Синхронізуємо візуальні поля з прихованими полями моделі перед відправкою форми
+            document.getElementById('expenseForm').addEventListener('submit', function (e) {
+                splitUIInputs.forEach(uiInput => {
+                    const idx = uiInput.dataset.index;
+                    const hiddenAmount = document.querySelector(`.split-amount-hidden[data-index="${idx}"]`);
+                    if (hiddenAmount) {
+                        hiddenAmount.value = uiInput.value;
+                    }
+                });
+            });
+        });
     </script>
 }

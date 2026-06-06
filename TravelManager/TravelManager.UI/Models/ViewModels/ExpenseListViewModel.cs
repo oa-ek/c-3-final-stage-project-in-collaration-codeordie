@@ -12,6 +12,7 @@ namespace TravelManager.UI.Models.ViewModels
         public string CategoryName { get; set; }
         public string TripTitle { get; set; }
         public int TripId { get; set; }
+        public string? ReceiptImageUrl { get; set; }
 
     }
 }
