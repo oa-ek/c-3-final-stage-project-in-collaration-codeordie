@@ -1365,6 +1365,95 @@
                 <div style="font-size:0.85rem; color:rgba(255,255,255,0.5); transform: translateZ(20px);">@Model.Expenses.Count() витрат · з конвертацією</div>
             </div>
 
+            <div class="light-glass-card" style="animation-delay: 0.12s; overflow:visible;">
+                <div class="card-header" style="background:linear-gradient(135deg,rgba(99,102,241,.05),rgba(139,92,246,.05));border-bottom:1px solid rgba(99,102,241,.1);">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);"><i class="bi bi-robot"></i></div>
+                        AI-аналіз витрат
+                    </div>
+                    <span style="font-size:.65rem;font-weight:800;background:rgba(99,102,241,.1);color:#6366f1;padding:.2rem .65rem;border-radius:50px;border:1px solid rgba(99,102,241,.2);letter-spacing:.06em;">GROQ</span>
+                </div>
+                <div style="padding:1.4rem;">
+
+                    @* Idle state *@
+                    <div id="aib-idle">
+                        <p style="font-size:.86rem;color:#64748b;line-height:1.65;margin:0 0 1rem;">
+                            Groq проаналізує ваші витрати за категоріями, порівняє з типовим бюджетом для напрямку та надасть конкретні поради щодо економії.
+                        </p>
+
+                        @{
+                            var catGroups = Model.Expenses
+                            .Where(e => e.Category != null)
+                            .GroupBy(e => e.Category!.Name)
+                            .Select(g => new { Name = g.Key, Total = g.Sum(e => e.TotalAmount) })
+                            .OrderByDescending(g => g.Total)
+                            .Take(5)
+                            .ToList();
+                            var expTotal = Model.Expenses.Sum(e => e.TotalAmount);
+                            string[] barColors = { "#6366f1", "#10b981", "#f59e0b", "#ec4899", "#3b82f6" };
+                        }
+
+                        @if (catGroups.Any())
+                        {
+                            <div style="margin-bottom:1.1rem;">
+                                @for (int ci = 0; ci < catGroups.Count; ci++)
+                                {
+                                    var cat = catGroups[ci];
+                                    var pct = expTotal > 0 ? (int)(cat.Total / expTotal * 100) : 0;
+                                    var col = barColors[ci % barColors.Length];
+                                    <div style="margin-bottom:.55rem;">
+                                        <div style="display:flex;justify-content:space-between;font-size:.75rem;font-weight:700;color:#475569;margin-bottom:.22rem;">
+                                            <span>@cat.Name</span>
+                                            <span style="color:@col;">@pct%</span>
+                                        </div>
+                                        <div style="height:5px;background:rgba(0,0,0,.06);border-radius:50px;overflow:hidden;">
+                                            <div style="height:100%;width:@(pct)%;background:@col;border-radius:50px;transition:width 1s ease;"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="font-size:.82rem;color:#94a3b8;font-style:italic;margin-bottom:1rem;">Додайте витрати, щоб побачити аналіз.</div>
+                        }
+
+                        <button onclick="runAiBudget(@Model.Trip.Id)"
+                                style="width:100%;padding:.72rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:14px;font-family:'Montserrat',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;transition:all .25s;box-shadow:0 4px 16px rgba(99,102,241,.3);display:flex;align-items:center;justify-content:center;gap:.5rem;"
+                                onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(99,102,241,.45)'"
+                                onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(99,102,241,.3)'">
+                            <i class="bi bi-stars"></i> Проаналізувати витрати
+                        </button>
+                    </div>
+
+                    @* Loading state *@
+                    <div id="aib-loading" style="display:none;text-align:center;padding:2.5rem 0;">
+                        <div style="width:38px;height:38px;border:3px solid rgba(99,102,241,.15);border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .8rem;"></div>
+                        <div style="font-weight:700;color:#6366f1;font-size:.88rem;">Аналізую витрати...</div>
+                        <div style="font-size:.75rem;color:#94a3b8;margin-top:.3rem;">Groq обробляє дані</div>
+                    </div>
+
+                    @* Error state *@
+                    <div id="aib-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:.9rem 1rem;color:#ef4444;font-weight:700;font-size:.83rem;margin-top:.5rem;"></div>
+
+                    @* Result state *@
+                    <div id="aib-result" style="display:none;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;">
+                            <span style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#10b981;">
+                                <i class="bi bi-check-circle-fill me-1"></i>Аналіз готовий
+                            </span>
+                            <button onclick="resetAiBudget()" style="background:none;border:none;color:#94a3b8;font-size:.75rem;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;padding:0;">
+                                Оновити
+                            </button>
+                        </div>
+                        <div id="aib-content"
+                             style="font-size:.86rem;color:#374151;line-height:1.72;background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.1);border-radius:14px;padding:1.1rem;">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
             <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.2s;">
                 <div class="card-header">
                     <div class="card-header-title">
@@ -1733,6 +1822,41 @@
             });
             document.getElementById('content-tips').innerHTML = tHtml || '<div style="color:#94a3b8; font-style:italic; padding:1rem;">Немає даних</div>';
         }
+
+        // ══ AI BUDGET ANALYSIS ══
+        async function runAiBudget(tripId) {
+            document.getElementById('aib-idle').style.display = 'none';
+            document.getElementById('aib-loading').style.display = 'block';
+            document.getElementById('aib-error').style.display = 'none';
+            document.getElementById('aib-result').style.display = 'none';
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+                const res = await fetch(`/Expenses/AiAnalyze?tripId=${tripId}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                document.getElementById('aib-loading').style.display = 'none';
+                if (data.error) {
+                    document.getElementById('aib-error').style.display = 'block';
+                    document.getElementById('aib-error').textContent = data.error;
+                    document.getElementById('aib-idle').style.display = 'block';
+                    return;
+                }
+                document.getElementById('aib-content').innerHTML = data.html;
+                document.getElementById('aib-result').style.display = 'block';
+            } catch(e) {
+                document.getElementById('aib-loading').style.display = 'none';
+                document.getElementById('aib-error').style.display = 'block';
+                document.getElementById('aib-error').textContent = '😔 ' + e.message;
+                document.getElementById('aib-idle').style.display = 'block';
+            }
+        }
+        function resetAiBudget() {
+            document.getElementById('aib-result').style.display = 'none';
+            document.getElementById('aib-idle').style.display = 'block';
+        }
     </script>
 }
 
@@ -1768,8 +1892,8 @@
 <script>
     (function () {
         const destIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                        Model.Destinations.Select(d => d.Id).ToList()
-                ));
+                                                Model.Destinations.Select(d => d.Id).ToList()
+                                ));
 
         destIds.forEach(id => {
             fetch(`/TripDestinations/WeatherCard?destinationId=${id}`)
