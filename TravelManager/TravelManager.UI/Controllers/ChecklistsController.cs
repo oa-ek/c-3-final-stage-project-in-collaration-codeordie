@@ -198,7 +198,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст оновлено!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = model.Id });
         }
 
         [HttpPost]
