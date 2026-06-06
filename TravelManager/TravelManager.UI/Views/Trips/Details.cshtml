@@ -113,9 +113,9 @@
         transition: opacity 1.2s ease;
     }
 
-    .hero-video-bg.loaded {
-        opacity: 1;
-    }
+        .hero-video-bg.loaded {
+            opacity: 1;
+        }
 
     /* dark gradient overlay so text stays readable */
     .hero-video-overlay {
@@ -123,11 +123,7 @@
         inset: 0;
         z-index: 1;
         border-radius: 32px;
-        background: linear-gradient(
-            135deg,
-            rgba(10, 14, 28, 0.72) 0%,
-            rgba(20, 18, 60, 0.68) 100%
-        );
+        background: linear-gradient( 135deg, rgba(10, 14, 28, 0.72) 0%, rgba(20, 18, 60, 0.68) 100% );
         /* subtle vignette */
         box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.4);
     }
@@ -139,17 +135,19 @@
         inset: 0;
         z-index: 0;
         border-radius: 32px;
-        background: linear-gradient(90deg,
-            rgba(255,255,255,0) 0%,
-            rgba(255,255,255,0.04) 50%,
-            rgba(255,255,255,0) 100%);
+        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 100%);
         background-size: 200% 100%;
         animation: shimmer 1.8s infinite;
     }
 
     @@keyframes shimmer {
-        0%   { background-position: -200% 0; }
-        100% { background-position:  200% 0; }
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
     }
 
     .hero-dots {
@@ -248,36 +246,36 @@
         white-space: nowrap;
     }
 
-    .city-vid-btn:hover {
-        background: rgba(255,255,255,0.15);
-        color: white;
-        border-color: rgba(255,255,255,0.3);
-    }
+        .city-vid-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-color: rgba(255,255,255,0.3);
+        }
 
-    .city-vid-btn.active {
-        background: rgba(255,255,255,0.18);
-        border-color: rgba(255,255,255,0.45);
-        color: white;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
-    }
+        .city-vid-btn.active {
+            background: rgba(255,255,255,0.18);
+            border-color: rgba(255,255,255,0.45);
+            color: white;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+        }
 
-    .city-vid-btn.shuffle {
-        background: rgba(99,102,241,0.2);
-        border-color: rgba(99,102,241,0.4);
-        color: rgba(199,200,255,0.9);
-    }
+        .city-vid-btn.shuffle {
+            background: rgba(99,102,241,0.2);
+            border-color: rgba(99,102,241,0.4);
+            color: rgba(199,200,255,0.9);
+        }
 
-    .city-vid-btn.shuffle:hover {
-        background: rgba(99,102,241,0.35);
-        color: white;
-    }
+            .city-vid-btn.shuffle:hover {
+                background: rgba(99,102,241,0.35);
+                color: white;
+            }
 
-    /* spinner inside button while loading */
-    .city-vid-btn .spin {
-        display: inline-block;
-        animation: spin .7s linear infinite;
-        font-style: normal;
-    }
+        /* spinner inside button while loading */
+        .city-vid-btn .spin {
+            display: inline-block;
+            animation: spin .7s linear infinite;
+            font-style: normal;
+        }
 
     .btn-back {
         display: inline-flex;
@@ -587,16 +585,21 @@
         font-family: 'Montserrat', sans-serif;
     }
 
-    .tl-filter-btn:hover { background: #e2e8f0; color: #334155; }
+        .tl-filter-btn:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
 
-    .tl-filter-btn.active {
-        background: white;
-        border-color: currentColor;
-        color: #111827;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        .tl-filter-btn.active {
+            background: white;
+            border-color: currentColor;
+            color: #111827;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+    .tl-date-group {
+        margin-bottom: 0.5rem;
     }
-
-    .tl-date-group { margin-bottom: 0.5rem; }
 
     .tl-date-label {
         display: flex;
@@ -610,28 +613,28 @@
         padding: 0.8rem 0 0.4rem;
     }
 
-    .tl-date-label::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: rgba(0,0,0,0.06);
-    }
+        .tl-date-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0,0,0,0.06);
+        }
 
     .timeline-container {
         position: relative;
         padding: 0.5rem 1.5rem 1.5rem 3.8rem;
     }
 
-    .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: 2.7rem;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(to bottom, #e0e7ff, #fce7f3, #d1fae5);
-        border-radius: 2px;
-    }
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 2.7rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #e0e7ff, #fce7f3, #d1fae5);
+            border-radius: 2px;
+        }
 
     .timeline-item {
         position: relative;
@@ -639,7 +642,9 @@
         cursor: default;
     }
 
-    .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
 
     .tl-icon {
         position: absolute;
@@ -719,13 +724,13 @@
         padding-left: 0.2rem;
     }
 
-    .tl-gap-label::before,
-    .tl-gap-label::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: rgba(0,0,0,0.04);
-    }
+        .tl-gap-label::before,
+        .tl-gap-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0,0,0,0.04);
+        }
 
     .tl-next-badge {
         font-size: 0.65rem;
@@ -1018,67 +1023,61 @@
                         var groups = Model.Timeline.GroupBy(e => e.EventDate.Date).OrderBy(g => g.Key);
 
                         <div class="timeline-container" id="timelineContainer">
-                        @{
-                            TimelineEvent? prevItem = null;
-                        }
-                        @foreach (var group in groups)
-                        {
-                            <!-- Дата-заголовок -->
-                            <div class="tl-date-label" data-date="@group.Key.ToString("yyyy-MM-dd")">
-                                @group.Key.ToString("dd MMM yyyy")
-                                @if (group.Key == today) { <span style="color:#f59e0b">· сьогодні</span> }
-                            </div>
-
-                            @foreach (var item in group)
-                            {
-                                <!-- Gap між подіями -->
-                                @if (prevItem != null)
-                                {
-                                    var gap = (int)(item.EventDate - prevItem.EventDate).TotalDays;
-                                    if (gap >= 2 && item.EventDate.Date != prevItem.EventDate.Date)
-                                    {
-                                        <div class="tl-gap-label" data-type="@item.EventType">через @gap дн.</div>
-                                    }
-                                }
-
-                                @{
-                                    var isNext = nextEvent != null && item.EventDate == nextEvent.EventDate && item.Title == nextEvent.Title;
-                                    var typeIcon = item.EventType switch {
-                                        "Transit" => "✈️",
-                                        "Destination" => "📍",
-                                        "Accommodation" => "🏨",
-                                        _ => "📌"
-                                    };
-                                    var bgAlpha = item.EventType switch {
-                                        "Transit" => "rgba(139,92,246,0.15)",
-                                        "Destination" => "rgba(59,130,246,0.15)",
-                                        "Accommodation" => "rgba(20,184,166,0.15)",
-                                        _ => "rgba(0,0,0,0.08)"
-                                    };
-                                }
-
-                                <div class="timeline-item" data-type="@item.EventType">
-                                    <div class="tl-icon" style="background:@bgAlpha;">@typeIcon</div>
-                                    <div class="tl-card">
-                                        <div>
-                                            <div class="tl-card-title">
-                                                @item.Title
-                                                @if (isNext) { <span class="tl-next-badge">▶ наступне</span> }
-                                            </div>
-                                            @if (!string.IsNullOrEmpty(item.Subtitle))
-                                            {
-                                                <div class="tl-card-sub">@item.Subtitle</div>
-                                            }
-                                        </div>
-                                        <span class="tl-badge" style="color:@item.IconColor; background:@bgAlpha;">
-                                            <i class="bi @item.IconClass"></i>
-                                            @item.EventDate.ToString("HH:mm")
-                                        </span>
-                                    </div>
-                                </div>
-                                @{ prevItem = item; }
+                            @{
+                                TravelManager.UI.Models.ViewModels.TripDetailsViewModel.TimelineEvent? prevItem = null;
                             }
-                        }
+                            @foreach (var group in groups)
+                            {
+                                <!-- Дата-заголовок -->
+                                <div class="tl-date-label" data-date="@group.Key.ToString("yyyy-MM-dd")">
+                                    @group.Key.ToString("dd MMM yyyy")
+                                    @if (group.Key == today)
+                                    {
+                                        <span style="color:#f59e0b">· сьогодні</span>
+                                    }
+                                </div>
+
+                                @foreach (var item in group)
+                                {
+                                    var isNext = nextEvent is not null && item.EventDate == nextEvent.EventDate && item.Title == nextEvent.Title;
+                                    var typeIcon = item.EventType switch { "Transit" => "✈️", "Destination" => "📍", "Accommodation" => "🏨", _ => "📌" };
+                                    var bgAlpha = item.EventType switch { "Transit" => "rgba(139,92,246,0.15)", "Destination" => "rgba(59,130,246,0.15)", "Accommodation" => "rgba(20,184,166,0.15)", _ => "rgba(0,0,0,0.08)" };
+
+                                    <!-- Gap між подіями -->
+                                    if (prevItem is not null)
+                                    {
+                                        var gap = (int)(item.EventDate - prevItem.EventDate).TotalDays;
+                                        if (gap >= 2 && item.EventDate.Date != prevItem.EventDate.Date)
+                                        {
+                                            <div class="tl-gap-label" data-type="@item.EventType">через @gap дн.</div>
+                                        }
+                                    }
+
+                                    <div class="timeline-item" data-type="@item.EventType">
+                                        <div class="tl-icon" style="background:@bgAlpha;">@typeIcon</div>
+                                        <div class="tl-card">
+                                            <div>
+                                                <div class="tl-card-title">
+                                                    @item.Title
+                                                    @if (isNext)
+                                                    {
+                                                        <span class="tl-next-badge">▶ наступне</span>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(item.Subtitle))
+                                                {
+                                                    <div class="tl-card-sub">@item.Subtitle</div>
+                                                }
+                                            </div>
+                                            <span class="tl-badge" style="color:@item.IconColor; background:@bgAlpha;">
+                                                <i class="bi @item.IconClass"></i>
+                                                @item.EventDate.ToString("HH:mm")
+                                            </span>
+                                        </div>
+                                    </div>
+                                    prevItem = item;
+                                }
+                            }
                         </div>
                     }
                 </div>
@@ -1089,39 +1088,253 @@
                     <div class="card-header-title">
                         <div class="icon-box" style="background: #8b5cf6;"><i class="bi bi-airplane-fill"></i></div>
                         Транспорт
+                        <span id="transitCount" style="font-size:.75rem; background:rgba(139,92,246,0.12); color:#8b5cf6; border-radius:50px; padding:.15rem .6rem; font-weight:700; margin-left:.3rem;">@Model.Transits.Count()</span>
                     </div>
                     <a asp-controller="Transits" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="btn-add-small">+ Квиток</a>
                 </div>
+
                 @if (!Model.Transits.Any())
                 {
-                    <div style="padding:1.8rem; color:#94a3b8; font-style:italic; font-size:.9rem; transform: translateZ(20px);">Квитки відсутні.</div>
+                    <div style="padding:2.5rem 1.8rem; text-align:center; transform: translateZ(20px);">
+                        <div style="font-size:2.2rem; margin-bottom:.6rem;">✈️</div>
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem;">Квитки відсутні.</div>
+                    </div>
                 }
                 else
                 {
-                    <div style="padding: 0.5rem 0; transform: translateZ(20px);">
-                        @foreach (var t in Model.Transits)
+                    <!-- Панель фільтрів і сортування -->
+                    <div style="padding:.75rem 1.2rem .5rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; border-bottom:1px solid rgba(0,0,0,0.05);">
+                        <div style="display:flex; gap:.35rem; flex-wrap:wrap; flex:1;">
+                            <button onclick="transitFilter('all',this)" class="tr-filter-btn tr-filter-active" data-filter="all">🗓 Всі</button>
+                            <button onclick="transitFilter('Flight',this)" class="tr-filter-btn" data-filter="Flight">✈️ Рейс</button>
+                            <button onclick="transitFilter('Train',this)" class="tr-filter-btn" data-filter="Train">🚄 Поїзд</button>
+                            <button onclick="transitFilter('Car',this)" class="tr-filter-btn" data-filter="Car">🚗 Авто</button>
+                            <button onclick="transitFilter('Other',this)" class="tr-filter-btn" data-filter="Other">🚐 Інше</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:.4rem;">
+                            <span style="font-size:.75rem; color:#94a3b8; font-weight:600;">Сортування:</span>
+                            <select id="transitSort" onchange="transitSortFn()" style="font-size:.75rem; border:1px solid #e2e8f0; border-radius:8px; padding:.25rem .5rem; color:#475569; background:white; cursor:pointer; outline:none;">
+                                <option value="date-asc">Дата ↑</option>
+                                <option value="date-desc">Дата ↓</option>
+                                <option value="type">Тип</option>
+                                <option value="route">Маршрут A→Z</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="transitList" style="padding:.75rem 1.2rem; transform: translateZ(20px); display:flex; flex-direction:column; gap:0.6rem;">
+                        @foreach (var t in Model.Transits.OrderBy(x => x.DepartureTime))
                         {
-                            <div style="display:flex; align-items:center; gap:1rem; padding:1.2rem 1.8rem; border-bottom:1px solid rgba(0,0,0,0.04);">
-                                <div style="width:44px; height:44px; border-radius:14px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
-                                    @(t.TransitType?.Name switch { "Поїзд" => "🚄", "Автобус" => "🚌", "Корабель" => "🚢", "Авто" => "🚗", _ => "✈️" })
-                                </div>
-                                <div style="flex:1;">
-                                    <div style="font-weight:800; color:#111827; font-size:1.05rem;">@t.DepartureLocation → @t.ArrivalLocation</div>
-                                    <div style="font-size:.85rem; color:#64748b; margin-top:.2rem;">
-                                        @t.TransitType?.Name · @t.DepartureTime.ToString("dd.MM.yyyy HH:mm")
+                            var tIcon = t.TransitType?.Name switch { "Поїзд" or "Train" => "🚄", "Автобус" or "Bus" => "🚌", "Корабель" => "🚢", "Авто" or "Car" => "🚗", "Flight" => "✈️", "Other" => "🚐", _ => "✈️" };
+                            var tColor = t.TransitType?.Name switch { "Поїзд" or "Train" => "#3b82f6", "Автобус" or "Bus" => "#f59e0b", "Корабель" => "#06b6d4", "Авто" or "Car" => "#10b981", "Flight" => "#8b5cf6", _ => "#8b5cf6" };
+                            var tBg = t.TransitType?.Name switch { "Поїзд" or "Train" => "rgba(59,130,246,0.07)", "Автобус" or "Bus" => "rgba(245,158,11,0.07)", "Корабель" => "rgba(6,182,212,0.07)", "Авто" or "Car" => "rgba(16,185,129,0.07)", _ => "rgba(139,92,246,0.07)" };
+                            var statusColor = t.BookingStatus?.Name switch { "Confirmed" or "Підтверджено" => "#10b981", "Pending" or "Очікує" => "#f59e0b", "Cancelled" or "Скасовано" => "#ef4444", _ => "#94a3b8" };
+                            var statusLabel = t.BookingStatus?.Name switch { "Confirmed" => "✔ Підтверджено", "Pending" => "⏳ Очікує", "Cancelled" => "✕ Скасовано", _ => t.BookingStatus?.Name ?? "" };
+                            var transitDuration = (t.ArrivalTime - t.DepartureTime);
+                            var durationStr = transitDuration.TotalMinutes > 0 ? (transitDuration.TotalHours >= 24 ? $"{(int)transitDuration.TotalDays}д {transitDuration.Hours}г" : $"{(int)transitDuration.TotalHours}г {transitDuration.Minutes}хв") : "";
+                            var typeName = t.TransitType?.Name ?? "Other";
+
+                            <div class="transit-card" data-type="@typeName" data-date="@t.DepartureTime.ToString("yyyy-MM-ddTHH:mm")" data-route="@t.DepartureLocation"
+                                 style="background:@tBg; border:1.5px solid @(tColor)33; border-radius:16px; overflow:hidden; transition:all .22s;">
+
+                                <!-- Заголовок картки (клікабельний) -->
+                                <div onclick="transitToggle(this)" style="display:flex; align-items:center; gap:1rem; padding:.9rem 1rem; cursor:pointer; user-select:none;">
+                                    <div style="width:44px; height:44px; border-radius:13px; background:@tColor; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; box-shadow:0 3px 10px @(tColor)44;">
+                                        @tIcon
+                                    </div>
+                                    <div style="flex:1; min-width:0;">
+                                        <div style="display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;">
+                                            <span style="font-weight:800; color:#0f172a; font-size:.95rem;">@t.DepartureLocation</span>
+                                            <span style="color:@tColor; font-weight:700;">→</span>
+                                            <span style="font-weight:800; color:#0f172a; font-size:.95rem;">@t.ArrivalLocation</span>
+                                            @if (!string.IsNullOrEmpty(durationStr))
+                                            {
+                                                <span style="font-size:.68rem; background:white; border:1px solid #e2e8f0; border-radius:50px; padding:.1rem .5rem; color:#64748b; font-weight:600;">⏱ @durationStr</span>
+                                            }
+                                        </div>
+                                        <div style="font-size:.78rem; color:#64748b; margin-top:.2rem; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;">
+                                            <span><i class="bi bi-calendar3"></i> @t.DepartureTime.ToString("dd.MM.yyyy")</span>
+                                            <span><i class="bi bi-clock"></i> @t.DepartureTime.ToString("HH:mm") → @t.ArrivalTime.ToString("HH:mm")</span>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:.3rem; flex-shrink:0;">
+                                        @if (!string.IsNullOrEmpty(statusLabel))
+                                        {
+                                            <span style="font-size:.68rem; font-weight:700; color:@statusColor; background:@(statusColor)18; border:1px solid @(statusColor)33; border-radius:50px; padding:.15rem .55rem; white-space:nowrap;">@statusLabel</span>
+                                        }
+                                        <i class="bi bi-chevron-down transit-chevron" style="color:#94a3b8; font-size:.8rem; transition:transform .2s;"></i>
                                     </div>
                                 </div>
-                                @if (!string.IsNullOrEmpty(t.BookingReference))
-                                {
-                                    <span style="font-size:.75rem; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:50px; padding:.3rem .8rem; color:#475569; font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                                        Квиток: @t.BookingReference
-                                    </span>
-                                }
+
+                                <!-- Розгорнута панель -->
+                                <div class="transit-details" style="display:none; border-top:1px solid @(tColor)22; padding:.85rem 1rem; background:rgba(255,255,255,0.6);">
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.6rem .8rem; margin-bottom:.8rem;">
+                                        <div style="font-size:.78rem; color:#475569;">
+                                            <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Тип</div>
+                                            @tIcon @(t.TransitType?.Name ?? "—")
+                                        </div>
+                                        <div style="font-size:.78rem; color:#475569;">
+                                            <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Статус</div>
+                                            @statusLabel
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(t.CarrierInfo))
+                                        {
+                                            <div style="font-size:.78rem; color:#475569;">
+                                                <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Перевізник</div>
+                                                <i class="bi bi-building"></i> @t.CarrierInfo
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(t.BookingReference))
+                                        {
+                                            <div style="font-size:.78rem; color:#475569;">
+                                                <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Номер квитка</div>
+                                                <span style="font-family:monospace; font-weight:700; background:white; border:1px solid #e2e8f0; border-radius:6px; padding:.1rem .4rem;">🎫 @t.BookingReference</span>
+                                            </div>
+                                        }
+                                        <div style="font-size:.78rem; color:#475569;">
+                                            <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Відправлення</div>
+                                            @t.DepartureTime.ToString("dd.MM.yyyy HH:mm")
+                                        </div>
+                                        <div style="font-size:.78rem; color:#475569;">
+                                            <div style="font-weight:700; color:#94a3b8; font-size:.67rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.15rem;">Прибуття</div>
+                                            @t.ArrivalTime.ToString("dd.MM.yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                    <!-- Кнопки дій -->
+                                    <div style="display:flex; gap:.5rem; justify-content:flex-end;">
+                                        <a asp-controller="Transits" asp-action="Edit" asp-route-id="@t.Id"
+                                           style="font-size:.75rem; padding:.35rem .85rem; border-radius:8px; background:white; border:1.5px solid #e2e8f0; color:#475569; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:.3rem; transition:all .18s;"
+                                           onmouseenter="this.style.borderColor='@tColor';this.style.color='@tColor';"
+                                           onmouseleave="this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                                            <i class="bi bi-pencil"></i> Редагувати
+                                        </a>
+                                        <button onclick="transitDelete(@t.Id, '@t.DepartureLocation → @t.ArrivalLocation', this)"
+                                                style="font-size:.75rem; padding:.35rem .85rem; border-radius:8px; background:white; border:1.5px solid #fecaca; color:#ef4444; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.3rem; transition:all .18s;"
+                                                onmouseenter="this.style.background='#ef4444';this.style.color='white';"
+                                                onmouseleave="this.style.background='white';this.style.color='#ef4444';">
+                                            <i class="bi bi-trash"></i> Видалити
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
+
+                    <!-- Повідомлення "нічого не знайдено" -->
+                    <div id="transitEmpty" style="display:none; padding:2rem; text-align:center; color:#94a3b8; font-style:italic; font-size:.9rem;">
+                        Немає квитків цього типу.
+                    </div>
                 }
             </div>
+
+            <!-- Прихована форма для видалення транзиту -->
+            <form id="transitDeleteForm" asp-controller="Transits" asp-action="Delete" method="post" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="transitDeleteId" />
+            </form>
+
+            <!-- Модальне підтвердження видалення -->
+            <div id="transitDeleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
+                <div style="background:white; border-radius:20px; padding:2rem; max-width:380px; width:90%; box-shadow:0 24px 60px rgba(0,0,0,0.2); animation:fadeInUp .2s ease;">
+                    <div style="font-size:2rem; text-align:center; margin-bottom:.8rem;">🗑️</div>
+                    <div style="font-weight:800; color:#0f172a; font-size:1.05rem; text-align:center; margin-bottom:.4rem;">Видалити квиток?</div>
+                    <div id="transitDeleteName" style="text-align:center; color:#64748b; font-size:.88rem; margin-bottom:1.5rem;"></div>
+                    <div style="display:flex; gap:.75rem;">
+                        <button onclick="document.getElementById('transitDeleteModal').style.display='none'"
+                                style="flex:1; padding:.65rem; border-radius:10px; border:1.5px solid #e2e8f0; background:white; color:#475569; font-weight:700; cursor:pointer; font-size:.88rem;">
+                            Скасувати
+                        </button>
+                        <button onclick="document.getElementById('transitDeleteForm').submit()"
+                                style="flex:1; padding:.65rem; border-radius:10px; border:none; background:#ef4444; color:white; font-weight:700; cursor:pointer; font-size:.88rem;">
+                            Видалити
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .tr-filter-btn {
+                    font-size: .72rem;
+                    padding: .25rem .65rem;
+                    border-radius: 50px;
+                    border: 1.5px solid #e2e8f0;
+                    background: white;
+                    color: #64748b;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all .18s;
+                    font-family: inherit;
+                }
+
+                    .tr-filter-btn:hover {
+                        border-color: #8b5cf6;
+                        color: #8b5cf6;
+                    }
+
+                    .tr-filter-btn.tr-filter-active {
+                        background: #8b5cf6;
+                        border-color: #8b5cf6;
+                        color: white;
+                    }
+
+                .transit-card:hover {
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                    transform: translateY(-1px);
+                }
+            </style>
+
+            <script>
+                // Розгортання картки
+                function transitToggle(header) {
+                    const card = header.closest('.transit-card');
+                    const details = card.querySelector('.transit-details');
+                    const chevron = card.querySelector('.transit-chevron');
+                    const isOpen = details.style.display !== 'none';
+                    details.style.display = isOpen ? 'none' : 'block';
+                    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+                }
+
+                // Фільтрація по типу
+                function transitFilter(type, btn) {
+                    document.querySelectorAll('.tr-filter-btn').forEach(b => b.classList.remove('tr-filter-active'));
+                    btn.classList.add('tr-filter-active');
+                    let visible = 0;
+                    document.querySelectorAll('.transit-card').forEach(card => {
+                        const match = type === 'all' || card.dataset.type === type;
+                        card.style.display = match ? '' : 'none';
+                        if (match) visible++;
+                    });
+                    document.getElementById('transitEmpty').style.display = visible === 0 ? 'block' : 'none';
+                    document.getElementById('transitCount').textContent = visible;
+                }
+
+                // Сортування
+                function transitSortFn() {
+                    const val = document.getElementById('transitSort').value;
+                    const list = document.getElementById('transitList');
+                    const cards = Array.from(list.querySelectorAll('.transit-card'));
+                    cards.sort((a, b) => {
+                        if (val === 'date-asc') return a.dataset.date.localeCompare(b.dataset.date);
+                        if (val === 'date-desc') return b.dataset.date.localeCompare(a.dataset.date);
+                        if (val === 'type') return (a.dataset.type || '').localeCompare(b.dataset.type || '');
+                        if (val === 'route') return (a.dataset.route || '').localeCompare(b.dataset.route || '');
+                        return 0;
+                    });
+                    cards.forEach(c => list.appendChild(c));
+                }
+
+                // Видалення з підтвердженням
+                function transitDelete(id, name, btn) {
+                    document.getElementById('transitDeleteId').value = id;
+                    document.getElementById('transitDeleteName').textContent = name;
+                    document.getElementById('transitDeleteModal').style.display = 'flex';
+                }
+
+                // Закрити модалку по кліку на фон
+                document.getElementById('transitDeleteModal')?.addEventListener('click', function(e) {
+                    if (e.target === this) this.style.display = 'none';
+                });
+            </script>
 
             @if (!string.IsNullOrEmpty(Model.Trip.Description))
             {
@@ -1525,168 +1738,168 @@
 
 @* ── Timeline filter ────────────────────────────────────────────────────── *@
 <script>
-function tlFilter(type, btn) {
-    document.querySelectorAll('.tl-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    function tlFilter(type, btn) {
+        document.querySelectorAll('.tl-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-    const items  = document.querySelectorAll('.timeline-item');
-    const gaps   = document.querySelectorAll('.tl-gap-label');
-    const labels = document.querySelectorAll('.tl-date-label');
+        const items  = document.querySelectorAll('.timeline-item');
+        const gaps   = document.querySelectorAll('.tl-gap-label');
+        const labels = document.querySelectorAll('.tl-date-label');
 
-    items.forEach(el => {
-        el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
-    });
-    gaps.forEach(el => {
-        el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
-    });
+        items.forEach(el => {
+            el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
+        });
+        gaps.forEach(el => {
+            el.style.display = (type === 'all' || el.dataset.type === type) ? '' : 'none';
+        });
 
-    // Ховаємо дату-заголовок якщо в групі немає видимих подій
-    labels.forEach(label => {
-        const date = label.dataset.date;
-        const groupItems = document.querySelectorAll(`.timeline-item[data-type]`);
-        const visibleInGroup = [...document.querySelectorAll('.timeline-item')]
-            .filter(el => el.style.display !== 'none');
-        label.style.display = visibleInGroup.length === 0 ? 'none' : '';
-    });
-}
+        // Ховаємо дату-заголовок якщо в групі немає видимих подій
+        labels.forEach(label => {
+            const date = label.dataset.date;
+            const groupItems = document.querySelectorAll(`.timeline-item[data-type]`);
+            const visibleInGroup = [...document.querySelectorAll('.timeline-item')]
+                .filter(el => el.style.display !== 'none');
+            label.style.display = visibleInGroup.length === 0 ? 'none' : '';
+        });
+    }
 </script>
 
 @* ── Destination weather cards ──────────────────────────────────────────── *@
 <script>
-(function () {
-    const destIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-        Model.Destinations.Select(d => d.Id).ToList()
-    ));
+    (function () {
+        const destIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                        Model.Destinations.Select(d => d.Id).ToList()
+                ));
 
-    destIds.forEach(id => {
-        fetch(`/TripDestinations/WeatherCard?destinationId=${id}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(data => {
-                const cell = document.getElementById(`wcard-${id}`);
-                if (!cell) return;
+        destIds.forEach(id => {
+            fetch(`/TripDestinations/WeatherCard?destinationId=${id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    const cell = document.getElementById(`wcard-${id}`);
+                    if (!cell) return;
 
-                if (!data || (data.temp == null && !data.flagUrl)) {
-                    cell.innerHTML = '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
-                    return;
-                }
+                    if (!data || (data.temp == null && !data.flagUrl)) {
+                        cell.innerHTML = '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
+                        return;
+                    }
 
-                const temp = data.temp != null ? `${Math.round(data.temp)}°C` : '';
-                const icon = data.icon || '';
-                const desc = data.desc || '';
+                    const temp = data.temp != null ? `${Math.round(data.temp)}°C` : '';
+                    const icon = data.icon || '';
+                    const desc = data.desc || '';
 
-                let html = '';
+                    let html = '';
 
-                if (data.flagUrl) {
-                    html += `<img class="dest-flag" src="${data.flagUrl}" alt="${data.flagAlt || data.country || ''}" title="${data.country || ''}">`;
-                }
+                    if (data.flagUrl) {
+                        html += `<img class="dest-flag" src="${data.flagUrl}" alt="${data.flagAlt || data.country || ''}" title="${data.country || ''}">`;
+                    }
 
-                if (temp) {
-                    html += `<div class="dest-weather-info">
-                        <span class="dest-weather-temp">${icon} ${temp}</span>
-                        <span class="dest-weather-desc">${desc}</span>
-                    </div>`;
-                }
+                    if (temp) {
+                        html += `<div class="dest-weather-info">
+                            <span class="dest-weather-temp">${icon} ${temp}</span>
+                            <span class="dest-weather-desc">${desc}</span>
+                        </div>`;
+                    }
 
-                cell.innerHTML = html || '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
-            })
-            .catch(() => {
-                const cell = document.getElementById(`wcard-${id}`);
-                if (cell) cell.innerHTML = '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
-            });
-    });
-})();
+                    cell.innerHTML = html || '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
+                })
+                .catch(() => {
+                    const cell = document.getElementById(`wcard-${id}`);
+                    if (cell) cell.innerHTML = '<span style="color:#94a3b8; font-size:0.75rem;">—</span>';
+                });
+        });
+    })();
 </script>
 
 @* ── Hero video background ──────────────────────────────────────────────── *@
 <script>
-// ── Hero video: shared helpers ──────────────────────────────────────────
-const _heroCard = document.getElementById('heroCard');
-const _heroBgVideo = document.getElementById('heroBgVideo');
+    // ── Hero video: shared helpers ──────────────────────────────────────────
+    const _heroCard = document.getElementById('heroCard');
+    const _heroBgVideo = document.getElementById('heroBgVideo');
 
-function _applyHeroVideo(src) {
-    if (!_heroBgVideo) return;
-    _heroBgVideo.classList.remove('loaded');
-    _heroBgVideo.src = src;
-    _heroBgVideo.oncanplay = () => {
-        _heroBgVideo.classList.add('loaded');
-        _heroCard && _heroCard.classList.remove('video-loading');
-    };
-    _heroBgVideo.onerror = () => _heroCard && _heroCard.classList.remove('video-loading');
-    _heroBgVideo.load();
-}
+    function _applyHeroVideo(src) {
+        if (!_heroBgVideo) return;
+        _heroBgVideo.classList.remove('loaded');
+        _heroBgVideo.src = src;
+        _heroBgVideo.oncanplay = () => {
+            _heroBgVideo.classList.add('loaded');
+            _heroCard && _heroCard.classList.remove('video-loading');
+        };
+        _heroBgVideo.onerror = () => _heroCard && _heroCard.classList.remove('video-loading');
+        _heroBgVideo.load();
+    }
 
-function _fetchAndPlayVideo(query, btn) {
-    const cacheKey = 'hero_video_' + query.toLowerCase().replace(/\s+/g, '_');
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) { _applyHeroVideo(cached); return; }
+    function _fetchAndPlayVideo(query, btn) {
+        const cacheKey = 'hero_video_' + query.toLowerCase().replace(/\s+/g, '_');
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) { _applyHeroVideo(cached); return; }
 
-    fetch(`/PexelsProxy/Video?query=${encodeURIComponent(query)}`)
-        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-        .then(data => {
-            const videos = (data.videos || []).filter(v => v.duration >= 5 && v.duration <= 20);
-            if (!videos.length) { _heroCard && _heroCard.classList.remove('video-loading'); return; }
+        fetch(`/PexelsProxy/Video?query=${encodeURIComponent(query)}`)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(data => {
+                const videos = (data.videos || []).filter(v => v.duration >= 5 && v.duration <= 20);
+                if (!videos.length) { _heroCard && _heroCard.classList.remove('video-loading'); return; }
 
-            const pick = videos[Math.floor(Math.random() * Math.min(videos.length, 5))];
-            const file =
-                pick.video_files.find(f => f.quality === 'sd' && f.width <= 640) ||
-                pick.video_files.find(f => f.quality === 'sd') ||
-                pick.video_files.sort((a, b) => (a.width || 9999) - (b.width || 9999))[0];
+                const pick = videos[Math.floor(Math.random() * Math.min(videos.length, 5))];
+                const file =
+                    pick.video_files.find(f => f.quality === 'sd' && f.width <= 640) ||
+                    pick.video_files.find(f => f.quality === 'sd') ||
+                    pick.video_files.sort((a, b) => (a.width || 9999) - (b.width || 9999))[0];
 
-            if (!file) { _heroCard && _heroCard.classList.remove('video-loading'); return; }
-            sessionStorage.setItem(cacheKey, file.link);
-            _applyHeroVideo(file.link);
-        })
-        .catch(() => _heroCard && _heroCard.classList.remove('video-loading'))
-        .finally(() => {
-            if (btn) btn.innerHTML = btn.dataset.origLabel;
-        });
-}
+                if (!file) { _heroCard && _heroCard.classList.remove('video-loading'); return; }
+                sessionStorage.setItem(cacheKey, file.link);
+                _applyHeroVideo(file.link);
+            })
+            .catch(() => _heroCard && _heroCard.classList.remove('video-loading'))
+            .finally(() => {
+                if (btn) btn.innerHTML = btn.dataset.origLabel;
+            });
+    }
 
-// ── Auto-load on page open ───────────────────────────────────────────────
-(function () {
-    if (!_heroCard || !_heroBgVideo) return;
-    const rawQuery = (_heroCard.dataset.videoQuery || 'travel').trim();
+    // ── Auto-load on page open ───────────────────────────────────────────────
+    (function () {
+        if (!_heroCard || !_heroBgVideo) return;
+        const rawQuery = (_heroCard.dataset.videoQuery || 'travel').trim();
 
-    // Активуємо першу кнопку-місто якщо є
-    const firstBtn = document.querySelector('.city-vid-btn[data-city]');
-    if (firstBtn) firstBtn.classList.add('active');
+        // Активуємо першу кнопку-місто якщо є
+        const firstBtn = document.querySelector('.city-vid-btn[data-city]');
+        if (firstBtn) firstBtn.classList.add('active');
 
-    _fetchAndPlayVideo(rawQuery, null);
-})();
+        _fetchAndPlayVideo(rawQuery, null);
+    })();
 
-// ── Перемикач міст ───────────────────────────────────────────────────────
-function switchHeroVideo(city, btn) {
-    // Скидаємо активний стан з усіх кнопок
-    document.querySelectorAll('.city-vid-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    // ── Перемикач міст ───────────────────────────────────────────────────────
+    function switchHeroVideo(city, btn) {
+        // Скидаємо активний стан з усіх кнопок
+        document.querySelectorAll('.city-vid-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-    // Показуємо спінер
-    btn.dataset.origLabel = btn.innerHTML;
-    btn.innerHTML = `<span class="spin">⏳</span> ${city}`;
+        // Показуємо спінер
+        btn.dataset.origLabel = btn.innerHTML;
+        btn.innerHTML = `<span class="spin">⏳</span> ${city}`;
 
-    _heroCard && _heroCard.classList.add('video-loading');
-    _fetchAndPlayVideo(city, btn);
-}
+        _heroCard && _heroCard.classList.add('video-loading');
+        _fetchAndPlayVideo(city, btn);
+    }
 
-function shuffleHeroVideo(btn) {
-    // Збираємо всі міста з кнопок
-    const cityBtns = [...document.querySelectorAll('.city-vid-btn[data-city]')];
-    if (!cityBtns.length) return;
+    function shuffleHeroVideo(btn) {
+        // Збираємо всі міста з кнопок
+        const cityBtns = [...document.querySelectorAll('.city-vid-btn[data-city]')];
+        if (!cityBtns.length) return;
 
-    document.querySelectorAll('.city-vid-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+        document.querySelectorAll('.city-vid-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-    const randomBtn = cityBtns[Math.floor(Math.random() * cityBtns.length)];
-    const city = randomBtn.dataset.city;
+        const randomBtn = cityBtns[Math.floor(Math.random() * cityBtns.length)];
+        const city = randomBtn.dataset.city;
 
-    // Видаляємо кеш щоб отримати інше відео
-    const cacheKey = 'hero_video_' + city.toLowerCase().replace(/\s+/g, '_');
-    sessionStorage.removeItem(cacheKey);
+        // Видаляємо кеш щоб отримати інше відео
+        const cacheKey = 'hero_video_' + city.toLowerCase().replace(/\s+/g, '_');
+        sessionStorage.removeItem(cacheKey);
 
-    btn.dataset.origLabel = btn.innerHTML;
-    btn.innerHTML = `<span class="spin">⏳</span> Рандомне`;
+        btn.dataset.origLabel = btn.innerHTML;
+        btn.innerHTML = `<span class="spin">⏳</span> Рандомне`;
 
-    _heroCard && _heroCard.classList.add('video-loading');
-    _fetchAndPlayVideo(city, btn);
-}
+        _heroCard && _heroCard.classList.add('video-loading');
+        _fetchAndPlayVideo(city, btn);
+    }
 </script>

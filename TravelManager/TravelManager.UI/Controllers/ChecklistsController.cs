@@ -135,7 +135,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст успішно створено!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = entity.TripId });
         }
 
         [HttpGet]
@@ -189,7 +189,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст оновлено!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -206,11 +206,12 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.Checklist.Remove(entity);
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст видалено.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private string GetUserRoleInTrip(int tripId)
