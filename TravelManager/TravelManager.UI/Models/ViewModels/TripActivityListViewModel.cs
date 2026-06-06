@@ -11,5 +11,7 @@ namespace TravelManager.UI.Models.ViewModels
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public string BookingStatusName { get; set; } = string.Empty;
+        public DateTime Date => StartTime;
+        public string Location => Address ?? string.Empty;
     }
 }

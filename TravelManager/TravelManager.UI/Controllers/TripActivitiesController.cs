@@ -38,7 +38,7 @@ namespace TravelManager.UI.Controllers
             var viewModels = activities.Select(a => new TripActivityListViewModel
             {
                 Id = a.Id,
-                TripTitle = a.Trip?.Title ?? string.Empty,
+                TripTitle = a.Trip?.Title ?? "Без назви подорожі",
                 Title = a.Title,
                 Address = a.Address,
                 StartTime = a.StartTime,

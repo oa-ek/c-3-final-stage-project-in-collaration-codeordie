@@ -45,7 +45,9 @@ namespace TravelManager.UI.Controllers
                 Name = a.Name,
                 Address = a.Address,
                 CheckInTime = a.CheckInTime,
-                CheckOutTime = a.CheckOutTime
+                CheckOutTime = a.CheckOutTime,
+                TripTitle = a.Trip?.Title ?? "Без назви подорожі",
+                BookingStatusName = a.BookingStatus?.Name ?? "Статус невідомий"
             }).ToList();
 
             return View(viewModels);

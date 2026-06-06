@@ -38,7 +38,7 @@ namespace TravelManager.UI.Controllers
             var viewModels = transits.Select(t => new TransitListViewModel
             {
                 Id = t.Id,
-                TripTitle = t.Trip?.Title ?? string.Empty,
+                TripTitle = t.Trip?.Title ?? "Без назви подорожі",
                 TransitTypeName = t.TransitType?.Name ?? string.Empty,
                 DepartureLocation = t.DepartureLocation,
                 ArrivalLocation = t.ArrivalLocation,
