@@ -13,16 +13,27 @@ namespace TravelManager.UI.Controllers
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IEmailService _emailService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IEmailService emailService)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, IEmailService emailService, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailService = emailService;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
-        public IActionResult Register() => View();
+        public IActionResult Register(int? tripId, string? email, int? roleId)
+        {
+            var model = new RegisterViewModel
+            {
+                TripId = tripId,
+                Email = email ?? string.Empty,
+                RoleId = roleId
+            };
+            return View(model);
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -30,16 +41,55 @@ namespace TravelManager.UI.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new User { UserName = model.Email, Email = model.Email, FirstName = model.FirstName, LastName = model.LastName };
+                var user = new User
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    CreatedAt = DateTime.Now
+                };
+
                 var result = await _userManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, "User");
                     await _signInManager.SignInAsync(user, isPersistent: false);
+
+                    if (model.TripId.HasValue && model.TripId.Value > 0)
+                    {
+                        int finalRoleId = model.RoleId ?? 0;
+                        if (finalRoleId == 0)
+                        {
+                            var participantRole = _unitOfWork.TripRole.Get(r => r.Name == "Participant");
+                            if (participantRole != null) finalRoleId = participantRole.Id;
+                        }
+
+                        var participantExist = _unitOfWork.TripParticipant
+                            .Get(tp => tp.TripId == model.TripId.Value && tp.UserId == user.Id);
+
+                        if (participantExist == null && finalRoleId > 0)
+                        {
+                            _unitOfWork.TripParticipant.Add(new TripParticipant
+                            {
+                                TripId = model.TripId.Value,
+                                UserId = user.Id,
+                                RoleId = finalRoleId
+                            });
+                            await _unitOfWork.SaveAsync();
+
+                            TempData["SuccessMessage"] = "Успішна реєстрація! Вас автоматично долучено до поїздки.";
+                            return RedirectToAction("Details", "Trips", new { id = model.TripId.Value });
+                        }
+                    }
+
                     return RedirectToAction("Index", "Home");
                 }
-                foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
             }
             return View(model);
         }
@@ -184,12 +234,17 @@ namespace TravelManager.UI.Controllers
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
 
-            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            if (!string.IsNullOrEmpty(model.CroppedBase64))
+            {
+                var base64Data = model.CroppedBase64.Substring(model.CroppedBase64.IndexOf(",") + 1);
+                user.ProfilePicture = Convert.FromBase64String(base64Data);
+            }
+            else if (model.ProfileImage != null && model.ProfileImage.Length > 0)
             {
                 using (var memoryStream = new MemoryStream())
                 {
                     await model.ProfileImage.CopyToAsync(memoryStream);
-                    user.ProfilePicture = memoryStream.ToArray(); 
+                    user.ProfilePicture = memoryStream.ToArray();
                 }
             }
 
@@ -198,7 +253,7 @@ namespace TravelManager.UI.Controllers
             if (result.Succeeded)
             {
                 TempData["SuccessMessage"] = "Профіль успішно оновлено!";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(nameof(Profile)); 
             }
 
             foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);

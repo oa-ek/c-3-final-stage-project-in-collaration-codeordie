@@ -298,6 +298,7 @@
         margin-bottom: 1.5rem;
         display: inline-block;
         z-index: 10;
+        cursor: pointer; /* Важливо: курсор-вказівник для всього блоку */
     }
 
     .avatar-ring {
@@ -308,9 +309,9 @@
         background-size: 200% 200%;
         animation: avatarGradient 4s ease infinite, avatarPop 0.8s cubic-bezier(.34,1.56,.64,1) 0.4s both;
         padding: 3px;
-        cursor: pointer;
         box-shadow: 0 8px 30px rgba(99,102,241,0.35);
         transition: transform 0.4s cubic-bezier(.34,1.56,.64,1), box-shadow 0.3s ease;
+        position: relative;
     }
 
     @@keyframes avatarGradient {
@@ -339,7 +340,7 @@
         }
     }
 
-    .avatar-ring:hover {
+    .avatar-wrap:hover .avatar-ring {
         transform: scale(1.08) rotate(4deg);
         box-shadow: 0 14px 45px rgba(99,102,241,0.55);
     }
@@ -381,6 +382,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        pointer-events: none; /* Щоб не блокувало кліки */
     }
 
     .avatar-edit-badge {
@@ -395,16 +397,15 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-        cursor: pointer;
         color: #6366f1;
         font-size: 0.9rem;
         transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s ease;
     }
 
-        .avatar-edit-badge:hover {
-            transform: scale(1.25) rotate(-10deg);
-            box-shadow: 0 4px 18px rgba(99,102,241,0.4);
-        }
+    .avatar-wrap:hover .avatar-edit-badge {
+        transform: scale(1.25) rotate(-10deg);
+        box-shadow: 0 4px 18px rgba(99,102,241,0.4);
+    }
 
     /* Поля форми */
     .form-body {
@@ -446,38 +447,16 @@
             border-radius: 3px 0 0 3px;
         }
 
-        .field-wrap::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(105deg, transparent 40%, rgba(99,102,241,0.04) 50%, transparent 60%);
-            background-size: 200% 100%;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            animation: fieldShimmer 2s linear infinite;
-            background-position: 200% 0;
+        .field-wrap:focus-within {
+            background: white;
+            border-color: rgba(99,102,241,0.4);
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.09), 0 4px 20px rgba(99,102,241,0.08);
+            transform: translateY(-3px);
         }
 
-    @@keyframes fieldShimmer {
-        from {
-            background-position: 200% 0;
-        }
-
-        to {
-            background-position: -200% 0;
-        }
-    }
-
-    .field-wrap:focus-within {
-        background: white;
-        border-color: rgba(99,102,241,0.4);
-        box-shadow: 0 0 0 4px rgba(99,102,241,0.09), 0 4px 20px rgba(99,102,241,0.08);
-        transform: translateY(-3px);
-    }
-
-        .field-wrap:focus-within::before, .field-wrap:focus-within::after {
-            opacity: 1;
-        }
+            .field-wrap:focus-within::before {
+                opacity: 1;
+            }
 
     .field-label {
         font-size: 0.65rem;
@@ -505,7 +484,6 @@
         outline: none !important;
         box-shadow: none !important;
         font-family: 'DM Sans', sans-serif;
-        transition: color 0.2s ease;
     }
 
         .field-input:disabled {
@@ -544,32 +522,6 @@
 
         100% {
             background-position: 0% 50%;
-        }
-    }
-
-    .save-btn::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 60%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-        transition: left 0s;
-        animation: btnShimmer 3s ease-in-out infinite;
-    }
-
-    @@keyframes btnShimmer {
-        0% {
-            left: -100%;
-        }
-
-        50% {
-            left: 150%;
-        }
-
-        100% {
-            left: 150%;
         }
     }
 
@@ -627,7 +579,7 @@
         }
     }
 
-    /* Модалка */
+    /* Модалка кропера */
     .crop-modal .modal-content {
         border: none;
         border-radius: 2rem;
@@ -711,7 +663,9 @@
         }
 </style>
 
-<div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
 
 <div class="profile-root">
     <div style="max-width: 1000px; margin: 0 auto;">
@@ -727,6 +681,7 @@
                 <p class="sidebar-label">Акаунт</p>
                 <a asp-controller="Account" asp-action="Profile" class="s-link active"><i class="bi bi-person-fill"></i><span>Особисті дані</span></a>
                 <a asp-controller="Account" asp-action="ChangePassword" class="s-link"><i class="bi bi-shield-lock-fill"></i><span>Пароль</span></a>
+                <a class="s-link" asp-controller="ChecklistTemplates" asp-action="Index"><i class="bi bi-card-checklist"></i><span>Мої шаблони</span></a>
             </div>
 
             <div class="main-card reveal delay-3" style="flex:1; min-width:300px;">
@@ -736,9 +691,10 @@
                     <div class="hero-sub">Оновлюй інформацію про себе</div>
                 </div>
 
-                <div class="avatar-wrap">
-                    <div class="avatar-pulse"></div>
-                    <div class="avatar-ring" onclick="document.getElementById('ProfileImageInput').click()" title="Змінити фото">
+                <!-- БЛОК АВАТАРА: Додано обробник кліку на весь контейнер, а не на окремі елементи -->
+                <div class="avatar-wrap" onclick="triggerFileInput(event)" title="Змінити фото">
+                    <div class="avatar-pulse pointer-events-none"></div>
+                    <div class="avatar-ring pointer-events-none">
                         <div class="avatar-inner">
                             @if (hasPicture)
                             {
@@ -752,7 +708,7 @@
                             }
                         </div>
                     </div>
-                    <div class="avatar-edit-badge" onclick="document.getElementById('ProfileImageInput').click()">
+                    <div class="avatar-edit-badge pointer-events-none">
                         <i class="bi bi-camera-fill"></i>
                     </div>
                 </div>
@@ -769,7 +725,10 @@
                     <form asp-action="Profile" method="post" enctype="multipart/form-data" id="profileForm">
                         <div asp-validation-summary="ModelOnly" style="color:#ef4444;font-size:0.85rem;font-weight:600;margin-bottom:1rem;"></div>
 
+                        <!-- ПОВНІСТЮ ПРИХОВАНИЙ ІНПУТ ДЛЯ ФАЙЛУ -->
                         <input asp-for="ProfileImage" id="ProfileImageInput" type="file" style="display:none;" accept="image/png,image/jpeg,image/jpg" />
+                        <!-- ПРИХОВАНИЙ ІНПУТ ДЛЯ BASE64 (Надійне збереження) -->
+                        <input type="hidden" asp-for="CroppedBase64" id="CroppedBase64Input" />
 
                         <div class="fields-grid">
                             <div class="field-wrap reveal delay-3" style="grid-column:1/-1;">
@@ -793,6 +752,7 @@
                             </div>
                         </div>
 
+                        <!-- СТИЛІЗОВАНА КНОПКА ЗБЕРЕЖЕННЯ -->
                         <div style="display:flex;justify-content:flex-end;margin-top:1.75rem;" class="reveal delay-5">
                             <button type="submit" class="save-btn" id="mainSubmitBtn">
                                 <i class="bi bi-save2-fill" style="margin-right:0.5rem;"></i> Зберегти зміни
@@ -805,101 +765,129 @@
     </div>
 </div>
 
-@* Модалка кропера *@
-<div class="modal fade crop-modal" id="cropModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="crop-header">
-                <div class="crop-title"><i class="bi bi-crop me-2"></i>Обрізати фото</div>
-                <button type="button" class="crop-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="modal-body p-4">
-                <div style="max-height:450px;overflow:hidden;border-radius:1rem;">
-                    <img id="imageToCrop" src="" alt="Picture">
-                </div>
-            </div>
-            <div class="modal-footer border-0 px-4 pb-4 gap-3">
-                <button type="button" class="btn btn-light rounded-3 fw-bold px-4" data-bs-dismiss="modal">Скасувати</button>
-                <button type="button" id="btnCropAndSave" class="save-btn" style="padding:0.7rem 2rem;">
-                    <i class="bi bi-check2-circle me-2"></i>Підтвердити обрізання
-                </button>
+@* СТИЛЬНИЙ АВТОНОМНИЙ КРОПЕР *@
+<div id="customCropModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(12px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; transition: opacity 0.3s ease;">
+    <div style="background: rgba(255, 255, 255, 0.95); border: 1.5px solid rgba(255, 255, 255, 0.8); border-radius: 2.2rem; max-width: 650px; width: 100%; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3); overflow: hidden; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);" id="modalContentWindow">
+
+        <div class="crop-header" style="background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899); background-size: 200% 200%; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between;">
+            <div class="crop-title" style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.15rem; color: white;"><i class="bi bi-crop me-2"></i>Обрізати фото</div>
+            <button type="button" class="crop-close" onclick="closeCustomCropModal()" style="background: rgba(255, 255, 255, 0.2); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s ease; font-size: 1rem;"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div style="padding: 2rem;">
+            <div style="max-height: 400px; overflow: hidden; border-radius: 1.5rem; background: #f8fafc; border: 1px solid rgba(226, 232, 240, 0.8); display: flex; align-items: center; justify-content: center;">
+                <img id="imageToCrop" src="" alt="Picture" style="display: block; max-width: 100%;">
             </div>
         </div>
+
+        <!-- КНОПКИ КЕРУВАННЯ -->
+        <div style="padding: 1.5rem 2rem; background: rgba(248, 250, 252, 0.5); border-top: 1px solid rgba(226, 232, 240, 0.8); display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+            <button type="button" onclick="closeCustomCropModal()" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; border-radius: 1.2rem; padding: 0.8rem 1.8rem; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.875rem; cursor: pointer; transition: all 0.25s ease;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#475569';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b';">
+                Скасувати
+            </button>
+            <button type="button" id="btnCropAndSave" class="save-btn" style="padding: 0.8rem 2.2rem; font-size: 0.875rem; border-radius: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="bi bi-check2-circle"></i> Підтвердити обрізання
+            </button>
+        </div>
+
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <script>
+        // Гарантований виклик файлового провідника
+        function triggerFileInput(e) {
+            e.preventDefault();
+            document.getElementById('ProfileImageInput').click();
+        }
+
+        function openCustomCropModal() {
+            const modal = document.getElementById('customCropModal');
+            const content = document.getElementById('modalContentWindow');
+            modal.style.display = 'flex';
+            setTimeout(() => { content.style.transform = 'scale(1)'; }, 10);
+        }
+
+        function closeCustomCropModal() {
+            const modal = document.getElementById('customCropModal');
+            const content = document.getElementById('modalContentWindow');
+            const fileInput = document.getElementById('ProfileImageInput');
+
+            content.style.transform = 'scale(0.95)';
+            setTimeout(() => { modal.style.display = 'none'; }, 200);
+            fileInput.value = "";
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             let cropper;
-            const imageInput   = document.getElementById('ProfileImageInput');
-            const imageToCrop  = document.getElementById('imageToCrop');
+            const imageInput = document.getElementById('ProfileImageInput');
+            const imageToCrop = document.getElementById('imageToCrop');
             const previewImage = document.getElementById('profilePreview');
-            const placeholder  = document.getElementById('profilePlaceholder');
-            const cropModalEl  = document.getElementById('cropModal');
-            const btnCrop      = document.getElementById('btnCropAndSave');
-
-            // Надійне створення інстансу
-            const cropModal = new bootstrap.Modal(cropModalEl);
+            const placeholder = document.getElementById('profilePlaceholder');
+            const btnCrop = document.getElementById('btnCropAndSave');
+            const base64Input = document.getElementById('CroppedBase64Input'); // Поле для відправки на бекенд
 
             imageInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
+
                 const reader = new FileReader();
                 reader.onload = ev => {
                     imageToCrop.src = ev.target.result;
-                    cropModal.show();
+
+                    if (cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+
+                    openCustomCropModal();
+
+                    cropper = new Cropper(imageToCrop, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        dragMode: 'move',
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        background: false
+                    });
                 };
                 reader.readAsDataURL(file);
-            });
-
-            cropModalEl.addEventListener('shown.bs.modal', () => {
-                if (cropper) { cropper.destroy(); }
-                // viewMode: 1 краще адаптує зображення під екран
-                cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 1, autoCropArea: 1 });
-            });
-
-            cropModalEl.addEventListener('hidden.bs.modal', () => {
-                if (cropper) { cropper.destroy(); cropper = null; }
             });
 
             btnCrop.addEventListener('click', () => {
                 if (!cropper) return;
 
-                // Зміна стану кнопки, щоб показати, що йде обробка
                 const originalHtml = btnCrop.innerHTML;
-                btnCrop.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Обробляємо...';
+                btnCrop.innerHTML = '<i class="bi bi-hourglass-split"></i> Обробляємо...';
                 btnCrop.disabled = true;
 
                 try {
-                    cropper.getCroppedCanvas({ width: 400, height: 400 }).toBlob(blob => {
-                        if(blob) {
-                            previewImage.src = URL.createObjectURL(blob);
-                            previewImage.style.display = 'block';
-                            if (placeholder) placeholder.style.display = 'none';
+                    // НАДІЙНИЙ МЕТОД: Конвертація в Base64 для відправки
+                    const base64String = cropper.getCroppedCanvas({ width: 400, height: 400 }).toDataURL('image/jpeg', 0.95);
 
-                            const dt = new DataTransfer();
-                            dt.items.add(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-                            imageInput.files = dt.files;
-                        }
+                    if(base64String) {
+                        // Оновлюємо візуальне прев'ю
+                        previewImage.src = base64String;
+                        previewImage.style.display = 'block';
+                        if (placeholder) placeholder.style.display = 'none';
 
-                        // Гарантоване закриття через глобальний інстанс
-                        bootstrap.Modal.getInstance(cropModalEl).hide();
+                        // Записуємо дані у прихований input
+                        base64Input.value = base64String;
+                    }
 
-                        // Повертаємо кнопку в нормальний стан
-                        btnCrop.innerHTML = originalHtml;
-                        btnCrop.disabled = false;
+                    closeCustomCropModal();
 
-                        // Невеличка підказка (щоб юзер не забув зберегти)
-                        const submitBtn = document.getElementById('mainSubmitBtn');
-                        submitBtn.classList.add('pulse-alert');
-                        submitBtn.innerHTML = '<i class="bi bi-save2-fill" style="margin-right:0.5rem;"></i> Тепер збережіть зміни!';
+                    btnCrop.innerHTML = originalHtml;
+                    btnCrop.disabled = false;
 
-                    }, 'image/jpeg', 0.95);
+                    const submitBtn = document.getElementById('mainSubmitBtn');
+                    submitBtn.classList.add('pulse-alert');
+                    submitBtn.innerHTML = '<i class="bi bi-save2-fill" style="margin-right:0.5rem;"></i> Тепер збережіть зміни!';
+
                 } catch (err) {
                     console.error("Помилка при обрізанні: ", err);
                     btnCrop.innerHTML = originalHtml;
@@ -913,6 +901,7 @@
         .pulse-alert {
             animation: pulseSubmit 1.5s infinite;
             background: linear-gradient(135deg, #10b981, #059669) !important;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45) !important;
         }
 
         @@keyframes pulseSubmit {
@@ -922,7 +911,7 @@
             }
 
             50% {
-                transform: scale(1.05);
+                transform: scale(1.04);
                 box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
             }
 

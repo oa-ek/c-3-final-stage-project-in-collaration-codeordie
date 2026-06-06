@@ -211,5 +211,29 @@ namespace TravelManager.UI.Controllers
                     Value = c.Id.ToString()
                 });
         }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> ToggleCheck(int id)
+        {
+            var item = _unitOfWork.ChecklistItem.Get(i => i.Id == id);
+            if (item == null)
+            {
+                return Json(new { success = false, message = "Річ не знайдено в базі даних." });
+            }
+
+            var role = GetUserRoleByChecklistId(item.ChecklistId);
+            if (role == "Viewer" || role == "None")
+            {
+                return Json(new { success = false, message = "Глядачі не мають прав перемикати стан речей." });
+            }
+
+            // Перемикаємо статус
+            item.IsChecked = !item.IsChecked;
+            _unitOfWork.ChecklistItem.Update(item);
+            await _unitOfWork.SaveAsync();
+
+            return Json(new { success = true, isChecked = item.IsChecked });
+        }
     }
 }

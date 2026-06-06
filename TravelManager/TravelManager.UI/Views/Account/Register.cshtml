@@ -38,6 +38,8 @@
             </div>
 
             <form asp-action="Register" method="post">
+                <input type="hidden" asp-for="TripId" />
+                <input type="hidden" asp-for="RoleId" />
                 <div asp-validation-summary="ModelOnly" class="text-rose-500 mb-5 p-4 bg-rose-50/80 backdrop-blur-sm rounded-2xl text-sm font-medium border border-rose-100"></div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

@@ -1,0 +1,133 @@
+﻿@model IEnumerable<TravelManager.UI.Models.ViewModels.TemplateListViewModel>
+
+@{
+    ViewData["Title"] = "Шаблони чеклістів";
+    var systemTemplates = Model.Where(t => t.IsSystem).ToList();
+    var myTemplates = Model.Where(t => !t.IsSystem).ToList();
+}
+
+<div class="relative w-full max-w-5xl mx-auto min-h-[85vh] py-10 z-10 px-4">
+    <!-- Заголовок -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-100 pb-6">
+        <div>
+            <h1 class="text-4xl font-black tracking-tight text-slate-800 mb-2">
+                Шаблони списків речей
+            </h1>
+            <p class="text-sm font-bold text-slate-400 tracking-widest">
+                Наповніть шаблонні списки речей, щоб додавати їх до подорожей в один клік
+            </p>
+        </div>
+
+        <!-- КНОПКА СТВОРЕННЯ ВЛАСНОГО ШАБЛОНУ З НУЛЯ -->
+        <div class="shrink-0">
+            <a asp-action="Create" class="inline-flex items-center gap-2 px-6 py-4 rounded-full font-black text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all text-xs uppercase tracking-widest text-center shadow-md">
+                <i class="bi bi-plus-circle-fill text-sm"></i> Створити шаблон з нуля
+            </a>
+        </div>
+    </div>
+
+    <!-- Мої власні шаблони -->
+    <div class="mb-12">
+        <h2 class="text-xl font-black text-slate-700 mb-6 flex items-center gap-2">
+            Мої власні шаблони
+        </h2>
+        @if (!myTemplates.Any())
+        {
+            <div class="bg-white/60 backdrop-blur-md border border-dashed border-slate-200 rounded-[2rem] p-10 text-center shadow-sm">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-100">
+                    <i class="bi bi-folder-plus text-3xl"></i>
+                </div>
+                <p class="text-slate-500 font-bold">У вас поки немає власних шаблонів.</p>
+                <p class="text-xs text-slate-400 mt-1">Створіть свій з нуля або скопіюйте базовий шаблон нижче.</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach (var item in myTemplates)
+                {
+                    <div class="bg-white/85 backdrop-blur-md border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+                        <!-- Декоративний фон -->
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50/50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                                <i class="bi @(string.IsNullOrEmpty(item.IconClass) ? "bi-card-checklist" : item.IconClass)"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-black text-slate-800 mb-1 group-hover:text-indigo-600 transition-colors">@item.Title</h3>
+                                <p class="text-slate-500 text-sm font-medium">@item.Description</p>
+                                <span class="inline-block mt-3 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-indigo-100/50">
+                                    @item.ItemsCount елементів
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- ПАНЕЛЬ КНОПОК ДЛЯ ВЛАСНОГО ШАБЛОНУ -->
+                        <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-100/50">
+                            <!-- Кнопка Переглянути -->
+                            <a asp-action="Details" asp-route-id="@item.Id" class="px-4 py-2 rounded-xl font-black text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 transition-all text-[10px] uppercase tracking-widest flex items-center gap-1">
+                                <i class="bi bi-eye-fill"></i> Вміст
+                            </a>
+                            <!-- Кнопка Редагувати -->
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="px-4 py-2 rounded-xl font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition-all text-[10px] uppercase tracking-widest flex items-center gap-1">
+                                <i class="bi bi-pencil-fill"></i> Редагувати
+                            </a>
+                            <!-- Кнопка Видалити -->
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="m-0" onsubmit="return confirm('Видалити цей шаблон?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="w-9 h-9 flex items-center justify-center bg-rose-50 text-rose-500 border border-rose-100 rounded-xl hover:bg-rose-100 transition-colors">
+                                    <i class="bi bi-trash-fill text-sm"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Базові шаблони -->
+    <div>
+        <h2 class="text-xl font-black text-slate-700 mb-6 flex items-center gap-2">
+           Базові системні шаблони
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @foreach (var item in systemTemplates)
+            {
+                <div class="bg-white/80 backdrop-blur-md border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+                    <!-- Декоративний фон -->
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-50/50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600 text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                            <i class="bi @(string.IsNullOrEmpty(item.IconClass) ? "bi-card-checklist" : item.IconClass)"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-slate-800 mb-1 group-hover:text-cyan-600 transition-colors">@item.Title</h3>
+                            <p class="text-slate-500 text-sm font-medium">@item.Description</p>
+                            <span class="inline-block mt-3 bg-cyan-50 text-cyan-600 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-cyan-100/50">
+                                @item.ItemsCount елементів
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- ПАНЕЛЬ КНОПОК ДЛЯ СИСТЕМНОГО ШАБЛОНУ -->
+                    <div class="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-100/50">
+                        <!-- Кнопка Переглянути -->
+                        <a asp-action="Details" asp-route-id="@item.Id" class="px-4 py-2 rounded-xl font-black text-slate-500 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 transition-all text-[10px] uppercase tracking-widest flex items-center gap-1">
+                            <i class="bi bi-eye-fill"></i> Переглянути вміст
+                        </a>
+                        <!-- Форма Копіювання -->
+                        <form asp-action="Clone" asp-route-id="@item.Id" method="post" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="px-4 py-2 rounded-xl font-black text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-100 transition-all text-[10px] uppercase tracking-widest flex items-center gap-1">
+                                <i class="bi bi-files"></i> Скопіювати собі
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

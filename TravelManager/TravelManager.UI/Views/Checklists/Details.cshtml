@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Деталі списку";
+    // Безпечно отримуємо TripId з ViewBag, щоб уникнути помилки компіляції CS1061
+    var tripId = ViewBag.TripId as int? ?? 0;
 }
 
 <style>
@@ -24,44 +26,79 @@
 
     /* Красивий кастомний чекбокс (візуально) */
     .packed-item {
-        background: rgba(16, 185, 129, 0.1);
-        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: rgba(16, 185, 129, 0.3) !important;
     }
 
     .unpacked-item {
-        background: rgba(255, 255, 255, 0.6);
-        border-color: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.9) !important;
     }
 </style>
 
 <div class="relative w-full max-w-5xl mx-auto min-h-[85vh] py-10 z-10 px-4">
 
+    <!-- Фонові ефекти -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div class="absolute top-0 right-20 w-[30rem] h-[30rem] bg-cyan-300/20 rounded-full blur-[100px]"></div>
         <div class="absolute bottom-0 left-10 w-[20rem] h-[20rem] bg-indigo-300/20 rounded-full blur-[100px]"></div>
     </div>
 
-    <div class="relative z-20 bg-white/40 backdrop-blur-3xl border border-white/80 rounded-[3rem] p-10 md:p-12 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] mb-10 stagger-item" style="animation-delay: 0.1s;">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
+    <div class="relative z-20 mb-6 stagger-item" style="animation-delay: 0.05s;">
+        <button type="button" onclick="history.back()" class="inline-flex items-center gap-2 px-5 py-3 rounded-full font-black text-slate-500 bg-white hover:bg-slate-50 border border-slate-100 shadow-sm transition-all text-xs uppercase tracking-widest text-center whitespace-nowrap">
+            <i class="bi bi-arrow-left text-base"></i> Назад
+        </button>
+    </div>
+
+    <!-- ГОЛОВНА КАРТКА ІНФОРМАЦІЇ -->
+    <div class="relative z-20 bg-white/40 backdrop-blur-3xl border border-white/80 rounded-[3rem] p-6 md:p-12 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] mb-10 stagger-item" style="animation-delay: 0.1s;">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 md:gap-6">
+
+            <!-- Ліва частина: Бейдж та Заголовок -->
+            <div class="flex-1 min-w-0 w-full">
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 shadow-inner mb-4">
                     <i class="bi bi-airplane-engines text-blue-500"></i>
                     <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Поїздка: @Model.TripName</span>
                 </div>
-                <h1 class="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter drop-shadow-sm">@Model.Title</h1>
+
+                <!-- Заголовок чеклиста з красивим адаптивним розміром і правильним переносом по СЛОВАХ -->
+                <div class="flex items-center gap-3 md:gap-4 w-full">
+                    <h1 class="font-black text-slate-800 tracking-tighter drop-shadow-sm leading-tight break-words whitespace-normal text-2xl sm:text-3xl md:text-4xl lg:text-5xl"
+                        style="word-break: break-word; overflow-wrap: break-word;">
+                        @Model.Title
+                    </h1>
+
+                    <!-- Кнопка швидкого редагування самого чеклиста -->
+                    <a asp-controller="Checklists" asp-action="Edit" asp-route-id="@Model.Id"
+                       class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm hover:shadow-md shrink-0"
+                       title="Редагувати список">
+                        <i class="bi bi-pencil-square text-base md:text-lg"></i>
+                    </a>
+                </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <a asp-action="Index" class="px-6 py-4 rounded-full font-black text-slate-500 bg-white hover:bg-slate-50 border border-white shadow-sm transition-all text-xs uppercase tracking-widest text-center">
-                    <i class="bi bi-arrow-left mr-1"></i> Назад
-                </a>
+            <!-- Права частина: Керування (Імпорт та Додати) -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-stretch sm:items-center shrink-0">
+
+                <form asp-action="ImportTemplate" asp-route-id="@Model.Id" method="post" class="flex items-center gap-2 bg-white/90 border border-white/80 p-1.5 rounded-full shadow-sm hover:shadow transition-all">
+                    <select name="templateId" asp-items="@((IEnumerable<SelectListItem>)ViewBag.Templates)" required class="bg-transparent border-0 text-[10px] font-black uppercase tracking-widest text-slate-700 focus:ring-0 px-4 py-2 cursor-pointer outline-none max-w-[160px] sm:max-w-xs truncate">
+                        <option value="" disabled selected>Обрати шаблон 📋</option>
+                    </select>
+
+                    <button type="submit" class="px-5 py-3 rounded-full font-black text-white bg-cyan-600 hover:bg-cyan-700 hover:shadow-md active:scale-95 transition-all text-[10px] uppercase tracking-widest shrink-0">
+                        Імпорт <i class="bi bi-download ml-0.5"></i>
+                    </button>
+                </form>
+
                 <a asp-controller="ChecklistItems" asp-action="Create" asp-route-checklistId="@Model.Id" class="px-8 py-4 rounded-full font-black text-white bg-slate-900 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-xs uppercase tracking-widest text-center flex items-center justify-center gap-2">
                     Додати річ <i class="bi bi-plus-circle-fill"></i>
                 </a>
+
             </div>
         </div>
     </div>
 
+    <!-- СПИСОК РЕЧЕЙ -->
     <div class="relative z-20">
         @if (!Model.Items.Any())
         {
@@ -74,35 +111,102 @@
         else
         {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @Html.AntiForgeryToken()
                 @{
                     var delay = 0.2m;
                 }
                 @foreach (var item in Model.Items)
                 {
-                    <div class="group backdrop-blur-md border-2 rounded-3xl p-5 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg stagger-item @(item.IsChecked ? "packed-item" : "unpacked-item")" style="animation-delay: @(delay.ToString(System.Globalization.CultureInfo.InvariantCulture))s;">
+                    <div id="item-card-@item.Id"
+                         onclick="toggleItemCheck(@item.Id)"
+                         class="group backdrop-blur-md border-2 rounded-3xl p-5 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer stagger-item @(item.IsChecked ? "packed-item" : "unpacked-item")"
+                         style="animation-delay: @(delay.ToString(System.Globalization.CultureInfo.InvariantCulture))s;">
 
-                        <div class="flex items-center gap-4">
-                            @if (item.IsChecked)
-                            {
-                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-inner shrink-0">
-                                    <i class="bi bi-check-lg text-emerald-500 text-xl font-black"></i>
-                                </div>
-                                <span class="text-lg font-black text-slate-400 line-through decoration-emerald-500/50 decoration-2">@item.Content</span>
-                            }
-                            else
-                            {
-                                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-slate-200 shadow-inner shrink-0 group-hover:border-cyan-400 transition-colors"></div>
-                                <span class="text-lg font-black text-slate-700">@item.Content</span>
-                            }
+                        <div class="flex items-center gap-4 min-w-0 flex-1 mr-2">
+                            <div id="check-icon-container-@item.Id" class="shrink-0">
+                                @if (item.IsChecked)
+                                {
+                                    <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-inner shrink-0">
+                                        <i class="bi bi-check-lg text-emerald-500 text-xl font-black"></i>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-slate-200 shadow-inner shrink-0 group-hover:border-cyan-400 transition-colors"></div>
+                                }
+                            </div>
+
+                            <span id="item-text-@item.Id" class="text-base md:text-lg font-black transition-all duration-200 break-words leading-snug @(item.IsChecked ? "text-slate-400 line-through decoration-emerald-500/50 decoration-2" : "text-slate-700")" style="word-break: break-word; overflow-wrap: break-word;">
+                                @item.Content
+                            </span>
                         </div>
 
-                        <a asp-controller="ChecklistItems" asp-action="Edit" asp-route-id="@item.Id" class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 hover:text-cyan-600 hover:border-cyan-200 transition-all shadow-sm opacity-0 group-hover:opacity-100">
+                        <a asp-controller="ChecklistItems" asp-action="Edit" asp-route-id="@item.Id"
+                           onclick="event.stopPropagation();"
+                           class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 hover:text-cyan-600 hover:border-cyan-200 transition-all shadow-sm opacity-0 group-hover:opacity-100 shrink-0">
                             <i class="bi bi-pencil-fill text-sm"></i>
                         </a>
                     </div>
-                    delay += 0.05m;
+
+                    // Блок C# коду, який не ламає компіляцію
+                    { delay += 0.05m; }
                 }
             </div>
         }
     </div>
 </div>
+
+<script>
+    async function toggleItemCheck(itemId) {
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+            const response = await fetch(`/ChecklistItems/ToggleCheck/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                console.error("Помилка на сервері.");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                const card = document.getElementById(`item-card-${itemId}`);
+                const iconContainer = document.getElementById(`check-icon-container-${itemId}`);
+                const text = document.getElementById(`item-text-${itemId}`);
+
+                if (data.isChecked) {
+                    card.classList.remove('unpacked-item');
+                    card.classList.add('packed-item');
+
+                    iconContainer.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 shadow-inner shrink-0">
+                            <i class="bi bi-check-lg text-emerald-500 text-xl font-black"></i>
+                        </div>
+                    `;
+
+                    text.className = "text-base md:text-lg font-black text-slate-400 line-through decoration-emerald-500/50 decoration-2 transition-all duration-200 break-words leading-snug";
+                } else {
+                    card.classList.remove('packed-item');
+                    card.classList.add('unpacked-item');
+
+                    iconContainer.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center border-2 border-slate-200 shadow-inner shrink-0 group-hover:border-cyan-400 transition-colors"></div>
+                    `;
+
+                    text.className = "text-base md:text-lg font-black text-slate-700 transition-all duration-200 break-words leading-snug";
+                }
+            } else {
+                alert(data.message || "Сталася помилка при збереженні.");
+            }
+        } catch (error) {
+            console.error("Помилка запиту: ", error);
+        }
+    }
+</script>

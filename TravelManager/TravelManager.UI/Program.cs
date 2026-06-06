@@ -52,6 +52,8 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddScoped<TravelManager.Infrastructure.Services.ExcelExportService>();
+
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -65,39 +67,47 @@ builder.Services.AddScoped<IDestinationInfoService, DestinationInfoService>();
 
 builder.Services.AddMemoryCache();
 
-// ¬»ѕ–ј¬Ћ≈ЌЌя: прибрано .AddStandardResilienceHandler() Ч в≥н вмикаЇ circuit breaker,
-// €кий блокуЇ повторн≥ запити до зовн≥шн≥х API п≥сл€ першоњ невдач≥.
-// Timeout зб≥льшено до 15с, бо зовн≥шн≥ API (особливо Nominatim) можуть в≥дпов≥дати пов≥льно.
 
 builder.Services.AddHttpClient<IWeatherApiService, WeatherApiService>(client =>
 {
     client.BaseAddress = new Uri("https://api.open-meteo.com/");
-    client.Timeout = TimeSpan.FromSeconds(15);
+    client.Timeout = TimeSpan.FromSeconds(20); 
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler(options => {
+    options.Retry.MaxRetryAttempts = 3; 
+    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential; 
 });
 
 builder.Services.AddHttpClient<ICountryInfoService, CountryInfoService>(client =>
 {
     client.BaseAddress = new Uri("https://restcountries.com/");
-    client.Timeout = TimeSpan.FromSeconds(15);
+    client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler(options => {
+    options.Retry.MaxRetryAttempts = 2;
 });
 
 builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
 {
     client.BaseAddress = new Uri("https://bank.gov.ua/");
-    client.Timeout = TimeSpan.FromSeconds(15);
+    client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0");
+})
+.AddStandardResilienceHandler(options => {
+    options.Retry.MaxRetryAttempts = 2;
 });
 
-// ¬»ѕ–ј¬Ћ≈ЌЌя: Nominatim робить два запити (uk + en) Ч timeout зб≥льшено до 20с,
-// щоб обидва запити встигли виконатись.
 builder.Services.AddHttpClient<INominatimService, NominatimService>(client => {
     client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
-    client.Timeout = TimeSpan.FromSeconds(20);
+    client.Timeout = TimeSpan.FromSeconds(25); 
     client.DefaultRequestHeaders.Add("User-Agent", "TravelManager/1.0 (university project)");
+})
+.AddStandardResilienceHandler(options => {
+    options.Retry.MaxRetryAttempts = 3;
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(40); 
 });
-
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TravelManager.Application.DTOs.External;
@@ -27,6 +26,14 @@ namespace TravelManager.Infrastructure.Services
             _httpClient = httpClient;
             _cache = cache;
             _logger = logger;
+        }
+
+        public async Task<List<ExchangeRateInfo>> GetAllCurrenciesAsync()
+        {
+            var allRates = await GetAllRatesAsync();
+            if (allRates == null) return new List<ExchangeRateInfo>();
+
+            return allRates.OrderBy(r => r.CurrencyCode).ToList();
         }
 
         public async Task<List<ExchangeRateInfo>> GetRatesAsync(IEnumerable<string> currencyCodes)
@@ -54,8 +61,7 @@ namespace TravelManager.Infrastructure.Services
 
             try
             {
-                var response = await _httpClient.GetAsync(
-                    "NBUStatService/v1/statdirectory/exchange?json");
+                var response = await _httpClient.GetAsync("NBUStatService/v1/statdirectory/exchange?json");
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
@@ -71,7 +77,6 @@ namespace TravelManager.Infrastructure.Services
                     ExchangeDate = d.ExchangeDate ?? string.Empty
                 }).ToList();
 
-                // Кешуємо до кінця дня — НБУ оновлює курси раз на день
                 var midnight = DateTime.Today.AddDays(1);
                 _cache.Set(AllRatesCacheKey, result, midnight);
 

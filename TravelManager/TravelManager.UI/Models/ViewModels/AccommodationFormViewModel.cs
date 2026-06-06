@@ -27,5 +27,10 @@ namespace TravelManager.UI.Models.ViewModels
         public int TripId { get; set; }
 
         public IEnumerable<SelectListItem>? TripList { get; set; }
+
+        public string? ContactPhone { get; set; }
+        public string? WebsiteUrl { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }
