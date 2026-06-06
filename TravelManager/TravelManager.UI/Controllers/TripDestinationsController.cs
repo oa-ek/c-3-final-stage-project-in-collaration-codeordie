@@ -47,7 +47,7 @@ namespace TravelManager.UI.Controllers
             var destinations = _unitOfWork.TripDestination
                 .GetAll(d => myTripIds.Contains(d.TripId), includeProperties: "Trip");
 
-          
+
             if (tripId.HasValue)
             {
                 destinations = destinations.Where(d => d.TripId == tripId.Value);
@@ -355,6 +355,35 @@ namespace TravelManager.UI.Controllers
             if (model == null) return NotFound();
 
             return View(model);
+        }
+
+        // GET /TripDestinations/WeatherCard?destinationId=5
+        // Повертає JSON з погодою і прапором для рядка таблиці маршруту
+        [HttpGet]
+        public async Task<IActionResult> WeatherCard(int destinationId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var destination = _unitOfWork.TripDestination.Get(d => d.Id == destinationId);
+            if (destination == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == destination.TripId && tp.UserId == currentUserId);
+            if (participant == null) return Forbid();
+
+            var info = await _destinationInfoService.GetDestinationInfoAsync(destinationId);
+            if (info == null) return NotFound();
+
+            return Json(new
+            {
+                temp = info.Weather?.Temperature,
+                icon = info.Weather?.Icon,
+                desc = info.Weather?.Description,
+                humidity = info.Weather?.Humidity,
+                windSpeed = info.Weather?.WindSpeed,
+                flagUrl = info.Country_Info?.FlagUrl,
+                flagAlt = info.Country_Info?.FlagAlt,
+                country = info.Country_Info?.CommonName,
+            });
         }
 
         private string GetUserRoleInTrip(int tripId)

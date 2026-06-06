@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews()
 .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpClient();
 
 builder.Services.AddSwaggerGen(c =>
 {
