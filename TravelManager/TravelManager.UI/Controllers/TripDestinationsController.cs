@@ -2,10 +2,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TravelManager.Application.DTOs.External;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
 using TravelManager.Infrastructure.Interfaces.IServices;
-using TravelManager.Application.DTOs.External;
+using TravelManager.Infrastructure.Services;
 using TravelManager.UI.Models.ViewModels;
 
 namespace TravelManager.UI.Controllers
@@ -17,17 +18,20 @@ namespace TravelManager.UI.Controllers
         private readonly UserManager<User> _userManager;
         private readonly INominatimService _nominatimService;
         private readonly IDestinationInfoService _destinationInfoService;
+        private readonly IAiRecommendationService _aiService;
 
         public TripDestinationsController(
-            IUnitOfWork unitOfWork,
-            UserManager<User> userManager,
-            INominatimService nominatimService,
-            IDestinationInfoService destinationInfoService)
+     IUnitOfWork unitOfWork,
+     UserManager<User> userManager,
+     INominatimService nominatimService,
+     IDestinationInfoService destinationInfoService,
+     IAiRecommendationService aiService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _nominatimService = nominatimService;
             _destinationInfoService = destinationInfoService;
+            _aiService = aiService;
         }
 
         [HttpGet]
@@ -43,8 +47,7 @@ namespace TravelManager.UI.Controllers
             var destinations = _unitOfWork.TripDestination
                 .GetAll(d => myTripIds.Contains(d.TripId), includeProperties: "Trip");
 
-            // --- КЛЮЧОВА ЗМІНА ДЛЯ КАРТИ ---
-            // Завантажуємо транзити (квитки), щоб показати їх як дуги на карті
+
             if (tripId.HasValue)
             {
                 destinations = destinations.Where(d => d.TripId == tripId.Value);
@@ -97,7 +100,20 @@ namespace TravelManager.UI.Controllers
                 country = result.Country
             });
         }
+        [HttpGet]
+        public async Task<IActionResult> AiRecommendations(string city, string country)
+        {
+            var result = await _aiService.GetRecommendationsAsync(city, country);
+            if (result == null)
+                return Json(new { error = "Не вдалося отримати рекомендації" });
 
+            return Json(new
+            {
+                attractions = result.Attractions,
+                restaurants = result.Restaurants,
+                tips = result.PracticalTips
+            });
+        }
         [HttpGet]
         public IActionResult Create(int? tripId)
         {
@@ -299,7 +315,26 @@ namespace TravelManager.UI.Controllers
             TempData["SuccessMessage"] = "Місто видалено з маршруту.";
             return RedirectToAction(nameof(Index), new { tripId });
         }
+        [HttpGet]
+        public async Task<IActionResult> GetAiRecommendations(int destinationId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var destination = _unitOfWork.TripDestination.Get(d => d.Id == destinationId);
+            if (destination == null) return NotFound();
 
+            // Перевіряємо доступ
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == destination.TripId && tp.UserId == currentUserId);
+            if (participant == null) return Forbid();
+
+            var result = await _aiService.GetRecommendationsAsync(
+                destination.CityName, destination.Country);
+
+            if (result == null)
+                return StatusCode(503, new { error = "AI сервіс тимчасово недоступний" });
+
+            return Json(result);
+        }
         [HttpGet]
         public async Task<IActionResult> Info(int id)
         {
@@ -320,6 +355,35 @@ namespace TravelManager.UI.Controllers
             if (model == null) return NotFound();
 
             return View(model);
+        }
+
+        // GET /TripDestinations/WeatherCard?destinationId=5
+        // Повертає JSON з погодою і прапором для рядка таблиці маршруту
+        [HttpGet]
+        public async Task<IActionResult> WeatherCard(int destinationId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var destination = _unitOfWork.TripDestination.Get(d => d.Id == destinationId);
+            if (destination == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == destination.TripId && tp.UserId == currentUserId);
+            if (participant == null) return Forbid();
+
+            var info = await _destinationInfoService.GetDestinationInfoAsync(destinationId);
+            if (info == null) return NotFound();
+
+            return Json(new
+            {
+                temp = info.Weather?.Temperature,
+                icon = info.Weather?.Icon,
+                desc = info.Weather?.Description,
+                humidity = info.Weather?.Humidity,
+                windSpeed = info.Weather?.WindSpeed,
+                flagUrl = info.Country_Info?.FlagUrl,
+                flagAlt = info.Country_Info?.FlagAlt,
+                country = info.Country_Info?.CommonName,
+            });
         }
 
         private string GetUserRoleInTrip(int tripId)
