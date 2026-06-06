@@ -85,7 +85,9 @@ namespace TravelManager.UI.Controllers
                 .ToList();
 
             var expenses = _unitOfWork.Expense
-                .GetAll(e => myTripIds.Contains(e.TripId), includeProperties: "Trip,Category");
+                .GetAll(e => myTripIds.Contains(e.TripId),
+                        includeProperties: "Trip,Category,Transit,Accommodation,TripActivity");
+
 
             var myParticipants = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId, includeProperties: "Role")
@@ -103,7 +105,13 @@ namespace TravelManager.UI.Controllers
                     CategoryName = e.Category?.Name ?? "Невідомо",
                     TripTitle = e.Trip?.Title ?? "Невідомо",
                     TripId = e.TripId,
-                    ReceiptImageUrl = e.ReceiptImageUrl // ВИПРАВЛЕНО: Передаємо посилання на чек у список відображення
+                    ReceiptImageUrl = e.ReceiptImageUrl,
+                    TransitId = e.TransitId,
+                    LinkedTransit = e.Transit != null ? $"{e.Transit.DepartureLocation} - {e.Transit.ArrivalLocation}" : null,
+                    AccommodationId = e.AccommodationId,
+                    LinkedAccommodation = e.Accommodation?.Name,
+                    TripActivityId = e.TripActivityId,
+                    LinkedActivity = e.TripActivity?.Title
                 };
             }).ToList();
 

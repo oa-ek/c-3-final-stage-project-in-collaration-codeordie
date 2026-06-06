@@ -17,5 +17,9 @@
         public string PayerId { get; set; } = string.Empty;
         public string DebtorId { get; set; } = string.Empty;
 
+        public string? LinkedTransit { get; set; }
+        public string? LinkedAccommodation { get; set; }
+        public string? LinkedActivity { get; set; }
+
     }
 }

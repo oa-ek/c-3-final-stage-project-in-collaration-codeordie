@@ -40,7 +40,7 @@
     <div class="absolute top-10 left-10 w-[30rem] h-[30rem] bg-amber-400/20 rounded-full blur-[120px] animate-pulse pointer-events-none -translate-x-1/2"></div>
     <div class="absolute bottom-10 right-10 w-[35rem] h-[35rem] bg-indigo-400/15 rounded-full blur-[140px] animate-pulse pointer-events-none translate-x-1/4" style="animation-delay: 2s;"></div>
 
-    <!-- Заголовок та головні дії -->
+    <!-- Заголовок та кнопка створення -->
     <div class="relative z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-slate-100 pb-6 stagger-item" style="animation-delay: 0.05s">
         <div>
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-md border border-white shadow-sm mb-4">
@@ -61,8 +61,7 @@
 
             @if (ViewBag.CurrentUserRole != "Viewer" && ViewBag.CurrentUserRole != "None")
             {
-                <!-- КНОПКА: Додати витрату -->
-                <a asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="group relative inline-flex items-center justify-center px-8 py-4 font-black text-white transition-all duration-300 bg-slate-900 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 uppercase tracking-widest text-xs overflow-hidden active:scale-95">
+                <a asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="group relative inline-flex items-center justify-center w-full md:w-auto px-8 py-4 font-black text-white transition-all duration-300 bg-slate-900 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 uppercase tracking-widest text-xs overflow-hidden active:scale-95">
                     <span class="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:animate-[shimmer_1.5s_infinite]"></span>
                     <span class="relative flex items-center gap-2">
                         Додати витрату <i class="bi bi-plus-circle-fill text-sm"></i>
@@ -95,7 +94,7 @@
 
                 <div class="space-y-4 stagger-item" style="animation-delay: @(animDelay.ToString(System.Globalization.CultureInfo.InvariantCulture))s;">
 
-                    <!-- Шапка групи подорожі із підрахованою сумою тільки для неї та посиланням на Ексель звіт -->
+                    <!-- Шапка групи подорожі із підрахованою сумою тільки для неї та Excel експортом -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-4 bg-slate-100/60 border border-slate-200/50 rounded-2xl gap-3">
                         <div class="flex items-center gap-2">
                             <i class="bi bi-airplane-engines text-indigo-500"></i>
@@ -103,8 +102,9 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                            <!-- ПОСИЛАННЯ НА ЕКСЕЛЬ ЗВІТ -->
                             <a asp-controller="Export" asp-action="Trip" asp-route-tripId="@tripId" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-950 transition-colors bg-emerald-50 border border-emerald-200/60 px-4 py-1.5 rounded-full shadow-inner">
-                                Звіт Excel подорожі
+                                Експорт Excel
                             </a>
 
                             <div class="text-sm font-bold text-slate-600 bg-white px-4 py-1.5 rounded-full border border-slate-200/60 shadow-inner">
@@ -146,7 +146,32 @@
                                         </div>
                                         <h4 class="font-black text-slate-800 text-lg tracking-tight truncate">@item.Description</h4>
 
-                                        <!-- ПОВЕРНУТО: Посилання на чек витрати (Receipt Link) -->
+                                        <!-- ПОВЕРНУТО ТА ПОКРАЩЕНО: Клікабельні кнопки-зв'язки -->
+                                        @if (item.TransitId.HasValue || item.AccommodationId.HasValue || item.TripActivityId.HasValue)
+                                        {
+                                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                                @if (item.TransitId.HasValue && !string.IsNullOrEmpty(item.LinkedTransit))
+                                                {
+                                                    <a asp-controller="Transits" asp-action="Index" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-100/60 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors no-underline">
+                                                        <i class="bi bi-car-front-fill text-xs"></i> @item.LinkedTransit
+                                                    </a>
+                                                }
+                                                @if (item.AccommodationId.HasValue && !string.IsNullOrEmpty(item.LinkedAccommodation))
+                                                {
+                                                    <a asp-controller="Accommodations" asp-action="Index" class="inline-flex items-center gap-1 px-2.5 py-1 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-600 border border-fuchsia-100/60 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors no-underline">
+                                                        <i class="bi bi-house-door-fill text-xs"></i> @item.LinkedAccommodation
+                                                    </a>
+                                                }
+                                                @if (item.TripActivityId.HasValue && !string.IsNullOrEmpty(item.LinkedActivity))
+                                                {
+                                                    <a asp-controller="TripActivities" asp-action="Index" class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-100/60 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors no-underline">
+                                                        <i class="bi bi-ticket-perforated-fill text-xs"></i> @item.LinkedActivity
+                                                    </a>
+                                                }
+                                            </div>
+                                        }
+
+                                        <!-- Якщо у витрати є активне посилання на чек - виводимо гарний лінк -->
                                         @if (!string.IsNullOrEmpty(item.ReceiptImageUrl))
                                         {
                                             <div class="mt-2">
@@ -169,6 +194,7 @@
                                     @if (ViewBag.CurrentUserRole != "Viewer" && ViewBag.CurrentUserRole != "None")
                                     {
                                         <div class="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                                            <!-- Передаємо returnUrl для розумного редіректу з редагування -->
                                             <a asp-action="Edit" asp-route-id="@item.Id" asp-route-returnUrl="@Context.Request.Path" class="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-all shadow-sm hover:scale-105" title="Редагувати">
                                                 <i class="bi bi-pencil-fill text-sm"></i>
                                             </a>
