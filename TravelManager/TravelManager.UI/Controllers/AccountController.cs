@@ -234,12 +234,17 @@ namespace TravelManager.UI.Controllers
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
 
-            if (model.ProfileImage != null && model.ProfileImage.Length > 0)
+            if (!string.IsNullOrEmpty(model.CroppedBase64))
+            {
+                var base64Data = model.CroppedBase64.Substring(model.CroppedBase64.IndexOf(",") + 1);
+                user.ProfilePicture = Convert.FromBase64String(base64Data);
+            }
+            else if (model.ProfileImage != null && model.ProfileImage.Length > 0)
             {
                 using (var memoryStream = new MemoryStream())
                 {
                     await model.ProfileImage.CopyToAsync(memoryStream);
-                    user.ProfilePicture = memoryStream.ToArray(); 
+                    user.ProfilePicture = memoryStream.ToArray();
                 }
             }
 
@@ -248,7 +253,7 @@ namespace TravelManager.UI.Controllers
             if (result.Succeeded)
             {
                 TempData["SuccessMessage"] = "Профіль успішно оновлено!";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(nameof(Profile)); 
             }
 
             foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);

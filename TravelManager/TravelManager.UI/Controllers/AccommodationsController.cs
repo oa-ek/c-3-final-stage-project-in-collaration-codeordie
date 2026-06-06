@@ -45,7 +45,14 @@ namespace TravelManager.UI.Controllers
                 Name = a.Name,
                 Address = a.Address,
                 CheckInTime = a.CheckInTime,
-                CheckOutTime = a.CheckOutTime
+                CheckOutTime = a.CheckOutTime,
+                TripTitle = a.Trip?.Title ?? "Без назви подорожі",
+                BookingStatusName = a.BookingStatus?.Name ?? "Статус невідомий",
+                ContactPhone = a.ContactPhone,
+                WebsiteUrl = a.WebsiteUrl,
+                Latitude = a.Latitude,
+                Longitude = a.Longitude,
+                BookingReference = a.BookingReference
             }).ToList();
 
             return View(viewModels);
@@ -83,7 +90,6 @@ namespace TravelManager.UI.Controllers
 
             return View(model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AccommodationFormViewModel model)
@@ -121,9 +127,11 @@ namespace TravelManager.UI.Controllers
                 CheckOutTime = model.CheckOutTime,
                 BookingReference = model.BookingReference,
                 TripId = model.TripId,
-                BookingStatusId = 1,
+                BookingStatusId = 1, // Твій автоматичний статус
                 Latitude = lat,
-                Longitude = lon
+                Longitude = lon,
+                ContactPhone = model.ContactPhone,
+                WebsiteUrl = model.WebsiteUrl
             };
 
             _unitOfWork.Accommodation.Add(entity);
@@ -132,7 +140,6 @@ namespace TravelManager.UI.Controllers
             TempData["SuccessMessage"] = $"Житло «{model.Name}» успішно додано!";
             return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
-
         [HttpGet]
         public IActionResult Edit(int id)
         {

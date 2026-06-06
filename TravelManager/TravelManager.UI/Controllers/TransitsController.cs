@@ -38,13 +38,15 @@ namespace TravelManager.UI.Controllers
             var viewModels = transits.Select(t => new TransitListViewModel
             {
                 Id = t.Id,
-                TripTitle = t.Trip?.Title ?? string.Empty,
+                TripTitle = t.Trip?.Title ?? "Без назви подорожі",
                 TransitTypeName = t.TransitType?.Name ?? string.Empty,
                 DepartureLocation = t.DepartureLocation,
                 ArrivalLocation = t.ArrivalLocation,
                 DepartureTime = t.DepartureTime,
                 ArrivalTime = t.ArrivalTime,
-                BookingStatusName = t.BookingStatus?.Name ?? string.Empty
+                BookingStatusName = t.BookingStatus?.Name ?? string.Empty,
+                CarrierInfo = t.CarrierInfo,
+                BookingReference = t.BookingReference
             }).ToList();
 
             return View(viewModels);

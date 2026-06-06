@@ -58,6 +58,15 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            var currentUserId = _userManager.GetUserId(User);
+            var templates = _unitOfWork.ChecklistTemplate.GetAll(t => t.OwnerId == null || t.OwnerId == currentUserId);
+
+            ViewBag.Templates = templates.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = t.Title
+            }).ToList();
+
             var model = new ChecklistDetailsViewModel
             {
                 Id = checklist.Id,
@@ -189,7 +198,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст оновлено!";
-            return RedirectToAction("Details", "Trips", new { id = model.TripId });
+            return RedirectToAction(nameof(Details), new { id = model.Id });
         }
 
         [HttpPost]
@@ -233,6 +242,53 @@ namespace TravelManager.UI.Controllers
                     Text = tp.Trip.Title,
                     Value = tp.TripId.ToString()
                 }).ToList();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportTemplate(int id, int templateId)
+        {
+            if (templateId <= 0)
+            {
+                TempData["ErrorMessage"] = "Будь ласка, виберіть коректний шаблон.";
+                return RedirectToAction(nameof(Details), new { id = id });
+            }
+
+            var checklist = _unitOfWork.Checklist.Get(c => c.Id == id, includeProperties: "Items");
+            if (checklist == null) return NotFound();
+
+            var role = GetUserRoleInTrip(checklist.TripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для додавання записів у цей чекліст.";
+                return RedirectToAction(nameof(Details), new { id = id });
+            }
+
+            var template = _unitOfWork.ChecklistTemplate.Get(t => t.Id == templateId, includeProperties: "Items");
+            if (template == null)
+            {
+                TempData["ErrorMessage"] = "Обраний шаблон не знайдено.";
+                return RedirectToAction(nameof(Details), new { id = id });
+            }
+
+            foreach (var templateItem in template.Items)
+            {
+                if (!checklist.Items.Any(i => i.Content.Equals(templateItem.Content, StringComparison.OrdinalIgnoreCase)))
+                {
+                    checklist.Items.Add(new ChecklistItem
+                    {
+                        ChecklistId = id,
+                        Content = templateItem.Content,
+                        IsChecked = false 
+                    });
+                }
+            }
+
+            _unitOfWork.Checklist.Update(checklist);
+            await _unitOfWork.SaveAsync();
+
+            TempData["SuccessMessage"] = $"Речі з шаблону '{template.Title}' успішно скопійовано до вашої валізи!";
+            return RedirectToAction(nameof(Details), new { id = id });
         }
     }
 }

@@ -12,5 +12,7 @@ namespace TravelManager.UI.Models.ViewModels
         public DateTime DepartureTime { get; set; }
         public DateTime ArrivalTime { get; set; }
         public string BookingStatusName { get; set; } = string.Empty;
+        public string? CarrierInfo { get; set; }
+        public string? BookingReference { get; set; }
     }
 }

@@ -64,6 +64,8 @@ builder.Services.AddAuthentication()
 
 
 builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddScoped<TravelManager.Infrastructure.Services.ExcelExportService>();
+
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

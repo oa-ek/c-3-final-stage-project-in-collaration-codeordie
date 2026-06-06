@@ -1,0 +1,276 @@
+﻿@model TravelManager.UI.Models.ViewModels.TemplateEditViewModel
+
+@{
+    ViewData["Title"] = "Експорт звіту";
+    var tripId = (int)ViewBag.TripId;
+    var tripTitle = (string)ViewBag.TripTitle;
+    var participants = (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Participants;
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .export-root {
+        font-family: 'DM Sans', sans-serif;
+        min-height: 100vh;
+        padding: 2rem 1rem 4rem;
+        position: relative;
+    }
+
+        /* Живий фон як у профілі */
+        .export-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 10% 20%, rgba(99,102,241,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 90% 80%, rgba(236,72,153,0.10) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 70%);
+            z-index: -1;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+
+    @@keyframes bgShift {
+        0% {
+            filter: hue-rotate(0deg) brightness(1);
+        }
+
+        100% {
+            filter: hue-rotate(25deg) brightness(1.03);
+        }
+    }
+
+    /* Плаваючі blob-и */
+    .blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.18;
+        z-index: -1;
+        animation: blobFloat linear infinite;
+        pointer-events: none;
+    }
+
+    .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: #6366f1;
+        top: -100px;
+        left: -100px;
+        animation-duration: 20s;
+    }
+
+    .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: #ec4899;
+        bottom: -80px;
+        right: -80px;
+        animation-duration: 25s;
+        animation-direction: reverse;
+    }
+
+    .blob-3 {
+        width: 300px;
+        height: 300px;
+        background: #10b981;
+        top: 40%;
+        left: 60%;
+        animation-duration: 18s;
+    }
+
+    @@keyframes blobFloat {
+        0% {
+            transform: translate(0,0) scale(1);
+        }
+
+        33% {
+            transform: translate(40px,-30px) scale(1.05);
+        }
+
+        66% {
+            transform: translate(-20px,40px) scale(0.95);
+        }
+
+        100% {
+            transform: translate(0,0) scale(1);
+        }
+    }
+
+    .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        animation: revealUp 0.65s cubic-bezier(.16,1,.3,1) forwards;
+    }
+
+    @@keyframes revealUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .delay-1 {
+        animation-delay: 0.05s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.15s;
+    }
+
+    /* Головна об'єднана картка */
+    .glass-card {
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 2.5rem;
+        box-shadow: 0 15px 50px rgba(99,102,241,0.08);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .page-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+    }
+
+        .page-title span {
+            background: linear-gradient(135deg, #10b981, #059669);
+            background-size: 200% 200%;
+            animation: titleGradient 5s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+    @@keyframes titleGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .save-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        background-size: 200% 200%;
+        color: white;
+        border: none;
+        border-radius: 1.2rem;
+        padding: 1rem 3rem;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 4px 20px rgba(16,185,129,0.3);
+        animation: btnGradient 4s ease infinite;
+    }
+
+    @@keyframes btnGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .save-btn:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 30px rgba(16,185,129,0.45);
+    }
+</style>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="export-root">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Навігація назад -->
+        <div class="reveal delay-1 mb-6">
+            <a asp-controller="Trips" asp-action="Details" asp-route-id="@tripId" class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-emerald-600 transition-colors">
+                <i class="bi bi-arrow-left"></i> Назад до подорожі
+            </a>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="reveal delay-1 mb-8">
+            <h1 class="page-title">Експорт <span>даних</span></h1>
+            <p style="color:#64748b; font-weight:500; margin-top:0.5rem;"><i class="bi bi-airplane text-amber-400 mr-1"></i> Подорож: @tripTitle</p>
+        </div>
+
+        <!-- ЄДИНА ЗГРУПОВАНА КАРТКА -->
+        <div class="glass-card p-6 md:p-10 reveal delay-2">
+
+            <div class="mb-10 pb-8 border-b border-slate-200/60 text-center">
+                <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-500 text-5xl mb-4 inline-block drop-shadow-sm"></i>
+                <h3 class="text-xl font-black text-slate-800 mb-2">
+                    Повний звіт по подорожі
+                </h3>
+                <p class="text-slate-500 text-sm font-medium mb-6">Містить 3 аркуші: Витрати, Борги та Взаєморозрахунки (нетто-план виплат).</p>
+
+                <a asp-controller="Export"
+                   asp-action="DownloadTripReport"
+                   asp-route-tripId="@tripId"
+                   class="save-btn w-full sm:w-auto inline-flex items-center justify-center gap-2">
+                    Скачати звіт (.xlsx) <i class="bi bi-download ml-1"></i>
+                </a>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-4 ml-2 text-center">
+                    Або завантажити персональний звіт учасника
+                </label>
+
+                <div class="space-y-3">
+                    @foreach (var p in participants)
+                    {
+                        <a asp-controller="Export"
+                           asp-action="DownloadTripReport"
+                           asp-route-tripId="@tripId"
+                           asp-route-filterUserId="@p.Value"
+                           class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:border-emerald-200 hover:bg-white transition-all group shadow-sm hover:shadow-md">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-500 flex items-center justify-center font-black shrink-0">
+                                    <i class="bi bi-person-fill text-lg"></i>
+                                </div>
+                                <span class="font-bold text-slate-700">@p.Text</span>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-xs font-bold text-emerald-600">
+                                <i class="bi bi-file-earmark-arrow-down-fill text-base"></i>
+                            </div>
+                        </a>
+                    }
+                    @if (!participants.Any())
+                    {
+                        <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            <i class="bi bi-people text-3xl mb-2 block text-slate-300"></i>
+                            <p class="font-bold text-sm text-slate-500">Немає учасників у поїздці</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

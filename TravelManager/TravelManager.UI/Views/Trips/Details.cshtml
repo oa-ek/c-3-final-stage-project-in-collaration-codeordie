@@ -904,6 +904,13 @@
                 <a asp-controller="TripDestinations" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-geo-alt"></i> Місто</a>
                 <a asp-controller="Checklists" asp-action="Create" asp-route-tripId="@Model.Trip.Id" class="nav-btn"><i class="bi bi-check2-square"></i> Чекліст</a>
                 <a asp-action="Edit" asp-route-id="@Model.Trip.Id" class="nav-btn ghost"><i class="bi bi-pencil"></i> Редагувати</a>
+                <a asp-controller="Export"
+   asp-action="Trip"
+   asp-route-tripId="@Model.Trip.Id"
+   class="nav-btn"
+   title="Експорт у Excel">
+    <i class="bi bi-file-earmark-spreadsheet"></i> Excel
+</a>
             </div>
 
             @if (Model.Destinations != null && Model.Destinations.Any())
