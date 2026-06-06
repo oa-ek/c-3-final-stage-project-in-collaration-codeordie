@@ -8,6 +8,7 @@ namespace TravelManager.Infrastructure.Interfaces.IServices
         string cityName,
         string? country,
         string language = "uk");
+        Task<string> AnalyzeExpensesAsync(string destination, int days, string currency, decimal totalAmount, Dictionary<string, decimal> expensesByCategory);
     }
 
 
