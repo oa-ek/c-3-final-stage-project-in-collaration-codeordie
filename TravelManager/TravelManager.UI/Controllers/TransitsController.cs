@@ -44,7 +44,9 @@ namespace TravelManager.UI.Controllers
                 ArrivalLocation = t.ArrivalLocation,
                 DepartureTime = t.DepartureTime,
                 ArrivalTime = t.ArrivalTime,
-                BookingStatusName = t.BookingStatus?.Name ?? string.Empty
+                BookingStatusName = t.BookingStatus?.Name ?? string.Empty,
+                CarrierInfo = t.CarrierInfo,
+                BookingReference = t.BookingReference
             }).ToList();
 
             return View(viewModels);

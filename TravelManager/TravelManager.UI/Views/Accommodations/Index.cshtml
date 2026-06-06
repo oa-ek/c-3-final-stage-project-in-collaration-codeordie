@@ -2,13 +2,17 @@
 
 @{
     ViewData["Title"] = "Житло";
-    // Групуємо за назвою поїздки
+    // ГРУПУЄМО ПО ПОЇЗДКАХ
     var groupedAccommodations = Model.GroupBy(x => x.TripTitle ?? "Без назви подорожі").ToList();
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
+    * {
+        box-sizing: border-box;
+    }
+
     .acc-root {
         font-family: 'DM Sans', sans-serif;
         min-height: 100vh;
@@ -36,10 +40,6 @@
             opacity: 1;
             transform: translateY(0);
         }
-    }
-
-    .d1 {
-        animation-delay: .05s
     }
 
     .page-title {
@@ -82,7 +82,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+        transition: all 0.35s;
         box-shadow: 0 4px 20px rgba(236,72,153,0.3);
     }
 
@@ -125,10 +125,6 @@
             transition: background 0.2s;
         }
 
-        .acc-table tr:last-child td {
-            border-bottom: none;
-        }
-
         .acc-table tr:hover td {
             background: rgba(255,255,255,0.9);
         }
@@ -139,29 +135,101 @@
         font-size: 1.1rem;
         color: #0f172a;
         display: flex;
-        align-items: center;
-        gap: 0.75rem;
+        align-items: flex-start;
+        gap: 1rem;
     }
 
     .acc-icon {
-        width: 42px;
-        height: 42px;
+        width: 46px;
+        height: 46px;
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: white;
         border-radius: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 1.4rem;
         box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+        flex-shrink: 0;
     }
 
     .acc-addr {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #64748b;
         font-weight: 500;
-        margin-top: 0.2rem;
+        margin-top: 0.3rem;
         display: block;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .contact-links {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+        flex-wrap: wrap;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    .contact-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.3rem 0.6rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .link-phone {
+        background: rgba(16,185,129,0.1);
+        color: #059669;
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+
+        .link-phone:hover {
+            background: rgba(16,185,129,0.2);
+            color: #047857;
+        }
+
+    .link-web {
+        background: rgba(14,165,233,0.1);
+        color: #0284c7;
+        border: 1px solid rgba(14,165,233,0.2);
+    }
+
+        .link-web:hover {
+            background: rgba(14,165,233,0.2);
+            color: #0369a1;
+        }
+
+    .link-map {
+        background: rgba(245,158,11,0.1);
+        color: #d97706;
+        border: 1px solid rgba(245,158,11,0.2);
+    }
+
+        .link-map:hover {
+            background: rgba(245,158,11,0.2);
+            color: #b45309;
+        }
+
+    /* Стиль для бейджа з номером бронювання */
+    .booking-ref-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: rgba(99, 102, 241, 0.1);
+        color: #4f46e5;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.4rem;
+        margin-top: 0.4rem;
     }
 
     .date-badge {
@@ -184,28 +252,6 @@
         font-size: 0.85rem;
         color: #334155;
         font-weight: 700;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.4rem 1rem;
-        border-radius: 99px;
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .pill-ok {
-        background: rgba(16,185,129,0.1);
-        color: #059669;
-    }
-
-    .pill-wait {
-        background: rgba(245,158,11,0.1);
-        color: #d97706;
     }
 
     .actions-cell {
@@ -252,12 +298,46 @@
             box-shadow: 0 4px 12px rgba(239,68,68,0.3);
         }
 
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+    .modal-card {
+        background: white;
+        border-radius: 2rem;
+        padding: 2.5rem;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        transform: scale(0.9);
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-overlay.show .modal-card {
+        transform: scale(1);
+    }
 </style>
 
 <div class="acc-root">
     <div style="max-width:1100px; margin:0 auto;">
 
-        <div class="reveal d1" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:3rem;">
+        <div class="reveal" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; margin-bottom:3rem;">
             <div>
                 <h1 class="page-title">Твоє <span>Житло</span></h1>
                 <p style="color:#64748b;font-weight:500;margin-top:0.4rem;">Готелі, апартаменти та вілли для відпочинку</p>
@@ -269,7 +349,7 @@
 
         @if (!Model.Any())
         {
-            <div class="reveal d1" style="background: rgba(255,255,255,0.65); backdrop-filter: blur(24px); border: 2px dashed rgba(236,72,153,0.3); border-radius: 2rem; padding: 5rem 2rem; text-align: center;">
+            <div class="reveal" style="background: rgba(255,255,255,0.65); backdrop-filter: blur(24px); border: 2px dashed rgba(236,72,153,0.3); border-radius: 2rem; padding: 5rem 2rem; text-align: center;">
                 <h3 style="font-family:'Syne',sans-serif;font-weight:900;color:#0f172a;font-size:1.5rem;margin-bottom:0.5rem;">Де плануєш зупинитись?</h3>
                 <p style="color:#94a3b8;font-weight:500;margin-bottom:1.5rem;">Ще немає жодного збереженого варіанту житла.</p>
                 <a asp-action="Create" class="add-btn" style="margin:0 auto;"><i class="bi bi-plus-lg"></i> Додати</a>
@@ -284,20 +364,17 @@
                 {
                     <div class="space-y-4 reveal" style="animation-delay: @(animDelay.ToString(System.Globalization.CultureInfo.InvariantCulture))s;">
 
-                        <!-- Шапка групи подорожі -->
                         <div class="flex items-center gap-2 px-6 py-4 bg-white/40 backdrop-blur-md border border-slate-200/50 rounded-2xl mb-4">
                             <i class="bi bi-airplane-engines text-indigo-500"></i>
                             <h3 class="font-black text-slate-800 text-lg m-0">@group.Key</h3>
                         </div>
 
-                        <!-- Таблиця житла для поїздки -->
                         <div class="list-wrapper">
                             <table class="acc-table">
                                 <thead>
                                     <tr>
-                                        <th>Назва та адреса</th>
+                                        <th>Назва та контакти</th>
                                         <th>Дати проживання</th>
-                                        <th>Статус</th>
                                         <th style="text-align:right;">Дії</th>
                                     </tr>
                                 </thead>
@@ -311,6 +388,35 @@
                                                     <div>
                                                         @item.Name
                                                         <span class="acc-addr"><i class="bi bi-geo-alt-fill text-pink-400"></i> @item.Address</span>
+
+                                                        <!-- Вивід номеру бронювання -->
+                                                        @if (!string.IsNullOrEmpty(item.BookingReference))
+                                                        {
+                                                            <div class="booking-ref-badge">
+                                                                <i class="bi bi-hash"></i> PNR/Бронь: @item.BookingReference
+                                                            </div>
+                                                        }
+
+                                                        <div class="contact-links">
+                                                            @if (!string.IsNullOrEmpty(item.ContactPhone))
+                                                            {
+                                                                <a href="tel:@item.ContactPhone" class="contact-link link-phone">
+                                                                    <i class="bi bi-telephone-fill"></i> Зателефонувати
+                                                                </a>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(item.WebsiteUrl))
+                                                            {
+                                                                <a href="@item.WebsiteUrl" target="_blank" class="contact-link link-web">
+                                                                    <i class="bi bi-globe"></i> Сайт готелю
+                                                                </a>
+                                                            }
+                                                            @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                                            {
+                                                                <a href="https://www.google.com/maps/search/?api=1&query=@item.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),@item.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)" target="_blank" class="contact-link link-map">
+                                                                    <i class="bi bi-map-fill"></i> Відкрити на карті
+                                                                </a>
+                                                            }
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -318,32 +424,26 @@
                                                 <div style="display:flex; gap:0.5rem; align-items:center;">
                                                     <div class="date-badge">
                                                         <span class="date-lbl">Заїзд</span>
-                                                        <span class="date-val">@item.CheckInDate.ToString("dd.MM.yyyy")</span>
+                                                        <span class="date-val">@item.CheckInDate.ToString("dd.MM.yyyy HH:mm")</span>
                                                     </div>
                                                     <i class="bi bi-arrow-right text-slate-300"></i>
                                                     <div class="date-badge">
                                                         <span class="date-lbl">Виїзд</span>
-                                                        <span class="date-val">@item.CheckOutDate.ToString("dd.MM.yyyy")</span>
+                                                        <span class="date-val">@item.CheckOutDate.ToString("dd.MM.yyyy HH:mm")</span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-pill @(item.BookingStatusName == "Підтверджено" ? "pill-ok" : "pill-wait")">
-                                                    <i class="bi @(item.BookingStatusName == "Підтверджено" ? "bi-check-circle-fill" : "bi-clock-fill")"></i>
-                                                    @item.BookingStatusName
-                                                </span>
                                             </td>
                                             <td>
                                                 <div class="actions-cell">
                                                     <a asp-action="Edit" asp-route-id="@item.Id" class="icon-btn btn-edit" title="Редагувати">
                                                         <i class="bi bi-pencil-fill"></i>
                                                     </a>
-                                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="margin:0;" onsubmit="return confirm('Ви впевнені, що хочете видалити житло @item.Name?')">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="icon-btn btn-delete" title="Видалити">
-                                                            <i class="bi bi-trash3-fill"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button"
+                                                            class="icon-btn btn-delete"
+                                                            title="Видалити"
+                                                            onclick="openDeleteModal('@Url.Action("Delete", "Accommodations", new { id = item.Id })', '@item.Name')">
+                                                        <i class="bi bi-trash3-fill"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -358,3 +458,50 @@
         }
     </div>
 </div>
+
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-card">
+        <div style="font-size:3rem; color:#ef4444; margin-bottom:1rem;">
+            <i class="bi bi-exclamation-octagon-fill"></i>
+        </div>
+        <h3 style="font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:#0f172a; margin-bottom:0.5rem;">Видалити житло?</h3>
+        <p class="confirm-sub" style="font-size:0.95rem; color:#64748b; font-weight:500; margin-bottom:1.5rem;"></p>
+        <div style="display:flex; gap:1rem; justify-content:center;">
+            <button type="button" onclick="closeDeleteModal()" style="padding:0.75rem 1.5rem; border-radius:1rem; border:1px solid #e2e8f0; background:white; color:#64748b; font-weight:700; cursor:pointer;">
+                Скасувати
+            </button>
+            <form id="deleteForm" method="post" style="margin:0;">
+                @Html.AntiForgeryToken()
+                <button type="button" onclick="submitDelete()" style="padding:0.75rem 1.5rem; border-radius:1rem; border:none; background:#ef4444; color:white; font-weight:700; cursor:pointer; box-shadow:0 4px 15px rgba(239,68,68,0.3);">
+                    Видалити
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let _deleteUrl = '';
+
+        function openDeleteModal(url, name) {
+            _deleteUrl = url;
+            document.querySelector('.confirm-sub').textContent = `«${name}» — цю дію неможливо скасувати.`;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        function submitDelete() {
+            const form = document.getElementById('deleteForm');
+            form.action = _deleteUrl;
+            form.submit();
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteModal();
+        });
+    </script>
+}

@@ -22,7 +22,7 @@ namespace TravelManager.Domain.Entities
         public DateTime CheckOutTime { get; set; }
         [MaxLength(50)] public string? BookingReference { get; set; }
         [MaxLength(50)] public string? ContactPhone { get; set; }
-        [MaxLength(255)] public string? WebsiteUrl { get; set; }
+        [MaxLength(2048)] public string? WebsiteUrl { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
     }
