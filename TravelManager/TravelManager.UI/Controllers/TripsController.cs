@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TravelManager.Domain.Entities;
 using TravelManager.Infrastructure.Interfaces;
-using TravelManager.Infrastructure.Interfaces.IServices;
+using TravelManager.Infrastructure.Interfaces.IServices; // Додано для IExchangeRateService
 using TravelManager.Infrastructure.Services;
 using TravelManager.UI.Models.ViewModels;
-using static TravelManager.UI.Models.ViewModels.TripDetailsViewModel;
 
 namespace TravelManager.UI.Controllers
 {
@@ -80,15 +79,16 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create() // Зроблено Async
         {
             var model = new CreateTripViewModel
             {
+                // Поля UserList немає в моделі, тому список користувачів (якщо потрібен) передаємо через ViewBag
                 BaseCurrency = "UAH"
             };
 
-            ViewBag.UserList = GetUserList();
-            ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
+            ViewBag.UserList = GetUserList(); // Передаємо список користувачів через ViewBag, якщо форма його очікує
+            ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо динамічний список валют
             return View(model);
         }
 
@@ -96,12 +96,13 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateTripViewModel model)
         {
+            // Видалено неіснуючі в моделі поля з ModelState.Remove
             ModelState.Remove("BaseCurrencyList");
 
             if (!ModelState.IsValid)
             {
                 ViewBag.UserList = GetUserList();
-                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
+                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо знову при помилці валідації
                 return View(model);
             }
 
@@ -119,7 +120,7 @@ namespace TravelManager.UI.Controllers
                 ReturnLocation = model.ReturnLocation,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                BaseCurrency = model.BaseCurrency,
+                BaseCurrency = model.BaseCurrency, // Зберігаємо обрану з повного списку валюту
                 StatusId = 1,
                 CreatedAt = DateTime.UtcNow,
                 CreatorId = currentUserId
@@ -128,6 +129,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Trip.Add(newTrip);
             await _unitOfWork.SaveAsync();
 
+            // Автоматично додаємо творця як Organizer
             var ownerRole = _unitOfWork.TripRole.Get(r => r.Name == "Organizer")
                             ?? _unitOfWork.TripRole.GetAll().FirstOrDefault();
 
@@ -147,7 +149,7 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id) // Зроблено Async
         {
             var role = GetUserRoleInTrip(id);
             if (role != "Organizer")
@@ -171,6 +173,7 @@ namespace TravelManager.UI.Controllers
                 BaseCurrency = trip.BaseCurrency
             };
 
+            // Передаємо динамічний список валют та позначаємо вибрану
             var currencies = await GetCurrencyDropdownListAsync();
             foreach (var item in currencies)
             {
@@ -200,7 +203,7 @@ namespace TravelManager.UI.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.UserList = GetUserList();
-                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync();
+                ViewBag.CurrencyList = await GetCurrencyDropdownListAsync(); // Передаємо знову при помилці валідації
                 return View(model);
             }
 
@@ -357,51 +360,15 @@ namespace TravelManager.UI.Controllers
             }
 
             ViewBag.TotalDistance = Math.Round(totalDistance);
+            var photoAlbums = _unitOfWork.TripDocument
+    .GetAll(d => d.TripId == id && d.FileName.StartsWith("ALBUM|"))
+    .ToList();
+            ViewBag.PhotoAlbums = photoAlbums;
 
             return View(model);
         }
 
-        [HttpGet]
-        public IActionResult DownloadCalendar(int id)
-        {
-            var currentUserId = _userManager.GetUserId(User);
-            var participant = _unitOfWork.TripParticipant
-                .Get(p => p.TripId == id && p.UserId == currentUserId);
-
-            if (participant == null)
-            {
-                TempData["ErrorMessage"] = "У вас немає доступу до цієї поїздки.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
-            if (trip == null) return NotFound();
-
-            var sb = new System.Text.StringBuilder();
-
-            sb.AppendLine("BEGIN:VCALENDAR");
-            sb.AppendLine("VERSION:2.0");
-            sb.AppendLine("PRODID:-//TravelManager//UA");
-            sb.AppendLine("BEGIN:VEVENT");
-            sb.AppendLine($"UID:{Guid.NewGuid()}");
-            sb.AppendLine($"DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}");
-            sb.AppendLine($"DTSTART;VALUE=DATE:{trip.StartDate:yyyyMMdd}");
-            sb.AppendLine($"DTEND;VALUE=DATE:{trip.EndDate.AddDays(1):yyyyMMdd}");
-            sb.AppendLine($"SUMMARY:Подорож: {trip.Title}");
-
-            var desc = string.IsNullOrEmpty(trip.Description) ? "" : trip.Description.Replace("\n", "\\n");
-            sb.AppendLine($"DESCRIPTION:{desc}");
-
-            var loc = $"{trip.DepartureLocation} - {trip.ReturnLocation}";
-            sb.AppendLine($"LOCATION:{loc}");
-
-            sb.AppendLine("END:VEVENT");
-            sb.AppendLine("END:VCALENDAR");
-
-            byte[] calendarBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-
-            return File(calendarBytes, "text/calendar", $"Trip_{trip.Title.Replace(" ", "_")}.ics");
-        }
+        // Цей метод вставляється у твій TripsController.cs замість старого InviteParticipant
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -426,6 +393,7 @@ namespace TravelManager.UI.Controllers
             var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
             if (trip == null) return NotFound();
 
+            // ЗАХИСТ: Якщо роль не передалась з форми (дорівнює 0), беремо стандартну роль
             if (roleId == 0)
             {
                 var defaultRole = _unitOfWork.TripRole.Get(r => r.Name == "Participant" || r.Name == "Member")
@@ -438,6 +406,9 @@ namespace TravelManager.UI.Controllers
 
             var userToInvite = await _userManager.FindByEmailAsync(email);
 
+            // =========================================================================
+            // СЦЕНАРІЙ А: Користувача НЕМАЄ в системі (Надсилаємо РЕФЕРАЛЬНЕ ЗАПРОШЕННЯ)
+            // =========================================================================
             if (userToInvite == null)
             {
                 var registerUrl = Url.Action("Register", "Account",
@@ -475,6 +446,9 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
+            // =========================================================================
+            // СЦЕНАРІЙ Б: Користувач ВЖЕ зареєстрований
+            // =========================================================================
             var existingParticipant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == userToInvite.Id);
 
@@ -493,6 +467,7 @@ namespace TravelManager.UI.Controllers
 
             try
             {
+                // Додаємо в базу
                 _unitOfWork.TripParticipant.Add(new TripParticipant
                 {
                     TripId = tripId,
@@ -507,6 +482,7 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
+            // Відправляємо сповіщення зареєстрованому користувачу на пошту
             string notificationSubject = $"Вас додано до подорожі \"{trip.Title}\"!";
             var tripDetailsUrl = Url.Action("Details", "Trips", new { id = tripId }, protocol: HttpContext.Request.Scheme);
 
@@ -530,6 +506,7 @@ namespace TravelManager.UI.Controllers
             }
             catch
             {
+                // Ігноруємо помилку пошти, якщо збереження в БД пройшло успішно
             }
 
             TempData["SuccessMessage"] = $"Користувача {userToInvite.UserName} успішно додано до поїздки!";
@@ -558,7 +535,7 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Details", new { id = tripId });
             }
 
-            if (participant.UserId == currentUserId())
+            if (participant.UserId == currentUserId()) // Виклик методу для отримання поточного користувача
             {
                 TempData["ErrorMessage"] = "Ви не можете видалити самого себе з поїздки.";
                 return RedirectToAction("Details", new { id = tripId });
@@ -758,6 +735,59 @@ namespace TravelManager.UI.Controllers
 
             byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
             return File(fileBytes, "application/vnd.ms-word", $"TravelManager_План_{trip.Title.Replace(" ", "_")}.doc");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPhotoAlbum(int tripId, string albumName, string albumUrl)
+        {
+            var role = GetUserRoleInTrip(tripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для додавання фотоальбому.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            if (!string.IsNullOrWhiteSpace(albumUrl))
+            {
+                // Якщо користувач не ввів назву, даємо стандартну
+                var safeName = string.IsNullOrWhiteSpace(albumName) ? "Спільний альбом" : albumName.Trim();
+
+                var newAlbum = new TripDocument
+                {
+                    TripId = tripId,
+                    // Додаємо префікс "ALBUM|", щоб відрізняти їх від інших документів (напр. квитків)
+                    FileName = "ALBUM|" + safeName,
+                    FilePath = albumUrl,
+                    UploadedAt = DateTime.UtcNow
+                };
+                _unitOfWork.TripDocument.Add(newAlbum);
+                await _unitOfWork.SaveAsync();
+                TempData["SuccessMessage"] = "Альбом успішно додано!";
+            }
+
+            return RedirectToAction("Details", new { id = tripId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePhotoAlbum(int tripId, int documentId)
+        {
+            var role = GetUserRoleInTrip(tripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для видалення фотоальбому.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            var album = _unitOfWork.TripDocument.Get(d => d.Id == documentId && d.TripId == tripId);
+            if (album != null)
+            {
+                _unitOfWork.TripDocument.Remove(album);
+                await _unitOfWork.SaveAsync();
+                TempData["SuccessMessage"] = "Альбом видалено.";
+            }
+
+            return RedirectToAction("Details", new { id = tripId });
         }
     }
 }
