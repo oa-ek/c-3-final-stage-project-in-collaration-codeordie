@@ -104,7 +104,7 @@
         box-shadow: 0 24px 48px rgba(0,0,0,0.15);
     }
 
-    .hero-bg-anim {
+    .hero-bg-img {
         position: absolute;
         inset: -5%;
         background-image: url('@cityImageUrl');
@@ -113,6 +113,43 @@
         z-index: 0;
         animation: photoZoom 20s ease-in-out infinite alternate;
     }
+
+    .hero-bg-video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 1s ease;
+    }
+
+        .hero-bg-video.loaded {
+            opacity: 1;
+        }
+
+    @@keyframes skeletonPulse {
+        0%, 100% {
+            opacity: .5;
+        }
+
+        50% {
+            opacity: .9;
+        }
+    }
+
+    .hero-skeleton {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        z-index: 0;
+        animation: skeletonPulse 2s ease-in-out infinite;
+    }
+
+        .hero-skeleton.hidden {
+            display: none;
+        }
 
     @@keyframes photoZoom {
         0% {
@@ -482,7 +519,9 @@
 
         @* ═══ PREMIUM HERO SECTION (ROUNDED PHOTO + KINEMATIC ZOOM) ═══ *@
         <div class="hero-wrapper">
-            <div class="hero-bg-anim"></div>
+            <div class="hero-skeleton" id="heroSkeleton"></div>
+            <div class="hero-bg-img"></div>
+            <video id="heroBgVideo" class="hero-bg-video" autoplay muted loop playsinline preload="none"></video>
             <div class="hero-overlay"></div>
 
             <div class="hero-top">
@@ -582,7 +621,527 @@
                     <p style="color: var(--text-muted); font-size: 14px;">Дані прогнозу тимчасово недоступні.</p>
                 }
             </div>
+            <!-- ═══ AI RECOMMENDATIONS SECTION ═══ -->
+            <div id="ai-section" class="ai-section">
 
+                <!-- Trigger Button -->
+                <div id="ai-trigger-wrapper">
+                    <button id="ai-trigger-btn" onclick="loadAiRecommendations()">
+                        <span class="ai-btn-icon">✨</span>
+                        <span class="ai-btn-text">Що подивитись у @Model.CityName?</span>
+                        <span class="ai-btn-badge">AI</span>
+                    </button>
+                    <p class="ai-hint">Персональні рекомендації атракцій, ресторанів та порад від AI</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="ai-loading" style="display:none;">
+                    <div class="ai-loading-card">
+                        <div class="ai-spinner"></div>
+                        <div class="ai-loading-text">
+                            <span id="ai-loading-msg">Готую рекомендації для @Model.CityName...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="ai-error" style="display:none;">
+                    <div class="ai-error-card">
+                        <span style="font-size:32px;">😕</span>
+                        <p>Не вдалося отримати рекомендації. Спробуйте ще раз.</p>
+                        <button onclick="loadAiRecommendations()" class="ai-retry-btn">Повторити</button>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="ai-results" style="display:none;">
+
+                    <div class="ai-results-header">
+                        <div>
+                            <h2 class="ai-results-title">
+                                <span>✨</span> Рекомендації для @Model.CityName
+                            </h2>
+                            <p class="ai-results-sub">Згенеровано AI · <span id="ai-cache-note"></span></p>
+                        </div>
+                        <button onclick="resetAiSection()" class="ai-reset-btn">✕ Закрити</button>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="ai-tabs">
+                        <button class="ai-tab active" onclick="switchTab('attractions', this)">🏛️ Атракції</button>
+                        <button class="ai-tab" onclick="switchTab('restaurants', this)">🍽️ Ресторани</button>
+                        <button class="ai-tab" onclick="switchTab('tips', this)">💡 Поради</button>
+                    </div>
+
+                    <div id="ai-tab-attractions" class="ai-tab-content active">
+                        <div id="ai-attractions-grid" class="ai-cards-grid"></div>
+                    </div>
+                    <div id="ai-tab-restaurants" class="ai-tab-content">
+                        <div id="ai-restaurants-grid" class="ai-cards-grid"></div>
+                    </div>
+                    <div id="ai-tab-tips" class="ai-tab-content">
+                        <div id="ai-tips-grid" class="ai-tips-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                /* ═══ AI SECTION STYLES ═══ */
+                .ai-section {
+                    width: 100%;
+                }
+
+                /* Trigger button */
+                #ai-trigger-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 48px 32px;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid var(--glass-border);
+                    border-radius: var(--radius-lg);
+                    text-align: center;
+                    transition: all 0.3s ease;
+                }
+
+                #ai-trigger-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 14px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 18px 36px;
+                    border-radius: 100px;
+                    font-size: 18px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+                    font-family: var(--font-body);
+                    letter-spacing: -0.01em;
+                }
+
+                    #ai-trigger-btn:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 16px 48px rgba(102, 126, 234, 0.5);
+                    }
+
+                    #ai-trigger-btn:active {
+                        transform: translateY(0);
+                    }
+
+                .ai-btn-icon {
+                    font-size: 22px;
+                }
+
+                .ai-btn-badge {
+                    background: rgba(255,255,255,0.25);
+                    padding: 3px 10px;
+                    border-radius: 100px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.08em;
+                }
+
+                .ai-hint {
+                    color: var(--text-muted);
+                    font-size: 14px;
+                    margin: 0;
+                }
+
+                /* Loading */
+                .ai-loading-card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 24px;
+                    padding: 64px 32px;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid var(--glass-border);
+                    border-radius: var(--radius-lg);
+                    text-align: center;
+                }
+
+                .ai-spinner {
+                    width: 52px;
+                    height: 52px;
+                    border: 3px solid rgba(102, 126, 234, 0.15);
+                    border-top-color: #667eea;
+                    border-radius: 50%;
+                    animation: spin 0.9s linear infinite;
+                }
+
+                @@keyframes spin {
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+
+                .ai-loading-text {
+                    font-size: 16px;
+                    color: var(--text-muted);
+                    font-weight: 500;
+                }
+
+                /* Error */
+                .ai-error-card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 48px 32px;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid rgba(239,68,68,0.2);
+                    border-radius: var(--radius-lg);
+                    text-align: center;
+                }
+
+                .ai-retry-btn {
+                    background: #667eea;
+                    color: white;
+                    border: none;
+                    padding: 12px 28px;
+                    border-radius: 100px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-family: var(--font-body);
+                    transition: all 0.2s;
+                }
+
+                    .ai-retry-btn:hover {
+                        background: #5a6fd6;
+                    }
+
+                /* Results header */
+                .ai-results-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 28px;
+                    padding: 32px 32px 0;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid var(--glass-border);
+                    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                    border-bottom: none;
+                }
+
+                .ai-results-title {
+                    font-family: var(--font-display);
+                    font-size: 26px;
+                    font-weight: 700;
+                    color: var(--text-main);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 6px;
+                }
+
+                .ai-results-sub {
+                    color: var(--text-muted);
+                    font-size: 13px;
+                }
+
+                .ai-reset-btn {
+                    background: rgba(0,0,0,0.05);
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 100px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: var(--text-muted);
+                    transition: all 0.2s;
+                    font-family: var(--font-body);
+                }
+
+                    .ai-reset-btn:hover {
+                        background: rgba(239,68,68,0.1);
+                        color: #ef4444;
+                    }
+
+                /* Tabs */
+                .ai-tabs {
+                    display: flex;
+                    gap: 4px;
+                    padding: 0 32px 24px;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border-left: 1px solid var(--glass-border);
+                    border-right: 1px solid var(--glass-border);
+                }
+
+                .ai-tab {
+                    padding: 10px 24px;
+                    border: none;
+                    border-radius: 100px;
+                    background: transparent;
+                    color: var(--text-muted);
+                    font-weight: 600;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-family: var(--font-body);
+                }
+
+                    .ai-tab.active {
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+                        box-shadow: 0 4px 16px rgba(102,126,234,0.35);
+                    }
+
+                    .ai-tab:hover:not(.active) {
+                        background: rgba(0,0,0,0.05);
+                    }
+
+                /* Tab content */
+                .ai-tab-content {
+                    display: none;
+                    padding: 24px 32px 32px;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid var(--glass-border);
+                    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+                    border-top: none;
+                }
+
+                    .ai-tab-content.active {
+                        display: block;
+                    }
+
+                /* Cards grid */
+                .ai-cards-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 20px;
+                }
+
+                .ai-place-card {
+                    background: rgba(255,255,255,0.6);
+                    border: 1px solid rgba(255,255,255,0.8);
+                    border-radius: var(--radius-md);
+                    padding: 24px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                    animation: cardIn 0.4s ease both;
+                }
+
+                    .ai-place-card:hover {
+                        transform: translateY(-4px);
+                        background: white;
+                        box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+                    }
+
+                @@keyframes cardIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(16px);
+                    }
+
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                .ai-card-emoji {
+                    font-size: 36px;
+                    line-height: 1;
+                }
+
+                .ai-card-name {
+                    font-family: var(--font-display);
+                    font-size: 17px;
+                    font-weight: 600;
+                    color: var(--text-main);
+                }
+
+                .ai-card-desc {
+                    font-size: 14px;
+                    color: var(--text-muted);
+                    line-height: 1.6;
+                    flex: 1;
+                }
+
+                .ai-card-meta {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-top: 4px;
+                }
+
+                .ai-meta-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    padding: 4px 12px;
+                    border-radius: 100px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    background: rgba(102,126,234,0.1);
+                    color: #667eea;
+                }
+
+                    .ai-meta-pill.price {
+                        background: rgba(16,185,129,0.1);
+                        color: #10b981;
+                    }
+
+                    .ai-meta-pill.time {
+                        background: rgba(245,158,11,0.1);
+                        color: #f59e0b;
+                    }
+
+                /* Tips grid */
+                .ai-tips-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 16px;
+                }
+
+                .ai-tip-card {
+                    display: flex;
+                    gap: 16px;
+                    padding: 20px 24px;
+                    background: rgba(255,255,255,0.6);
+                    border: 1px solid rgba(255,255,255,0.8);
+                    border-radius: var(--radius-md);
+                    transition: all 0.3s ease;
+                    animation: cardIn 0.4s ease both;
+                }
+
+                    .ai-tip-card:hover {
+                        background: white;
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+                        transform: translateY(-2px);
+                    }
+
+                .ai-tip-emoji {
+                    font-size: 28px;
+                    flex-shrink: 0;
+                }
+
+                .ai-tip-title {
+                    font-weight: 700;
+                    font-size: 15px;
+                    color: var(--text-main);
+                    margin-bottom: 6px;
+                }
+
+                .ai-tip-body {
+                    font-size: 14px;
+                    color: var(--text-muted);
+                    line-height: 1.6;
+                }
+            </style>
+
+            <script>
+                const DESTINATION_ID = @Model.DestinationId;
+                let aiLoaded = false;
+
+                const loadingMessages = [
+                    "Готую рекомендації для @Model.CityName...",
+                    "Аналізую найкращі місця міста...",
+                    "Підбираю ресторани та поради...",
+                    "Майже готово! ✨"
+                ];
+
+                function loadAiRecommendations() {
+                    if (aiLoaded) return;
+
+                    document.getElementById('ai-trigger-wrapper').style.display = 'none';
+                    document.getElementById('ai-error').style.display = 'none';
+                    document.getElementById('ai-loading').style.display = 'block';
+
+                    // Cycling loading messages
+                    let msgIdx = 0;
+                    const msgEl = document.getElementById('ai-loading-msg');
+                    const msgInterval = setInterval(() => {
+                        msgIdx = (msgIdx + 1) % loadingMessages.length;
+                        msgEl.textContent = loadingMessages[msgIdx];
+                    }, 2200);
+
+                    fetch(`/TripDestinations/GetAiRecommendations?destinationId=${DESTINATION_ID}`)
+                        .then(r => {
+                            clearInterval(msgInterval);
+                            if (!r.ok) throw new Error(r.status);
+                            return r.json();
+                        })
+                        .then(data => {
+                            renderResults(data);
+                            document.getElementById('ai-loading').style.display = 'none';
+                            document.getElementById('ai-results').style.display = 'block';
+                            aiLoaded = true;
+                        })
+                        .catch(() => {
+                            clearInterval(msgInterval);
+                            document.getElementById('ai-loading').style.display = 'none';
+                            document.getElementById('ai-error').style.display = 'block';
+                        });
+                }
+
+                function renderResults(data) {
+                    // Attractions
+                    const attGrid = document.getElementById('ai-attractions-grid');
+                    attGrid.innerHTML = data.attractions.map((p, i) => placeCardHtml(p, i)).join('');
+
+                    // Restaurants
+                    const restGrid = document.getElementById('ai-restaurants-grid');
+                    restGrid.innerHTML = data.restaurants.map((p, i) => placeCardHtml(p, i)).join('');
+
+                    // Tips
+                    const tipsGrid = document.getElementById('ai-tips-grid');
+                    tipsGrid.innerHTML = data.practicalTips.map((t, i) => tipCardHtml(t, i)).join('');
+
+                    // Timestamp
+                    document.getElementById('ai-cache-note').textContent =
+                        'оновлено ' + new Date(data.generatedAt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+                }
+
+                function placeCardHtml(p, idx) {
+                    return `<div class="ai-place-card" style="animation-delay:${idx * 0.07}s">
+                        <div class="ai-card-emoji">${p.emoji}</div>
+                        <div class="ai-card-name">${p.name}</div>
+                        <div class="ai-card-desc">${p.description}</div>
+                        <div class="ai-card-meta">
+                            <span class="ai-meta-pill">${p.category}</span>
+                            ${p.priceRange ? `<span class="ai-meta-pill price">${p.priceRange}</span>` : ''}
+                            ${p.bestTime ? `<span class="ai-meta-pill time">⏰ ${p.bestTime}</span>` : ''}
+                        </div>
+                    </div>`;
+                }
+
+                function tipCardHtml(t, idx) {
+                    return `<div class="ai-tip-card" style="animation-delay:${idx * 0.08}s">
+                        <div class="ai-tip-emoji">${t.emoji}</div>
+                        <div>
+                            <div class="ai-tip-title">${t.title}</div>
+                            <div class="ai-tip-body">${t.body}</div>
+                        </div>
+                    </div>`;
+                }
+
+                function switchTab(tabName, btn) {
+                    document.querySelectorAll('.ai-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.ai-tab-content').forEach(t => t.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById('ai-tab-' + tabName).classList.add('active');
+                }
+
+                function resetAiSection() {
+                    aiLoaded = false;
+                    document.getElementById('ai-results').style.display = 'none';
+                    document.getElementById('ai-loading').style.display = 'none';
+                    document.getElementById('ai-error').style.display = 'none';
+                    document.getElementById('ai-trigger-wrapper').style.display = 'flex';
+                }
+            </script>
             @* ─── COUNTRY INFO CARD ─── *@
             <div class="glass-card">
                 <div class="card-header">
@@ -672,4 +1231,53 @@
 
         </div>
     </div>
+
+
+    @section Scripts {
+        <script>
+            (async function() {
+                const query = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CityName + " " + (Model.Country ?? "")));
+                const cacheKey = 'pexels_hero_' + query.toLowerCase().trim();
+
+                async function loadVideo() {
+                    try {
+                        let url = sessionStorage.getItem(cacheKey);
+                        if (!url) {
+                            const res = await fetch('/PexelsProxy/Video?query=' + encodeURIComponent(query));
+                            if (!res.ok) throw new Error('fetch failed');
+                            const data = await res.json();
+                            const videos = data.videos ?? [];
+                            if (!videos.length) throw new Error('no videos');
+                            const video = videos[Math.floor(Math.random() * Math.min(videos.length, 5))];
+                            const files = video.video_files ?? [];
+                            const hd = files.find(f => f.quality === 'hd' && f.width >= 1280)
+                                     || files.find(f => f.quality === 'sd')
+                                     || files[0];
+                            url = hd?.link;
+                            if (!url) throw new Error('no url');
+                            sessionStorage.setItem(cacheKey, url);
+                        }
+
+                        const videoEl = document.getElementById('heroBgVideo');
+                        const skeleton = document.getElementById('heroSkeleton');
+                        videoEl.src = url;
+                        videoEl.load();
+                        videoEl.addEventListener('canplay', () => {
+                            videoEl.classList.add('loaded');
+                            skeleton?.classList.add('hidden');
+                            videoEl.play().catch(() => {});
+                        }, { once: true });
+                        videoEl.addEventListener('error', () => {
+                            skeleton?.classList.add('hidden');
+                        }, { once: true });
+                    } catch {
+                        document.getElementById('heroSkeleton')?.classList.add('hidden');
+                    }
+                }
+
+                loadVideo();
+            })();
+        </script>
+    }
+
 </div>

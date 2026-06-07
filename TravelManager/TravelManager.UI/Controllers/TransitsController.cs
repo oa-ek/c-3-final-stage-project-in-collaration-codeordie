@@ -53,7 +53,7 @@ namespace TravelManager.UI.Controllers
         }
 
         [HttpGet]
-        
+
         public IActionResult Create(int? tripId, string? arrivalLocation, DateTime? arrivalDate)
         {
             var allowedTrips = GetAllowedTripsForUser();
@@ -102,7 +102,7 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
-            
+
             ModelState.Remove("TripList");
             ModelState.Remove("TransitTypeList");
             ModelState.Remove("BookingStatusList");
@@ -132,7 +132,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Транзит успішно збережено!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = entity.TripId });
         }
 
         [HttpGet]
@@ -206,7 +206,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.Transit.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -223,10 +223,11 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.Transit.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private IEnumerable<SelectListItem> GetTransitTypeList()

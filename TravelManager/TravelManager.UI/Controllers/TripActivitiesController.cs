@@ -52,7 +52,7 @@ namespace TravelManager.UI.Controllers
         [HttpGet]
         public IActionResult Create(int? tripId)
         {
-            var allowedTrips = GetAllowedTripsForUser(); 
+            var allowedTrips = GetAllowedTripsForUser();
 
             if (!allowedTrips.Any())
             {
@@ -66,7 +66,7 @@ namespace TravelManager.UI.Controllers
                 if (role == "Viewer" || role == "None")
                 {
                     TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
-                    return RedirectToAction("Index", "Trips"); 
+                    return RedirectToAction("Index", "Trips");
                 }
 
                 var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
@@ -113,7 +113,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripActivity.Add(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = entity.TripId });
         }
 
         [HttpGet]
@@ -128,7 +128,7 @@ namespace TravelManager.UI.Controllers
             if (role == "Viewer" || role == "None")
             {
                 TempData["ErrorMessage"] = "Глядачі не можуть редагувати записи.";
-                return RedirectToAction("Index", "Trips"); 
+                return RedirectToAction("Index", "Trips");
             }
 
             var model = new TripActivityFormViewModel
@@ -182,7 +182,7 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.TripActivity.Update(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = model.TripId });
         }
 
         [HttpPost]
@@ -201,10 +201,11 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.TripActivity.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private IEnumerable<SelectListItem> GetTripList()

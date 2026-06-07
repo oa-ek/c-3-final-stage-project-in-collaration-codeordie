@@ -17,6 +17,12 @@ namespace TravelManager.Infrastructure.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<TripRole> TripRoles => Set<TripRole>();
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.ConfigureWarnings(warnings =>
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
         public DbSet<TripParticipant> TripParticipants => Set<TripParticipant>();
         public DbSet<TripStatus> TripStatuses => Set<TripStatus>();
         public DbSet<BookingStatus> BookingStatuses => Set<BookingStatus>();

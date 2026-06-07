@@ -19,15 +19,18 @@ namespace TravelManager.UI.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
         private readonly IExchangeRateService _exchangeRateService;
+        private readonly IAiRecommendationService _aiService;
 
         public ExpensesController(
             IUnitOfWork unitOfWork,
             UserManager<User> userManager,
-            IExchangeRateService exchangeRateService)
+            IExchangeRateService exchangeRateService,
+            IAiRecommendationService aiService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _exchangeRateService = exchangeRateService;
+            _aiService = aiService;
         }
 
         private async Task<List<SelectListItem>> GetCurrencyDropdownListAsync()
@@ -48,7 +51,6 @@ namespace TravelManager.UI.Controllers
             return dropdownList;
         }
 
-        // --- ДОПОМІЖНІ МЕТОДИ ДЛЯ РОЛЕЙ ---
         private string GetUserRoleInTrip(int tripId)
         {
             var currentUserId = _userManager.GetUserId(User);
@@ -64,13 +66,59 @@ namespace TravelManager.UI.Controllers
             return _unitOfWork.TripParticipant
                 .GetAll(tp => tp.UserId == currentUserId && tp.Role.Name != "Viewer", includeProperties: "Trip")
                 .Select(tp => tp.Trip)
-                .Distinct() // Уникаємо дублікатів поїздок
+                .Distinct()
                 .Select(t => new SelectListItem
                 {
                     Text = t.Title,
                     Value = t.Id.ToString(),
-                    Selected = t.Id == activeTripId // Завжди позначаємо поточну поїздку
+                    Selected = t.Id == activeTripId
                 }).ToList();
+        }
+
+        // ── AI АНАЛІЗ ВИТРАТ ──────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AiAnalyze(int tripId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var participant = _unitOfWork.TripParticipant
+                .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId);
+            if (participant == null)
+                return Json(new { error = "Немає доступу до цієї поїздки." });
+
+            var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
+            if (trip == null)
+                return Json(new { error = "Поїздку не знайдено." });
+
+            var expenses = _unitOfWork.Expense
+                .GetAll(e => e.TripId == tripId, includeProperties: "Category")
+                .ToList();
+
+            if (!expenses.Any())
+                return Json(new { error = "Немає витрат для аналізу. Спочатку додайте витрати до поїздки." });
+
+            var byCategory = expenses
+                .GroupBy(e => e.Category?.Name ?? "Інше")
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.TotalAmount));
+
+            var totalAmount = expenses.Sum(e => e.TotalAmount);
+            var currency = trip.BaseCurrency ?? "UAH";
+            var days = (trip.EndDate - trip.StartDate).Days;
+            if (days <= 0) days = 1;
+
+            var firstDest = _unitOfWork.TripDestination
+                .GetAll(d => d.TripId == tripId)
+                .OrderBy(d => d.ArrivalDate)
+                .FirstOrDefault();
+            var destination = firstDest != null
+                ? $"{firstDest.CityName}, {firstDest.Country}"
+                : trip.DepartureLocation ?? "невідоме місце";
+
+            var result = await _aiService.AnalyzeExpensesAsync(
+                destination, days, currency, totalAmount, byCategory);
+
+            return Json(new { html = result });
         }
 
         [HttpGet]
@@ -178,7 +226,7 @@ namespace TravelManager.UI.Controllers
             var model = new ExpenseFormViewModel
             {
                 TripId = activeTripId,
-                TripList = GetAllowedTripsForUser(activeTripId), // Передаємо ID, щоб він виділився у формі
+                TripList = GetAllowedTripsForUser(activeTripId),
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
                 CurrencyList = await GetCurrencyDropdownListAsync(), // ← реальні курси
@@ -359,7 +407,6 @@ namespace TravelManager.UI.Controllers
                 CategoryId = model.CategoryId,
                 PayerId = model.PayerId,
                 ReceiptImageUrl = model.ReceiptImageUrl,
-
                 TransitId = model.TransitId,
                 AccommodationId = model.AccommodationId,
                 TripActivityId = model.TripActivityId
@@ -511,7 +558,6 @@ namespace TravelManager.UI.Controllers
                 model.CategoryList = GetCategoryList();
                 model.CurrencyList = await GetCurrencyDropdownListAsync();
                 model.PayerList = participants.Select(p => new SelectListItem { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
-
                 model.TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == model.TripId).Select(t => new SelectListItem { Text = $"{t.DepartureLocation} - {t.ArrivalLocation}", Value = t.Id.ToString() });
                 model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
                 model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
@@ -609,10 +655,11 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            int tripId = entity.TripId;
             _unitOfWork.Expense.Remove(entity);
             await _unitOfWork.SaveAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Details", "Trips", new { id = tripId });
         }
 
         private IEnumerable<SelectListItem> GetCategoryList()
