@@ -32,7 +32,7 @@ namespace TravelManager.UI.Controllers
             var searchQuery = Uri.EscapeDataString(query.Trim() + " city");
             var url = $"https://api.pexels.com/videos/search?query={searchQuery}&per_page=15&orientation=landscape";
 
-            var response = await client.GetAsync(url);
+                var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode)
                 return StatusCode((int)response.StatusCode, "Pexels request failed");
 

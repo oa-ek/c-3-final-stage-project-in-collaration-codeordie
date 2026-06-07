@@ -23,11 +23,63 @@
         animation: fadeSlideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         opacity: 0;
     }
+
+    /* Video background */
+    .trip-card-video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -10;
+        transition: opacity .6s ease;
+        opacity: 0;
+    }
+
+        .trip-card-video.loaded {
+            opacity: 1;
+        }
+
+    .trip-card-img-fallback {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        z-index: -11;
+        transition: transform 1s ease;
+    }
+
+    .group:hover .trip-card-img-fallback {
+        transform: scale(1.08);
+    }
+
+    /* Skeleton pulse while video loads */
+    @@keyframes skeletonPulse {
+        0%, 100% {
+            opacity: .4;
+        }
+
+        50% {
+            opacity: .8;
+        }
+    }
+
+    .video-skeleton {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        z-index: -9;
+        animation: skeletonPulse 1.8s ease-in-out infinite;
+    }
+
+        .video-skeleton.hidden {
+            display: none;
+        }
 </style>
 
 @if (Model != null)
 {
-    var photos = new string[]
+    var fallbacks = new string[]
     {
         "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
@@ -35,7 +87,7 @@
         "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80"
     };
-    int photoCounter = 0;
+    int idx = 0;
 
     <div class="max-w-7xl mx-auto py-10 px-4">
 
@@ -52,18 +104,35 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             @foreach (var item in Model)
             {
-                string photoPath = photos[photoCounter++ % photos.Length];
-
-                @* ВИПРАВЛЕНО: "Organizer" замість "Owner"/"Editor" *@
+                string fallback = fallbacks[idx % fallbacks.Length];
                 bool canManage = item.CurrentUserRole == "Organizer";
                 bool isOrganizer = item.CurrentUserRole == "Organizer";
 
-                <div class="relative h-[520px] rounded-[3rem] overflow-hidden group shadow-xl transition-all duration-500 hover:-translate-y-2 isolate stagger-item" style="animation-delay: 0.2s;">
+                <!-- Search query: prefer departure location, fallback to title -->
+                string videoQuery = !string.IsNullOrWhiteSpace(item.DepartureLocation)
+                ? item.DepartureLocation
+                : item.Title;
 
-                    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 -z-10" style="background-image: url('@photoPath');"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90 -z-10"></div>
+                <div class="relative h-[520px] rounded-[3rem] overflow-hidden group shadow-xl transition-all duration-500 hover:-translate-y-2 isolate stagger-item"
+                     style="animation-delay: @(0.15 * (idx + 1))s;"
+                     data-video-query="@videoQuery">
 
-                    @* Бейджі статусу та ролі *@
+                    <!-- Skeleton loader -->
+                    <div class="video-skeleton"></div>
+
+                    <!-- Fallback image (always behind) -->
+                    <div class="trip-card-img-fallback" style="background-image: url('@fallback');"></div>
+
+                    <!-- Video element (filled by JS) -->
+                    <video class="trip-card-video"
+                           autoplay muted loop playsinline
+                           preload="none">
+                    </video>
+
+                    <!-- Gradient overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/20 to-transparent opacity-90" style="z-index:-1;"></div>
+
+                    <!-- Status & role badges -->
                     <div class="absolute top-6 left-6 z-20 flex gap-2">
                         <div class="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
                             <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
@@ -86,6 +155,7 @@
                         </div>
                     </div>
 
+                    <!-- Content -->
                     <div class="absolute inset-0 p-8 flex flex-col justify-end z-10">
                         <h3 class="text-4xl font-black text-white mb-6 drop-shadow-xl transition-transform duration-500 group-hover:-translate-y-2">
                             @item.Title
@@ -119,7 +189,6 @@
                                 <i class="bi bi-arrow-right text-xl transition-transform group-hover/btn:translate-x-2"></i>
                             </a>
 
-                            @* ВИПРАВЛЕНО: тільки Organizer бачить кнопки керування *@
                             @if (canManage)
                             {
                                 <div class="flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity delay-150">
@@ -144,7 +213,85 @@
                         </div>
                     </div>
                 </div>
+
+                idx++;
             }
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        (async function () {
+            // Cache video URLs in sessionStorage so repeated navigation is instant
+            const CACHE_PREFIX = 'pexels_v_';
+
+            async function fetchVideoUrl(query) {
+                const key = CACHE_PREFIX + query.toLowerCase();
+                const cached = sessionStorage.getItem(key);
+                if (cached) return cached;
+
+                try {
+                    const res = await fetch(`/PexelsProxy/Video?query=${encodeURIComponent(query)}`);
+                    if (!res.ok) return null;
+                    const data = await res.json();
+
+                    // Pick a random video from results for variety
+                    const videos = data.videos ?? [];
+                    if (!videos.length) return null;
+
+                    // Pick random video
+                    const video = videos[Math.floor(Math.random() * Math.min(videos.length, 5))];
+
+                    // Prefer HD file, fallback to first
+                    const files = video.video_files ?? [];
+                    const hd = files.find(f => f.quality === 'hd' && f.width >= 1280)
+                             || files.find(f => f.quality === 'sd')
+                             || files[0];
+
+                    const url = hd?.link ?? null;
+                    if (url) sessionStorage.setItem(key, url);
+                    return url;
+                } catch {
+                    return null;
+                }
+            }
+
+            // Load videos for all cards with a small stagger so we don't hammer the API
+            const cards = document.querySelectorAll('[data-video-query]');
+
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const query = card.dataset.videoQuery;
+                if (!query) continue;
+
+                // Stagger requests slightly
+                await new Promise(r => setTimeout(r, i * 250));
+
+                const url = await fetchVideoUrl(query);
+                const skeleton = card.querySelector('.video-skeleton');
+                const videoEl  = card.querySelector('.trip-card-video');
+
+                if (!url || !videoEl) {
+                    // No video — just hide skeleton, fallback image shows
+                    skeleton?.classList.add('hidden');
+                    continue;
+                }
+
+                videoEl.src = url;
+                videoEl.load();
+
+                videoEl.addEventListener('canplay', () => {
+                    videoEl.classList.add('loaded');
+                    skeleton?.classList.add('hidden');
+                    videoEl.play().catch(() => {}); // ignore autoplay policy errors
+                }, { once: true });
+
+                // If video fails, hide skeleton and show fallback
+                videoEl.addEventListener('error', () => {
+                    skeleton?.classList.add('hidden');
+                }, { once: true });
+            }
+        })();
+    </script>
 }
