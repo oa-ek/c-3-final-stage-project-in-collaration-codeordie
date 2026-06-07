@@ -83,11 +83,10 @@ namespace TravelManager.UI.Controllers
 
             return View(model);
         }
-
         [HttpGet]
         public IActionResult Create(int? tripId)
         {
-            var allowedTrips = GetAllowedTripsForUser();
+            var allowedTrips = GetAllowedTripsForUser().ToList();
 
             if (!allowedTrips.Any())
             {
@@ -95,27 +94,35 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
+            int activeTripId = (tripId.HasValue && tripId.Value > 0)
+                ? tripId.Value
+                : int.Parse(allowedTrips.First().Value);
+
             if (tripId.HasValue)
             {
-                var role = GetUserRoleInTrip(tripId.Value);
+                var role = GetUserRoleInTrip(activeTripId);
                 if (role == "Viewer" || role == "None")
                 {
                     TempData["ErrorMessage"] = "Глядачі не можуть додавати записи в цю поїздку.";
                     return RedirectToAction("Index", "Trips");
                 }
+            }
 
-                var selectedTrip = allowedTrips.FirstOrDefault(t => t.Value == tripId.Value.ToString());
-                if (selectedTrip != null) selectedTrip.Selected = true;
+            ModelState.Clear();
+
+            foreach (var t in allowedTrips)
+            {
+                t.Selected = (t.Value == activeTripId.ToString());
             }
 
             var model = new ChecklistFormViewModel
             {
-                TripId = tripId ?? 0,
+                TripId = activeTripId,
                 TripList = allowedTrips
             };
+
             return View(model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ChecklistFormViewModel model)
@@ -127,7 +134,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
-            // ВИПРАВЛЕНО: прибрано дублюючий ModelState.IsValid
             if (!ModelState.IsValid)
             {
                 model.TripList = GetAllowedTripsForUser();
@@ -144,7 +150,7 @@ namespace TravelManager.UI.Controllers
             await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Чекліст успішно створено!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = entity.Id });
         }
 
         [HttpGet]

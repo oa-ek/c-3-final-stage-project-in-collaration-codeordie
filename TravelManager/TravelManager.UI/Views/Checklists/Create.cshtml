@@ -77,16 +77,23 @@
         <form asp-action="Create" method="post" id="checklistForm">
             <div asp-validation-summary="ModelOnly" class="text-rose-600 mb-6 text-sm font-bold text-center bg-rose-100/50 rounded-2xl py-3"></div>
 
+            @{
+                var preselectedTrip = Model.TripList.FirstOrDefault(t => t.Selected);
+                var buttonText = preselectedTrip != null ? preselectedTrip.Text : "-- Оберіть поїздку --";
+                var textColorClass = preselectedTrip != null ? "text-slate-800" : "text-slate-400";
+            }
+
             <div class="space-y-8">
                 <div class="flex flex-col group relative z-50">
                     <label class="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2 pl-4 flex items-center gap-2 group-focus-within:text-blue-500 transition-colors">
                         <i class="bi bi-airplane-engines text-lg"></i> До якої поїздки готуємось?
                     </label>
+
                     <select asp-for="TripId" asp-items="Model.TripList" class="sr-only real-select"></select>
 
                     <div class="relative custom-dropdown w-full">
                         <button type="button" class="w-full bg-white/60 border-2 border-white/70 rounded-3xl py-5 pl-6 pr-6 text-lg font-bold text-slate-700 outline-none hover:bg-white/90 transition-all shadow-inner flex justify-between items-center" onclick="toggleDropdown(this)">
-                            <span class="selected-text text-slate-400">-- Оберіть поїздку --</span>
+                            <span class="selected-text @textColorClass">@buttonText</span>
                             <i class="bi bi-chevron-down text-slate-400 transition-transform"></i>
                         </button>
                         <div class="dropdown-menu absolute left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl opacity-0 invisible translate-y-4 transition-all duration-300 overflow-hidden">

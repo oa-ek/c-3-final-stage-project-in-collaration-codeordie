@@ -303,6 +303,68 @@ namespace TravelManager.UI.Controllers
                 }).ToList()
             };
 
+            var timeline = new List<TimelineEvent>();
+
+            if (model.Destinations != null)
+            {
+                timeline.AddRange(model.Destinations.Select(d => new TimelineEvent
+                {
+                    EventDate = d.ArrivalDate,
+                    EventType = "Destination",
+                    Title = $"Прибуття в {d.CityName}",
+                    Subtitle = d.Country,
+                    IconClass = "bi-geo-alt-fill",
+                    IconColor = "#3b82f6"
+                }));
+            }
+
+            if (model.Transits != null)
+            {
+                timeline.AddRange(model.Transits.Select(t => new TimelineEvent
+                {
+                    EventDate = t.DepartureTime,
+                    EventType = "Transit",
+                    Title = $"Транспорт: {t.DepartureLocation} → {t.ArrivalLocation}",
+                    Subtitle = $"{t.TransitType?.Name ?? "Рейс"} (Квиток: {t.BookingReference ?? "-"})",
+                    IconClass = "bi-airplane-fill",
+                    IconColor = "#8b5cf6"
+                }));
+            }
+
+            if (model.Accommodations != null)
+            {
+                timeline.AddRange(model.Accommodations.Select(a => new TimelineEvent
+                {
+                    EventDate = a.CheckInTime,
+                    EventType = "Accommodation",
+                    Title = $"Заселення: {a.Name}",
+                    Subtitle = a.Address,
+                    IconClass = "bi-building",
+                    IconColor = "#14b8a6"
+                }));
+            }
+
+            model.Timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            double totalDistance = 0;
+            var destsWithCoords = model.Destinations
+                .Where(d => d.Latitude.HasValue && d.Longitude.HasValue)
+                .OrderBy(d => d.ArrivalDate)
+                .ToList();
+
+            for (int i = 0; i < destsWithCoords.Count - 1; i++)
+            {
+                totalDistance += CalculateHaversineDistance(
+                    destsWithCoords[i].Latitude.Value, destsWithCoords[i].Longitude.Value,
+                    destsWithCoords[i + 1].Latitude.Value, destsWithCoords[i + 1].Longitude.Value);
+            }
+
+            ViewBag.TotalDistance = Math.Round(totalDistance);
+            var photoAlbums = _unitOfWork.TripDocument
+    .GetAll(d => d.TripId == id && d.FileName.StartsWith("ALBUM|"))
+    .ToList();
+            ViewBag.PhotoAlbums = photoAlbums;
+
             return View(model);
         }
 
@@ -527,6 +589,205 @@ namespace TravelManager.UI.Controllers
         private string currentUserId()
         {
             return _userManager.GetUserId(User) ?? string.Empty;
+        }
+
+        private double CalculateHaversineDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            var R = 6371d;
+            var dLat = (lat2 - lat1) * Math.PI / 180.0;
+            var dLon = (lon2 - lon1) * Math.PI / 180.0;
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        [HttpGet]
+        public IActionResult ExportToCsv(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+
+            if (trip == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant.Get(p => p.TripId == id && p.UserId == currentUserId);
+            if (participant == null) return Unauthorized();
+
+            var dests = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).ToList();
+            var transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList();
+            var accs = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList();
+
+            var timeline = new List<TimelineEvent>();
+            timeline.AddRange(dests.Select(d => new TimelineEvent { EventDate = d.ArrivalDate, EventType = "Місто", Title = d.CityName, Subtitle = d.Country }));
+            timeline.AddRange(transits.Select(t => new TimelineEvent { EventDate = t.DepartureTime, EventType = "Транспорт", Title = $"{t.DepartureLocation} → {t.ArrivalLocation}", Subtitle = t.TransitType?.Name }));
+            timeline.AddRange(accs.Select(a => new TimelineEvent { EventDate = a.CheckInTime, EventType = "Житло", Title = a.Name, Subtitle = a.Address }));
+
+            timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("Дата;Тип події;Назва;Деталі");
+
+            foreach (var item in timeline)
+            {
+                var date = item.EventDate.ToString("dd.MM.yyyy HH:mm");
+                var type = item.EventType;
+                var title = item.Title?.Replace(";", ",");
+                var sub = item.Subtitle?.Replace(";", ",");
+
+                sb.AppendLine($"{date};{type};{title};{sub}");
+            }
+
+            byte[] bom = new byte[] { 0xEF, 0xBB, 0xBF };
+            byte[] csvBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            byte[] finalBytes = bom.Concat(csvBytes).ToArray();
+
+            return File(finalBytes, "text/csv", $"Trip_{trip.Title.Replace(" ", "_")}_Plan.csv");
+        }
+        [HttpGet]
+        public IActionResult ExportToWord(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var trip = _unitOfWork.Trip.Get(u => u.Id == id);
+
+            if (trip == null) return NotFound();
+
+            var participant = _unitOfWork.TripParticipant.Get(p => p.TripId == id && p.UserId == currentUserId);
+            if (participant == null) return Unauthorized();
+
+            var dests = _unitOfWork.TripDestination.GetAll(d => d.TripId == id).ToList();
+            var transits = _unitOfWork.Transit.GetAll(t => t.TripId == id, includeProperties: "TransitType").ToList();
+            var accs = _unitOfWork.Accommodation.GetAll(a => a.TripId == id).ToList();
+            var expenses = _unitOfWork.Expense.GetAll(e => e.TripId == id).ToList();
+
+            var timeline = new List<TimelineEvent>();
+            timeline.AddRange(dests.Select(d => new TimelineEvent { EventDate = d.ArrivalDate, EventType = "Місто", Title = d.CityName, Subtitle = d.Country }));
+            timeline.AddRange(transits.Select(t => new TimelineEvent { EventDate = t.DepartureTime, EventType = "Транспорт", Title = $"{t.DepartureLocation} → {t.ArrivalLocation}", Subtitle = t.TransitType?.Name }));
+            timeline.AddRange(accs.Select(a => new TimelineEvent { EventDate = a.CheckInTime, EventType = "Житло", Title = a.Name, Subtitle = a.Address }));
+
+            timeline = timeline.OrderBy(e => e.EventDate).ToList();
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>");
+            sb.AppendLine("<head><meta charset='utf-8'><style>");
+            sb.AppendLine("body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; }");
+            sb.AppendLine("h1 { color: #4f46e5; text-align: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }");
+            sb.AppendLine("h2 { color: #10b981; margin-top: 30px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }");
+            sb.AppendLine("table { width: 100%; border-collapse: collapse; margin-top: 10px; }");
+            sb.AppendLine("th, td { border: 1px solid #d1d5db; padding: 10px; text-align: left; }");
+            sb.AppendLine("th { background-color: #f3f4f6; color: #374151; font-weight: bold; }");
+            sb.AppendLine("</style></head><body>");
+
+            sb.AppendLine($"<h1>План подорожі: {trip.Title}</h1>");
+            sb.AppendLine($"<p><strong>Маршрут:</strong> {trip.DepartureLocation} &rarr; {trip.ReturnLocation}</p>");
+            sb.AppendLine($"<p><strong>Дати:</strong> {trip.StartDate:dd.MM.yyyy} &mdash; {trip.EndDate:dd.MM.yyyy}</p>");
+
+            if (!string.IsNullOrEmpty(trip.Description))
+            {
+                sb.AppendLine($"<p><strong>Опис:</strong> {trip.Description.Replace("\n", "<br>")}</p>");
+            }
+
+            sb.AppendLine("<h2>Загальна хронологія подій</h2>");
+            sb.AppendLine("<table><tr><th>Дата і час</th><th>Тип</th><th>Подія</th><th>Деталі</th></tr>");
+            foreach (var item in timeline)
+            {
+                sb.AppendLine($"<tr><td>{item.EventDate:dd.MM.yyyy HH:mm}</td><td>{item.EventType}</td><td><strong>{item.Title}</strong></td><td>{item.Subtitle}</td></tr>");
+            }
+            sb.AppendLine("</table>");
+
+            if (accs.Any())
+            {
+                sb.AppendLine("<h2>Заброньоване житло</h2>");
+                sb.AppendLine("<table><tr><th>Назва</th><th>Адреса</th><th>Заїзд</th><th>Виїзд</th></tr>");
+                foreach (var a in accs)
+                {
+                    sb.AppendLine($"<tr><td><strong>{a.Name}</strong></td><td>{a.Address}</td><td>{a.CheckInTime:dd.MM.yyyy HH:mm}</td><td>{a.CheckOutTime:dd.MM.yyyy HH:mm}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            if (transits.Any())
+            {
+                sb.AppendLine("<h2>Транспортні квитки</h2>");
+                sb.AppendLine("<table><tr><th>Маршрут</th><th>Тип</th><th>Відправлення</th><th>Прибуття</th><th>Квиток (Номер)</th></tr>");
+                foreach (var t in transits)
+                {
+                    sb.AppendLine($"<tr><td><strong>{t.DepartureLocation} &rarr; {t.ArrivalLocation}</strong></td><td>{t.TransitType?.Name}</td><td>{t.DepartureTime:dd.MM.yyyy HH:mm}</td><td>{t.ArrivalTime:dd.MM.yyyy HH:mm}</td><td>{t.BookingReference}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            if (expenses.Any())
+            {
+                sb.AppendLine("<h2>Зафіксовані витрати</h2>");
+                sb.AppendLine("<table><tr><th>Назва</th><th>Сума</th><th>Валюта</th><th>Дата</th></tr>");
+                foreach (var e in expenses)
+                {
+                   // sb.AppendLine($"<tr><td>{e.Description}</td><td>{e.TotalAmount:N2}</td><td>{e.Currency}</td><td>{e.Date:dd.MM.yyyy}</td></tr>");
+                }
+                sb.AppendLine("</table>");
+            }
+
+            sb.AppendLine("<br><hr><p style='text-align:center; color:#9ca3af; font-size: 12px;'>Згенеровано автоматично через TravelManager</p>");
+            sb.AppendLine("</body></html>");
+
+            byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(fileBytes, "application/vnd.ms-word", $"TravelManager_План_{trip.Title.Replace(" ", "_")}.doc");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPhotoAlbum(int tripId, string albumName, string albumUrl)
+        {
+            var role = GetUserRoleInTrip(tripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для додавання фотоальбому.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            if (!string.IsNullOrWhiteSpace(albumUrl))
+            {
+                // Якщо користувач не ввів назву, даємо стандартну
+                var safeName = string.IsNullOrWhiteSpace(albumName) ? "Спільний альбом" : albumName.Trim();
+
+                var newAlbum = new TripDocument
+                {
+                    TripId = tripId,
+                    // Додаємо префікс "ALBUM|", щоб відрізняти їх від інших документів (напр. квитків)
+                    FileName = "ALBUM|" + safeName,
+                    FilePath = albumUrl,
+                    UploadedAt = DateTime.UtcNow
+                };
+                _unitOfWork.TripDocument.Add(newAlbum);
+                await _unitOfWork.SaveAsync();
+                TempData["SuccessMessage"] = "Альбом успішно додано!";
+            }
+
+            return RedirectToAction("Details", new { id = tripId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeletePhotoAlbum(int tripId, int documentId)
+        {
+            var role = GetUserRoleInTrip(tripId);
+            if (role == "Viewer" || role == "None")
+            {
+                TempData["ErrorMessage"] = "У вас немає прав для видалення фотоальбому.";
+                return RedirectToAction("Details", new { id = tripId });
+            }
+
+            var album = _unitOfWork.TripDocument.Get(d => d.Id == documentId && d.TripId == tripId);
+            if (album != null)
+            {
+                _unitOfWork.TripDocument.Remove(album);
+                await _unitOfWork.SaveAsync();
+                TempData["SuccessMessage"] = "Альбом видалено.";
+            }
+
+            return RedirectToAction("Details", new { id = tripId });
         }
     }
 }

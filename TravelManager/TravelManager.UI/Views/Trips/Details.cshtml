@@ -323,6 +323,24 @@
 </a>
             </div>
 
+            @if (Model.Destinations != null && Model.Destinations.Any())
+            {
+                <div class="video-city-switcher" id="citySwitcher">
+                    <span class="video-city-switcher-label"><i class="bi bi-camera-video"></i> Фон:</span>
+                    @foreach (var d in Model.Destinations)
+                    {
+                        <button class="city-vid-btn"
+                                onclick="switchHeroVideo('@d.CityName', this)"
+                                data-city="@d.CityName">
+                            @d.CityName
+                        </button>
+                    }
+                    <button class="city-vid-btn shuffle" onclick="shuffleHeroVideo(this)">
+                        Рандомне
+                    </button>
+                </div>
+            }
+
         </div>
     </div>
 
@@ -417,7 +435,199 @@
                     </div>
                 }
             </div>
-            
+
+            <!-- Прихована форма для видалення транзиту -->
+            <form id="transitDeleteForm" asp-controller="Transits" asp-action="Delete" method="post" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="transitDeleteId" />
+            </form>
+
+            <!-- Модальне підтвердження видалення -->
+            <div id="transitDeleteModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
+                <div style="background:white; border-radius:20px; padding:2rem; max-width:380px; width:90%; box-shadow:0 24px 60px rgba(0,0,0,0.2); animation:fadeInUp .2s ease;">
+                    <div style="font-size:2rem; text-align:center; margin-bottom:.8rem;">🗑️</div>
+                    <div style="font-weight:800; color:#0f172a; font-size:1.05rem; text-align:center; margin-bottom:.4rem;">Видалити квиток?</div>
+                    <div id="transitDeleteName" style="text-align:center; color:#64748b; font-size:.88rem; margin-bottom:1.5rem;"></div>
+                    <div style="display:flex; gap:.75rem;">
+                        <button onclick="document.getElementById('transitDeleteModal').style.display='none'"
+                                style="flex:1; padding:.65rem; border-radius:10px; border:1.5px solid #e2e8f0; background:white; color:#475569; font-weight:700; cursor:pointer; font-size:.88rem;">
+                            Скасувати
+                        </button>
+                        <button onclick="document.getElementById('transitDeleteForm').submit()"
+                                style="flex:1; padding:.65rem; border-radius:10px; border:none; background:#ef4444; color:white; font-weight:700; cursor:pointer; font-size:.88rem;">
+                            Видалити
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .tr-filter-btn {
+                    font-size: .72rem;
+                    padding: .25rem .65rem;
+                    border-radius: 50px;
+                    border: 1.5px solid #e2e8f0;
+                    background: white;
+                    color: #64748b;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all .18s;
+                    font-family: inherit;
+                }
+
+                    .tr-filter-btn:hover {
+                        border-color: #8b5cf6;
+                        color: #8b5cf6;
+                    }
+
+                    .tr-filter-btn.tr-filter-active {
+                        background: #8b5cf6;
+                        border-color: #8b5cf6;
+                        color: white;
+                    }
+
+                .transit-card:hover {
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+                    transform: translateY(-1px);
+                }
+            </style>
+
+            <script>
+                // Розгортання картки
+                function transitToggle(header) {
+                    const card = header.closest('.transit-card');
+                    const details = card.querySelector('.transit-details');
+                    const chevron = card.querySelector('.transit-chevron');
+                    const isOpen = details.style.display !== 'none';
+                    details.style.display = isOpen ? 'none' : 'block';
+                    chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+                }
+
+                // Фільтрація по типу
+                function transitFilter(type, btn) {
+                    document.querySelectorAll('.tr-filter-btn').forEach(b => b.classList.remove('tr-filter-active'));
+                    btn.classList.add('tr-filter-active');
+                    let visible = 0;
+                    document.querySelectorAll('.transit-card').forEach(card => {
+                        const match = type === 'all' || card.dataset.type === type;
+                        card.style.display = match ? '' : 'none';
+                        if (match) visible++;
+                    });
+                    document.getElementById('transitEmpty').style.display = visible === 0 ? 'block' : 'none';
+                    document.getElementById('transitCount').textContent = visible;
+                }
+
+                // Сортування
+                function transitSortFn() {
+                    const val = document.getElementById('transitSort').value;
+                    const list = document.getElementById('transitList');
+                    const cards = Array.from(list.querySelectorAll('.transit-card'));
+                    cards.sort((a, b) => {
+                        if (val === 'date-asc') return a.dataset.date.localeCompare(b.dataset.date);
+                        if (val === 'date-desc') return b.dataset.date.localeCompare(a.dataset.date);
+                        if (val === 'type') return (a.dataset.type || '').localeCompare(b.dataset.type || '');
+                        if (val === 'route') return (a.dataset.route || '').localeCompare(b.dataset.route || '');
+                        return 0;
+                    });
+                    cards.forEach(c => list.appendChild(c));
+                }
+
+                // Видалення з підтвердженням
+                function transitDelete(id, name, btn) {
+                    document.getElementById('transitDeleteId').value = id;
+                    document.getElementById('transitDeleteName').textContent = name;
+                    document.getElementById('transitDeleteModal').style.display = 'flex';
+                }
+
+                // Закрити модалку по кліку на фон
+                document.getElementById('transitDeleteModal')?.addEventListener('click', function(e) {
+                    if (e.target === this) this.style.display = 'none';
+                });
+            </script>
+
+            <div class="light-glass-card" data-tilt data-tilt-max="2" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1" style="animation-delay: 0.35s;">
+                <div class="card-header">
+                    <div class="card-header-title">
+                        <div class="icon-box" style="background: #d946ef;"><i class="bi bi-images"></i></div>
+                        Фото та спогади
+                    </div>
+                </div>
+
+                <div style="padding: 1.5rem; transform: translateZ(20px);">
+                    @if (ViewBag.PhotoAlbums != null && ((List<TravelManager.Domain.Entities.TripDocument>)ViewBag.PhotoAlbums).Any())
+                    {
+                        @foreach (var album in (List<TravelManager.Domain.Entities.TripDocument>)ViewBag.PhotoAlbums)
+                        {
+                            var cleanName = album.FileName.Replace("ALBUM|", "");
+
+                            <div class="list-item-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 1rem 1.2rem; background: rgba(255,255,255,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+
+                                <div style="display: flex; align-items: center; gap: 12px; min-width: 0; padding-right: 15px;">
+                                    <div style="width: 42px; height: 42px; border-radius: 50%; background: #fdf4ff; color: #d946ef; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem;">
+                                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    </div>
+                                    <div style="min-width: 0; overflow: hidden;">
+                                        <div style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: #111827; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@cleanName">
+                                            @cleanName
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+                                            📅 Додано: @album.UploadedAt.ToString("dd.MM.yyyy")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                    <a href="@album.FilePath" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; border-radius: 50px; border: 1.5px solid #d946ef; color: #d946ef; font-weight: 700; font-size: 0.8rem; text-decoration: none; transition: all 0.2s; white-space: nowrap; background: transparent;" onmouseenter="this.style.background='#d946ef'; this.style.color='white';" onmouseleave="this.style.background='transparent'; this.style.color='#d946ef';">
+                                        <i class="bi bi-box-arrow-up-right" style="margin-right: 6px;"></i> Відкрити
+                                    </a>
+
+                                    @if (ViewBag.CurrentUserRole != "Viewer" && ViewBag.CurrentUserRole != "None")
+                                    {
+                                        <form asp-action="DeletePhotoAlbum" asp-controller="Trips" method="post" style="margin: 0; padding: 0; display: inline-flex; height: 36px;" onsubmit="return confirm('Видалити цей альбом?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="tripId" value="@Model.Trip.Id" />
+                                            <input type="hidden" name="documentId" value="@album.Id" />
+                                            <button type="submit" title="Видалити" style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid rgba(239,68,68,0.3); color: #ef4444; background: transparent; cursor: pointer; transition: all 0.2s; padding: 0;" onmouseenter="this.style.background='rgba(239,68,68,0.08)';" onmouseleave="this.style.background='transparent';">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="color:#94a3b8; font-style:italic; font-size:.9rem; text-align: center; padding: 0.5rem 0;">
+                            Жодного альбому ще не додано.
+                        </div>
+                    }
+
+                    @if (ViewBag.CurrentUserRole != "Viewer" && ViewBag.CurrentUserRole != "None")
+                    {
+                        <div style="margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid rgba(0,0,0,0.06);">
+                            <div style="font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#64748b; margin-bottom:.8rem;">
+                                Додати новий фотоальбом
+                            </div>
+
+                            <form asp-action="AddPhotoAlbum" asp-controller="Trips" method="post" style="margin: 0; display: flex; gap: 10px; flex-wrap: wrap;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="tripId" value="@Model.Trip.Id" />
+
+                                <input type="text" name="albumName" required placeholder="Назва (напр. Фото з дискотеки)" style="flex: 1 1 180px; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; transition:border-color .2s;" onfocus="this.style.borderColor='#d946ef'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'" />
+
+                                <input type="url" name="albumUrl" required placeholder="Посилання (https://...)" style="flex: 2 1 250px; padding:.65rem 1rem; border:1px solid rgba(0,0,0,0.1); border-radius:12px; font-size:.88rem; font-family:'Inter',sans-serif; background:rgba(255,255,255,0.8); outline:none; transition:border-color .2s;" onfocus="this.style.borderColor='#d946ef'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'" />
+
+                                <button type="submit" style="flex: 0 0 auto; background:#d946ef; color:white; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.85rem; padding:0.65rem 1.5rem; border-radius:12px; border:none; box-shadow:0 4px 12px rgba(217,70,239,0.25); cursor:pointer; transition:all 0.2s;" onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 15px rgba(217,70,239,0.35)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(217,70,239,0.25)';">
+                                    <i class="bi bi-plus-lg"></i> Додати
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+
             @if (!string.IsNullOrEmpty(Model.Trip.Description))
             {
                 <div class="light-glass-card" style="animation-delay: 0.4s;">
@@ -602,12 +812,20 @@
                             </form>
                         </div>
                     }
+                </div>
+			</div>
+        </div>
+        
+    </div>
 
                 </div>
             </div>
 
         </div>
     </div>
+</div>
+
+
 </div>
 
 @section Scripts {
