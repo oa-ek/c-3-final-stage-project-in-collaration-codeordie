@@ -15,7 +15,6 @@ namespace TravelManager.UI.Controllers
             _configuration = configuration;
         }
 
-        // GET /PexelsProxy/Video?query=Prague
         [HttpGet]
         public async Task<IActionResult> Video([FromQuery] string query)
         {

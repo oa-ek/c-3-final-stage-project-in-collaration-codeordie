@@ -75,7 +75,6 @@ namespace TravelManager.UI.Controllers
                 }).ToList();
         }
 
-        // ── AI АНАЛІЗ ВИТРАТ ──────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AiAnalyze(int tripId)
@@ -229,7 +228,7 @@ namespace TravelManager.UI.Controllers
                 TripList = GetAllowedTripsForUser(activeTripId),
                 Date = DateTime.Today,
                 CategoryList = GetCategoryList(),
-                CurrencyList = await GetCurrencyDropdownListAsync(), // ← реальні курси
+                CurrencyList = await GetCurrencyDropdownListAsync(), 
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == activeTripId)
                     .Select(t => new SelectListItem
                     {
@@ -267,7 +266,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
-            // Надійний зчитувач часток з форми
             if (model.Splits != null)
             {
                 for (int i = 0; i < model.Splits.Count; i++)
@@ -287,7 +285,6 @@ namespace TravelManager.UI.Controllers
                 }
             }
 
-            // ДИНАМІЧНО очищаємо помилки валідації для службових полів і списків
             foreach (var key in ModelState.Keys.Where(k => k.Contains("UserName") || k.StartsWith("Splits")).ToList())
             {
                 ModelState.Remove(key);
@@ -312,7 +309,7 @@ namespace TravelManager.UI.Controllers
                 model.PayerList = pts.Select(p => new SelectListItem
                 { Text = p.User.UserName ?? p.User.Email, Value = p.UserId });
 
-                // Зберігаємо введені суми та довантажуємо імена користувачів
+                
                 if (model.Splits != null)
                 {
                     foreach (var s in model.Splits)
@@ -482,7 +479,7 @@ namespace TravelManager.UI.Controllers
                 TransitId = entity.TransitId,
                 AccommodationId = entity.AccommodationId,
                 TripActivityId = entity.TripActivityId,
-                TripList = GetAllowedTripsForUser(entity.TripId), // Передаємо ID, щоб поїздка виділилась
+                TripList = GetAllowedTripsForUser(entity.TripId),
                 CategoryList = GetCategoryList(),
                 CurrencyList = currencyList,
                 TransitList = _unitOfWork.Transit.GetAll(t => t.TripId == entity.TripId)
@@ -531,7 +528,6 @@ namespace TravelManager.UI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ExpenseFormViewModel model, string? returnUrl = null)
         {
-            // Очищення валідації для згенерованих сутностей
             foreach (var key in ModelState.Keys.Where(k => k.Contains("UserName") || k.StartsWith("Splits")).ToList())
             {
                 ModelState.Remove(key);
@@ -562,7 +558,6 @@ namespace TravelManager.UI.Controllers
                 model.AccommodationList = _unitOfWork.Accommodation.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Name, Value = a.Id.ToString() });
                 model.ActivityList = _unitOfWork.TripActivity.GetAll(a => a.TripId == model.TripId).Select(a => new SelectListItem { Text = a.Title, Value = a.Id.ToString() });
 
-                // Перезберігаємо суми часток
                 if (model.Splits != null)
                 {
                     foreach (var s in model.Splits)

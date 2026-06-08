@@ -36,11 +36,8 @@ namespace TravelManager.Infrastructure.Services
                 var encoded = Uri.EscapeDataString(countryName);
                 var fields = "fields=name,flags,currencies,languages,capital,population,region";
 
-                // Спроба 1: /name/ — працює для англійських назв (наприклад "France", "Germany")
                 var response = await _httpClient.GetAsync($"v3.1/name/{encoded}?{fields}");
 
-                // Спроба 2: /translation/ — для перекладених назв (наприклад "Франція", "Германія")
-                // REST Countries API підтримує пошук по перекладах у цьому ендпоінті
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation(
@@ -48,7 +45,6 @@ namespace TravelManager.Infrastructure.Services
                     response = await _httpClient.GetAsync($"v3.1/translation/{encoded}?{fields}");
                 }
 
-                // Спроба 3: /name/ з параметром fullText=false — частковий пошук (широкий fallback)
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation(
@@ -89,7 +85,6 @@ namespace TravelManager.Infrastructure.Services
                     CurrencySymbol = firstCurrency?.Value?.Symbol ?? string.Empty,
                 };
 
-                // Кешуємо на 24 години — дані країн майже не змінюються
                 _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
                 return result;
             }

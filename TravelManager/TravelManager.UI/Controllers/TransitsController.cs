@@ -76,7 +76,6 @@ namespace TravelManager.UI.Controllers
                 if (selectedTrip != null) selectedTrip.Selected = true;
             }
 
-            // ДОДАНО: Автоматичне заповнення локації та дати, якщо вони передані
             var model = new TransitFormViewModel
             {
                 TripId = tripId ?? 0,
@@ -85,7 +84,7 @@ namespace TravelManager.UI.Controllers
                 BookingStatusList = GetBookingStatusList(),
                 ArrivalLocation = arrivalLocation ?? string.Empty,
                 ArrivalTime = arrivalDate ?? DateTime.Today.AddDays(1),
-                DepartureTime = arrivalDate?.AddHours(-6) ?? DateTime.Today // Орієнтовний час виїзду
+                DepartureTime = arrivalDate?.AddHours(-6) ?? DateTime.Today 
             };
 
             return View(model);

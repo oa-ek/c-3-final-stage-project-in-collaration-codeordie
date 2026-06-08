@@ -20,7 +20,6 @@ namespace TravelManager.Infrastructure.Services
         {
             try
             {
-                // Намагаємося прочитати як "Host", так і "SmtpServer"
                 var host = _configuration["EmailSettings:Host"];
                 if (string.IsNullOrEmpty(host))
                 {
@@ -33,20 +32,19 @@ namespace TravelManager.Infrastructure.Services
                 }
 
                 var portString = _configuration["EmailSettings:Port"];
-                int port = 587; // Значення за замовчуванням
+                int port = 587; 
                 if (!string.IsNullOrEmpty(portString))
                 {
                     int.TryParse(portString, out port);
                 }
 
-                // Читаємо як EnableSSL, так і EnableSsl
                 var sslString = _configuration["EmailSettings:EnableSSL"];
                 if (string.IsNullOrEmpty(sslString))
                 {
                     sslString = _configuration["EmailSettings:EnableSsl"];
                 }
 
-                bool enableSSL = true; // За замовчуванням увімкнено
+                bool enableSSL = true;
                 if (!string.IsNullOrEmpty(sslString))
                 {
                     bool.TryParse(sslString, out enableSSL);
@@ -86,7 +84,6 @@ namespace TravelManager.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                // Логуємо або просто прокидаємо помилку далі, щоб побачити її у контролері
                 throw new InvalidOperationException($"Помилка при відправці листа на {email}: {ex.Message}", ex);
             }
         }

@@ -50,7 +50,6 @@ namespace TravelManager.UI.Controllers
             var checklist = _unitOfWork.Checklist.Get(c => c.Id == id, includeProperties: "Trip,Items");
             if (checklist == null) return NotFound();
 
-            // Перевірка доступу
             var role = GetUserRoleInTrip(checklist.TripId);
             if (role == "None")
             {

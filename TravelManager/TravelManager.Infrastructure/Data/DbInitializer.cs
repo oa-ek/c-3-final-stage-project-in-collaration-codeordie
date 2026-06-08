@@ -11,10 +11,8 @@ namespace TravelManager.Infrastructure.Data
             using var scope = serviceProvider.CreateScope();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-            // Email нашого головного адміна
             var adminEmail = "admin@travel.com";
 
-            // Перевіряємо, чи він вже існує
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
             if (adminUser == null)
@@ -29,12 +27,10 @@ namespace TravelManager.Infrastructure.Data
                     CreatedAt = DateTime.UtcNow
                 };
 
-                // Створюємо адміна з паролем
                 var result = await userManager.CreateAsync(admin, "AdminPass123!");
 
                 if (result.Succeeded)
                 {
-                    // Призначаємо йому роль Admin, яку ми вже засіяли в DatabaseSeeder
                     await userManager.AddToRoleAsync(admin, "Admin");
                 }
             }

@@ -107,7 +107,6 @@ namespace TravelManager.UI.Controllers
                 return View(model);
             }
 
-            // Автоматично геокодуємо адресу через NominatimService
             double? lat = null, lon = null;
             if (!string.IsNullOrWhiteSpace(model.Address))
             {
@@ -127,7 +126,7 @@ namespace TravelManager.UI.Controllers
                 CheckOutTime = model.CheckOutTime,
                 BookingReference = model.BookingReference,
                 TripId = model.TripId,
-                BookingStatusId = 1, // Твій автоматичний статус
+                BookingStatusId = 1,
                 Latitude = lat,
                 Longitude = lon,
                 ContactPhone = model.ContactPhone,
@@ -189,7 +188,6 @@ namespace TravelManager.UI.Controllers
             var entity = _unitOfWork.Accommodation.Get(u => u.Id == id);
             if (entity == null) return NotFound();
 
-            // Геокодуємо тільки якщо адреса змінилась
             if (!string.IsNullOrWhiteSpace(model.Address) && model.Address != entity.Address)
             {
                 var geo = await _nominatimService.GeocodeAddressAsync(model.Address);

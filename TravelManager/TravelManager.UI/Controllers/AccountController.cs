@@ -267,7 +267,6 @@ namespace TravelManager.UI.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return NotFound();
 
-            // Перевіряємо, чи є у користувача встановлений пароль
             ViewBag.HasPassword = await _userManager.HasPasswordAsync(user);
             return View();
         }

@@ -260,7 +260,6 @@
                     </div>
                 </div>
 
-                <!-- НОВИЙ БЛОК: Локація та Контакти -->
                 <div class="section-lbl reveal d5"><i class="bi bi-geo-alt-fill text-indigo-500"></i> Локація та Контакти</div>
                 <div class="two-col reveal d5">
                     <div class="field-wrap full">
@@ -268,7 +267,6 @@
                         <input asp-for="Address" class="field-input" placeholder="Вулиця, місто, країна..." />
                         <span asp-validation-for="Address" class="val-error"></span>
                     </div>
-                    <!-- Поля: Телефон та Вебсайт -->
                     <div class="field-wrap">
                         <label class="field-label">Телефон <span class="optional-tag">необов'язково</span></label>
                         <input asp-for="ContactPhone" class="field-input" placeholder="+380..." type="tel" />
@@ -278,7 +276,6 @@
                         <input asp-for="WebsiteUrl" class="field-input" placeholder="https://..." type="url" />
                     </div>
 
-                    <!-- Координати (Опціонально) -->
                     <div class="field-wrap">
                         <label class="field-label">Широта (Latitude) <span class="optional-tag">опційно</span></label>
                         <input asp-for="Latitude" class="field-input" placeholder="Напр. 48.8566" type="number" step="any" />

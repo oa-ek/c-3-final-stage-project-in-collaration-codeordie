@@ -228,7 +228,6 @@ namespace TravelManager.UI.Controllers
                 return Json(new { success = false, message = "Глядачі не мають прав перемикати стан речей." });
             }
 
-            // Перемикаємо статус
             item.IsChecked = !item.IsChecked;
             _unitOfWork.ChecklistItem.Update(item);
             await _unitOfWork.SaveAsync();

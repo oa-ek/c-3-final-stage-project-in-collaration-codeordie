@@ -25,7 +25,6 @@ namespace TravelManager.Infrastructure.Services
 
         public async Task<WeatherInfo?> GetWeatherAsync(double latitude, double longitude)
         {
-            // Округлюємо до 2 знаків для кращого кешування
             var lat = Math.Round(latitude, 2);
             var lon = Math.Round(longitude, 2);
             var cacheKey = $"weather:{lat}:{lon}";
@@ -38,9 +37,6 @@ namespace TravelManager.Infrastructure.Services
 
             try
             {
-                // ВИПРАВЛЕННЯ: явно використовуємо InvariantCulture для форматування координат.
-                // Без цього на системі з uk-UA локаллю double 40.4168 перетворюється на "40,4168"
-                // і Open-Meteo API повертає помилку бо не розуміє кому як десятковий роздільник.
                 var latStr = lat.ToString("F4", CultureInfo.InvariantCulture);
                 var lonStr = lon.ToString("F4", CultureInfo.InvariantCulture);
 
@@ -75,7 +71,6 @@ namespace TravelManager.Infrastructure.Services
                     Forecast = BuildForecast(dto)
                 };
 
-                // Кешуємо на 10 хвилин
                 _cache.Set(cacheKey, result, TimeSpan.FromMinutes(10));
 
                 return result;

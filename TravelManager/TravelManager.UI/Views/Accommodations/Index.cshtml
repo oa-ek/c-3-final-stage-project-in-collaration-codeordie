@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "Житло";
-    // ГРУПУЄМО ПО ПОЇЗДКАХ
     var groupedAccommodations = Model.GroupBy(x => x.TripTitle ?? "Без назви подорожі").ToList();
 }
 
@@ -389,7 +388,6 @@
                                                         @item.Name
                                                         <span class="acc-addr"><i class="bi bi-geo-alt-fill text-pink-400"></i> @item.Address</span>
 
-                                                        <!-- Вивід номеру бронювання -->
                                                         @if (!string.IsNullOrEmpty(item.BookingReference))
                                                         {
                                                             <div class="booking-ref-badge">

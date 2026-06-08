@@ -50,8 +50,6 @@ namespace TravelManager.Infrastructure.Services
                 DepartureDate = destination.DepartureDate,
             };
 
-            // Якщо координати відсутні — геокодуємо по назві міста та країни,
-            // щоб погода могла завантажитись навіть без збережених координат у БД
             double? lat = destination.Latitude;
             double? lon = destination.Longitude;
 
@@ -74,7 +72,6 @@ namespace TravelManager.Infrastructure.Services
                         vm.Latitude = lat;
                         vm.Longitude = lon;
 
-                        // Якщо країна ще не заповнена — підставляємо з геокодування
                         if (string.IsNullOrWhiteSpace(vm.Country) && !string.IsNullOrWhiteSpace(geo.Country))
                             vm.Country = geo.Country;
 
@@ -93,10 +90,8 @@ namespace TravelManager.Infrastructure.Services
                 }
             }
 
-            // Визначаємо країну для API — пріоритет: збережена в destination, потім з vm після геокодування
             var countryForApi = destination.Country ?? vm.Country;
 
-            // Три API паралельно
             var weatherTask = GetWeatherSafeAsync(lat, lon);
             var countryTask = GetCountryInfoSafeAsync(countryForApi);
             var ratesTask = GetExchangeRatesSafeAsync(countryForApi);

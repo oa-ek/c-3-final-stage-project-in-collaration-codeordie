@@ -322,7 +322,6 @@ namespace TravelManager.UI.Controllers
             var destination = _unitOfWork.TripDestination.Get(d => d.Id == destinationId);
             if (destination == null) return NotFound();
 
-            // Перевіряємо доступ
             var participant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == destination.TripId && tp.UserId == currentUserId);
             if (participant == null) return Forbid();
@@ -357,8 +356,6 @@ namespace TravelManager.UI.Controllers
             return View(model);
         }
 
-        // GET /TripDestinations/WeatherCard?destinationId=5
-        // Повертає JSON з погодою і прапором для рядка таблиці маршруту
         [HttpGet]
         public async Task<IActionResult> WeatherCard(int destinationId)
         {

@@ -107,7 +107,6 @@ namespace TravelManager.UI.Controllers
                     }
                     catch (Exception ex)
                     {
-                        // Тепер ми ловимо помилку!
                         errorCount++;
                         lastErrorMessage = ex.Message;
                     }
@@ -124,7 +123,6 @@ namespace TravelManager.UI.Controllers
             }
             else
             {
-                // Якщо 0 успіхів, показуємо реальну причину:
                 TempData["ErrorMessage"] = $"Помилка відправки. Перевірте налаштування SMTP. Деталі: {lastErrorMessage}";
             }
 

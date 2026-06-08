@@ -25,8 +25,6 @@ namespace TravelManager.UI.Controllers
             _excelService = excelService;
         }
 
-        // ── GET /Export/Trip/{tripId} ──────────────────────────────────
-        // Показує сторінку вибору параметрів (фільтр по учаснику)
         [HttpGet]
         public IActionResult Trip(int tripId)
         {
@@ -34,7 +32,6 @@ namespace TravelManager.UI.Controllers
             var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
             if (trip == null) return NotFound();
 
-            // Перевіряємо доступ
             var participant = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId);
             if (participant == null)
@@ -43,7 +40,6 @@ namespace TravelManager.UI.Controllers
                 return RedirectToAction("Index", "Trips");
             }
 
-            // Список учасників для фільтру
             var participants = _unitOfWork.TripParticipant
                 .GetAll(tp => tp.TripId == tripId, includeProperties: "User")
                 .Select(p => new SelectListItem
@@ -60,20 +56,16 @@ namespace TravelManager.UI.Controllers
             return View();
         }
 
-        // ── GET /Export/DownloadTripReport ─────────────────────────────
-        // Генерує та повертає .xlsx файл
         [HttpGet]
         public IActionResult DownloadTripReport(int tripId, string? filterUserId)
         {
             var currentUserId = _userManager.GetUserId(User);
 
-            // Перевірка доступу
             var access = _unitOfWork.TripParticipant
                 .Get(tp => tp.TripId == tripId && tp.UserId == currentUserId);
             if (access == null)
                 return Forbid();
 
-            // Завантажуємо дані
             var trip = _unitOfWork.Trip.Get(t => t.Id == tripId);
             if (trip == null) return NotFound();
 
@@ -87,7 +79,6 @@ namespace TravelManager.UI.Controllers
                         includeProperties: "Expense,Expense.Payer,Debtor")
                 .ToList();
 
-            // Ім'я фільтрованого користувача (для заголовку аркуша)
             string? filterUserName = null;
             if (!string.IsNullOrEmpty(filterUserId))
             {
@@ -97,11 +88,9 @@ namespace TravelManager.UI.Controllers
                 filterUserName = filtered?.User?.UserName ?? filtered?.User?.Email;
             }
 
-            // Генеруємо Excel
             var bytes = _excelService.GenerateTripReport(
                 trip, expenses, splits, filterUserId, filterUserName);
 
-            // Формуємо ім'я файлу: TravelManager_НазваПодорожі_YYYY-MM-DD.xlsx
             string safeName = string.Concat(trip.Title
                 .Where(c => !Path.GetInvalidFileNameChars().Contains(c)))
                 .Replace(" ", "_");

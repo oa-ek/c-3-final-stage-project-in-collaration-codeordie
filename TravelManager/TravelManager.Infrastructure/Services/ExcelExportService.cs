@@ -13,28 +13,22 @@ namespace TravelManager.Infrastructure.Services
 {
     public class ExcelExportService
     {
-        // ── Кольорова палітра (відповідає UI проєкту) ──
-        private static readonly Color ColHeaderBg = ColorTranslator.FromHtml("#1E293B"); // slate-800
+        private static readonly Color ColHeaderBg = ColorTranslator.FromHtml("#1E293B"); 
         private static readonly Color ColHeaderFg = Color.White;
-        private static readonly Color ColAccent = ColorTranslator.FromHtml("#F59E0B"); // amber-500
-        private static readonly Color ColGreen = ColorTranslator.FromHtml("#10B981"); // emerald-500
-        private static readonly Color ColRed = ColorTranslator.FromHtml("#F43F5E"); // rose-500
-        private static readonly Color ColRowAlt = ColorTranslator.FromHtml("#F8FAFC"); // slate-50
-        private static readonly Color ColBorder = ColorTranslator.FromHtml("#E2E8F0"); // slate-200
-        private static readonly Color ColSectionBg = ColorTranslator.FromHtml("#F1F5F9"); // slate-100
-        private static readonly Color ColTotalBg = ColorTranslator.FromHtml("#FFFBEB"); // amber-50
+        private static readonly Color ColAccent = ColorTranslator.FromHtml("#F59E0B"); 
+        private static readonly Color ColGreen = ColorTranslator.FromHtml("#10B981"); 
+        private static readonly Color ColRed = ColorTranslator.FromHtml("#F43F5E");
+        private static readonly Color ColRowAlt = ColorTranslator.FromHtml("#F8FAFC"); 
+        private static readonly Color ColBorder = ColorTranslator.FromHtml("#E2E8F0");
+        private static readonly Color ColSectionBg = ColorTranslator.FromHtml("#F1F5F9"); 
+        private static readonly Color ColTotalBg = ColorTranslator.FromHtml("#FFFBEB"); 
 
-        // ── Назви категорій (відповідають GetCategoryList() в ExpensesController) ──
         private static readonly Dictionary<int, string> CategoryNames = new()
         {
             { 1, "Проживання" }, { 2, "Транспорт" }, { 3, "Їжа" },
             { 4, "Розваги" },    { 5, "Шопінг" },    { 6, "Інше" }
         };
 
-        // ════════════════════════════════════════════════════════════════
-        //  ГОЛОВНИЙ МЕТОД — повний звіт по конкретній подорожі
-        //  Аркуші: 1) Витрати  2) Борги  3) Взаєморозрахунки (нетто)
-        // ════════════════════════════════════════════════════════════════
         public byte[] GenerateTripReport(
             Trip trip,
             IEnumerable<Expense> expenses,
@@ -53,9 +47,6 @@ namespace TravelManager.Infrastructure.Services
             return pkg.GetAsByteArray();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  АРКУШ 1 — Витрати
-        // ════════════════════════════════════════════════════════════════
         private void BuildExpensesSheet(
             ExcelPackage pkg,
             Trip trip,
@@ -70,20 +61,17 @@ namespace TravelManager.Infrastructure.Services
 
             var expList = expenses.OrderBy(e => e.Date).ToList();
 
-            // ── Шапка звіту ──
             int row = WriteReportHeader(ws, trip,
                 filterUserName != null ? $"Витрати — {filterUserName}" : "Витрати",
                 1);
             row++;
 
-            // ── Заголовки таблиці ──
             string[] headers = { "№", "Дата", "Назва витрати", "Категорія", "Сплатив", "Сума", "Валюта" };
             int[] widths = { 4, 12, 35, 16, 20, 14, 10 };
 
             WriteTableHeader(ws, row, headers, widths);
             row++;
 
-            // ── Рядки даних ──
             int num = 1;
             foreach (var e in expList)
             {
@@ -101,12 +89,10 @@ namespace TravelManager.Infrastructure.Services
                 ws.Cells[row, 7].Value = e.Currency;
 
                 StyleDataRow(ws, row, 1, 7, rowBg);
-                // Сума — вирівняти вправо
                 ws.Cells[row, 6].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                 row++;
             }
 
-            // ── Підсумок по категоріях ──
             row++;
             WriteSectionTitle(ws, row, 1, 7, "Підсумок за категоріями");
             row++;
@@ -130,20 +116,15 @@ namespace TravelManager.Infrastructure.Services
                 row++;
             }
 
-            // ── РАЗОМ ──
             WriteTotalRow(ws, row, 1, 3,
                 "РАЗОМ", expList.Count, expList.Sum(e => e.TotalAmount),
                 trip.BaseCurrency);
 
-            // Автоширина для колонок 1-7
             for (int c = 1; c <= 7; c++)
                 ws.Column(c).AutoFit();
             ws.Column(1).Width = 4;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  АРКУШ 2 — Борги (ExpenseSplits)
-        // ════════════════════════════════════════════════════════════════
         private void BuildDebtsSheet(
             ExcelPackage pkg,
             Trip trip,
@@ -199,12 +180,10 @@ namespace TravelManager.Infrastructure.Services
                 statusCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
                 StyleDataRow(ws, row, 1, 8, alt ? ColRowAlt : Color.White);
-                // Перезаписуємо колір тексту статусу після StyleDataRow
                 ws.Cells[row, 8].Style.Font.Color.SetColor(s.IsSettled ? ColGreen : ColRed);
                 row++;
             }
 
-            // ── Підсумки ──
             row++;
             var pending = list.Where(s => !s.IsSettled).ToList();
             var settled = list.Where(s => s.IsSettled).ToList();
@@ -215,9 +194,6 @@ namespace TravelManager.Infrastructure.Services
             ws.Column(1).Width = 4;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  АРКУШ 3 — Нетто-взаєморозрахунки (хто кому скільки винен)
-        // ════════════════════════════════════════════════════════════════
         private void BuildNetSettlementSheet(
             ExcelPackage pkg,
             Trip trip,
@@ -228,15 +204,12 @@ namespace TravelManager.Infrastructure.Services
             int row = WriteReportHeader(ws, trip, "Взаєморозрахунки (нетто)", 1);
             row++;
 
-            // ── Пояснення ──
             ws.Cells[row, 1].Value = "Показано мінімальну кількість транзакцій для закриття всіх боргів між учасниками.";
             ws.Cells[row, 1].Style.Font.Italic = true;
             ws.Cells[row, 1].Style.Font.Color.SetColor(ColorTranslator.FromHtml("#64748B"));
             ws.Cells[row, 1, row, 6].Merge = true;
             row += 2;
 
-            // ── Розрахунок нетто-балансів ──
-            // balance[userId] = скільки йому мають повернути (+ = кредитор, - = боржник)
             var balance = new Dictionary<string, (string name, decimal amount)>();
 
             foreach (var s in splits.Where(s => !s.IsSettled))
@@ -246,7 +219,7 @@ namespace TravelManager.Infrastructure.Services
                 string debtorName = s.Debtor?.UserName ?? debtorId;
                 string creditorName = s.Expense?.Payer?.UserName ?? creditorId;
 
-                if (debtorId == creditorId) continue; // сам собі — пропускаємо
+                if (debtorId == creditorId) continue; 
 
                 if (!balance.ContainsKey(debtorId)) balance[debtorId] = (debtorName, 0);
                 if (!balance.ContainsKey(creditorId)) balance[creditorId] = (creditorName, 0);
@@ -255,7 +228,6 @@ namespace TravelManager.Infrastructure.Services
                 balance[creditorId] = (creditorName, balance[creditorId].amount + s.OwedAmount);
             }
 
-            // ── Таблиця балансів ──
             WriteSectionTitle(ws, row, 1, 6, "Баланс кожного учасника");
             row++;
             WriteTableHeader(ws, row, new[] { "Учасник", "Баланс", "Валюта", "Роль" }, new[] { 25, 14, 10, 16 }, startCol: 1, colCount: 4);
@@ -274,8 +246,8 @@ namespace TravelManager.Infrastructure.Services
                               amt < -0.01m ? "Боржник (він винен)" : "Закрито";
                 ws.Cells[row, 4].Value = role;
 
-                var rowBg = amt > 0.01m ? Color.FromArgb(240, 253, 244)   // зелений відтінок
-                          : amt < -0.01m ? Color.FromArgb(255, 241, 242)   // червоний відтінок
+                var rowBg = amt > 0.01m ? Color.FromArgb(240, 253, 244)   
+                          : amt < -0.01m ? Color.FromArgb(255, 241, 242)  
                           : ColRowAlt;
 
                 StyleDataRow(ws, row, 1, 4, rowBg);
@@ -286,7 +258,6 @@ namespace TravelManager.Infrastructure.Services
 
             row += 2;
 
-            // ── Мінімальний план виплат (алгоритм greedy debt settlement) ──
             WriteSectionTitle(ws, row, 1, 6, "План виплат (мінімальна кількість транзакцій)");
             row++;
             WriteTableHeader(ws, row, new[] { "Хто платить", "Кому платить", "Сума", "Валюта" },
@@ -326,16 +297,12 @@ namespace TravelManager.Infrastructure.Services
             for (int c = 1; c <= 6; c++) ws.Column(c).AutoFit();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  АЛГОРИТМ: мінімальний план виплат (greedy)
-        // ════════════════════════════════════════════════════════════════
         private static List<(string from, string to, decimal amt, string currency)> ComputeMinimalSettlements(
             Dictionary<string, (string name, decimal amount)> balance,
             string currency)
         {
             var result = new List<(string, string, decimal, string)>();
 
-            // Розділяємо на боржників та кредиторів
             var debtors = balance.Where(b => b.Value.amount < -0.005m)
                                    .Select(b => (b.Key, b.Value.name, -b.Value.amount))
                                    .OrderByDescending(x => x.Item3).ToList();
@@ -364,16 +331,10 @@ namespace TravelManager.Infrastructure.Services
             return result;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  ДОПОМІЖНІ МЕТОДИ СТИЛІЗАЦІЇ
-        // ════════════════════════════════════════════════════════════════
-
-        /// Рядок з назвою звіту та метаданими поїздки
         private int WriteReportHeader(ExcelWorksheet ws, Trip trip, string sheetTitle, int startRow)
         {
             int r = startRow;
 
-            // Заголовок TravelManager
             ws.Cells[r, 1, r, 8].Merge = true;
             ws.Cells[r, 1].Value = "TravelManager — Фінансовий звіт";
             ws.Cells[r, 1].Style.Font.Bold = true;
@@ -381,7 +342,6 @@ namespace TravelManager.Infrastructure.Services
             ws.Cells[r, 1].Style.Font.Color.SetColor(ColorTranslator.FromHtml("#94A3B8"));
             r++;
 
-            // Назва аркуша / тип звіту
             ws.Cells[r, 1, r, 8].Merge = true;
             ws.Cells[r, 1].Value = sheetTitle;
             ws.Cells[r, 1].Style.Font.Bold = true;
@@ -389,7 +349,6 @@ namespace TravelManager.Infrastructure.Services
             ws.Cells[r, 1].Style.Font.Color.SetColor(ColHeaderBg);
             r++;
 
-            // Метадані поїздки
             ws.Cells[r, 1, r, 8].Merge = true;
             ws.Cells[r, 1].Value = $"Подорож: {trip.Title}   |   " +
                                    $"{trip.StartDate:dd.MM.yyyy} – {trip.EndDate:dd.MM.yyyy}   |   " +
@@ -399,14 +358,13 @@ namespace TravelManager.Infrastructure.Services
             ws.Cells[r, 1].Style.Font.Color.SetColor(ColorTranslator.FromHtml("#64748B"));
             r++;
 
-            // Акцентна лінія
             ws.Cells[r, 1, r, 8].Merge = true;
             ws.Cells[r, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
             ws.Cells[r, 1].Style.Fill.BackgroundColor.SetColor(ColAccent);
             ws.Row(r).Height = 3;
             r++;
 
-            return r; // повертає наступний вільний рядок
+            return r; 
         }
 
         private void WriteTableHeader(ExcelWorksheet ws, int row, string[] headers, int[] widths,
@@ -487,7 +445,6 @@ namespace TravelManager.Infrastructure.Services
         private void WriteDebtsTotal(ExcelWorksheet ws, int row,
             List<ExpenseSplit> all, List<ExpenseSplit> pending, List<ExpenseSplit> settled, string currency)
         {
-            // Рядок: непогашені
             ws.Cells[row, 1, row, 5].Merge = true;
             ws.Cells[row, 1].Value = "Непогашені борги";
             ws.Cells[row, 6].Value = pending.Sum(s => s.OwedAmount);
@@ -502,7 +459,6 @@ namespace TravelManager.Infrastructure.Services
             ws.Cells[row, 1].Style.Font.Bold = true;
             row++;
 
-            // Рядок: погашені
             ws.Cells[row, 1, row, 5].Merge = true;
             ws.Cells[row, 1].Value = "Погашені борги";
             ws.Cells[row, 6].Value = settled.Sum(s => s.OwedAmount);
@@ -517,7 +473,6 @@ namespace TravelManager.Infrastructure.Services
             ws.Cells[row, 1].Style.Font.Bold = true;
             row++;
 
-            // Рядок: загалом
             ws.Cells[row, 1, row, 5].Merge = true;
             ws.Cells[row, 1].Value = "ЗАГАЛЬНА СУМА БОРГІВ";
             ws.Cells[row, 6].Value = all.Sum(s => s.OwedAmount);

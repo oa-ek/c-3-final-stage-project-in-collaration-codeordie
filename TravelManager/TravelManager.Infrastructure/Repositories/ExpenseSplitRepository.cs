@@ -22,7 +22,6 @@ namespace TravelManager.Infrastructure.Repositories
                 objFromDb.OwedAmount = entity.OwedAmount;
                 objFromDb.IsSettled = entity.IsSettled;
 
-                // Обдумати логіку
             }
         }
     }

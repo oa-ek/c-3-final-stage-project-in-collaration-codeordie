@@ -23,7 +23,6 @@ namespace TravelManager.UI.Controllers
             _userManager = userManager;
         }
 
-        // 1. Головна сторінка зі списками шаблонів (Особисті + Системні)
         [HttpGet]
         public IActionResult Index()
         {
@@ -44,14 +43,12 @@ namespace TravelManager.UI.Controllers
             return View(viewModels);
         }
 
-        // 2. Сторінка створення нового шаблону з нуля (GET)
         [HttpGet]
         public IActionResult Create()
         {
             return View(new TemplateCreateViewModel());
         }
 
-        // 3. Створення нового шаблону з нуля (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TemplateCreateViewModel model)
@@ -67,7 +64,7 @@ namespace TravelManager.UI.Controllers
                 OwnerId = userId,
                 Title = model.Title,
                 Description = model.Description,
-                IconClass = "bi-backpack4-fill" // Стандартна іконка
+                IconClass = "bi-backpack4-fill" 
             };
 
             _unitOfWork.ChecklistTemplate.Add(newTemplate);
@@ -77,7 +74,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Edit), new { id = newTemplate.Id });
         }
 
-        // 4. Сторінка перегляду вмісту шаблону (GET)
         [HttpGet]
         public IActionResult Details(int id)
         {
@@ -98,7 +94,6 @@ namespace TravelManager.UI.Controllers
             return View(viewModel);
         }
 
-        // 5. Сторінка інтерактивного редагування (GET)
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -126,22 +121,18 @@ namespace TravelManager.UI.Controllers
             return View(viewModel);
         }
 
-        // 6. Оновлення назви шаблону ТА всіх його внутрішніх речей (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(TemplateEditViewModel model)
         {
             var userId = _userManager.GetUserId(User);
-            // ВАЖЛИВО: завантажуємо шаблон разом із речами (Items) з бази даних
             var template = _unitOfWork.ChecklistTemplate.Get(t => t.Id == model.Id, includeProperties: "Items");
 
             if (template == null) return NotFound();
             if (template.OwnerId != userId) return Forbid();
 
-            // 1. Оновлюємо заголовок самого шаблону
             template.Title = model.Title;
 
-            // 2. Пробігаємося по кожній надісланій речі й оновлюємо її контент у базі
             if (model.Items != null)
             {
                 foreach (var submittedItem in model.Items)
@@ -161,7 +152,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 7. Додавання нової речі всередину шаблону (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddItem(int templateId, string content)
@@ -190,7 +180,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Edit), new { id = templateId });
         }
 
-        // 8. Видалення речі з шаблону (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveItem(int itemId, int templateId)
@@ -211,7 +200,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Edit), new { id = templateId });
         }
 
-        // 9. Клонування шаблону собі в особисті (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Clone(int id)
@@ -232,7 +220,6 @@ namespace TravelManager.UI.Controllers
             _unitOfWork.ChecklistTemplate.Add(clonedTemplate);
             await _unitOfWork.SaveAsync();
 
-            // Копіюємо речі
             foreach (var item in template.Items)
             {
                 _unitOfWork.ChecklistTemplateItem.Add(new ChecklistTemplateItem
@@ -247,7 +234,6 @@ namespace TravelManager.UI.Controllers
             return RedirectToAction(nameof(Edit), new { id = clonedTemplate.Id });
         }
 
-        // 10. Повне видалення шаблону (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
